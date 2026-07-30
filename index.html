@@ -117,6 +117,14 @@
             </div>
             <div class="kpi-icon"><i class="fa-solid fa-percent"></i></div>
           </div>
+          <div class="kpi-card" style="border-left: 3px solid var(--danger);">
+            <div class="kpi-info">
+              <span>A Rischio / In Ritardo</span>
+              <h3 id="kpiAtRisk" style="color:var(--danger);">0</h3>
+              <p>Progetti con tempistiche critiche</p>
+            </div>
+            <div class="kpi-icon" style="color:var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          </div>
         </div>
 
         <!-- Dashboard Charts / Widget Grid -->
@@ -164,6 +172,12 @@
               <option value="">Tutti i PM / Coordinatori</option>
               <!-- Dynamic PM options -->
             </select>
+            <select id="tempisticheFilter" class="select-input">
+              <option value="">Tutte le Tempistiche</option>
+              <option value="In linea">🟢 In linea</option>
+              <option value="A rischio">🟡 A rischio</option>
+              <option value="In ritardo">🔴 In ritardo</option>
+            </select>
             <button id="projectsUploadExcelBtn" class="btn btn-secondary btn-sm" style="display:flex; align-items:center; gap:0.4rem;">
               <i class="fa-solid fa-file-excel" style="color:#10B981;"></i> Importa Excel
             </button>
@@ -176,9 +190,13 @@
               <tr>
                 <th>ID</th>
                 <th>Nome Progetto</th>
+                <th>Risorsa</th>
                 <th>Stato</th>
                 <th>PM / Coordinatore</th>
-                <th style="width: 250px;">Effort %</th>
+                <th style="width:180px;">Effort %</th>
+                <th style="width:120px;">Avanzamento</th>
+                <th>Scadenza</th>
+                <th>Tempistiche</th>
                 <th style="text-align: right;">Azioni</th>
               </tr>
             </thead>
@@ -342,41 +360,97 @@
 
   <!-- Modal: Add / Edit Project -->
   <div id="projectModal" class="modal-backdrop">
-    <div class="modal">
+    <div class="modal modal-wide">
       <div class="modal-header">
         <h3 id="modalProjectTitle">Aggiungi Progetto MP95</h3>
         <button class="modal-close" id="closeProjectModal">&times;</button>
       </div>
       <form id="projectForm">
         <input type="hidden" id="modalProjectId">
+
+        <!-- Row 1: Nome Progetto full width -->
         <div class="form-group">
-          <label for="modalProgetto">Nome Progetto</label>
+          <label for="modalProgetto">Nome Progetto *</label>
           <input type="text" id="modalProgetto" class="form-control" required placeholder="Es. WIDE-IT-Digital">
         </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:0.75rem;">
+
+        <!-- Row 2: Stato / Effort % / PM -->
+        <div class="form-grid-3" style="margin-top:0.75rem;">
           <div class="form-group">
-            <label for="modalStato">Stato</label>
+            <label for="modalStato">Stato *</label>
             <select id="modalStato" class="form-control" required>
               <option value="In corso">In corso</option>
+              <option value="Da iniziare">Da iniziare</option>
+              <option value="In fase di chiusura">In fase di chiusura</option>
+              <option value="Completato">Completato</option>
+              <option value="In attesa">In attesa</option>
               <option value="Manutenzione">Manutenzione</option>
               <option value="Terminato">Terminato</option>
               <option value="Stand by">Stand by</option>
-              <option value="Da iniziare">Da iniziare</option>
               <option value="Attività periodica">Attività periodica</option>
             </select>
           </div>
           <div class="form-group">
-            <label for="modalEffort">Effort %</label>
+            <label for="modalEffort">Effort % *</label>
             <input type="number" id="modalEffort" class="form-control" min="0" max="100" required placeholder="Es. 25">
           </div>
+          <div class="form-group">
+            <label for="modalAvanzamento">Avanzamento %</label>
+            <input type="number" id="modalAvanzamento" class="form-control" min="0" max="100" placeholder="Es. 60">
+          </div>
         </div>
+
+        <!-- Row 3: PM / Risorsa -->
+        <div class="form-grid-2" style="margin-top:0.75rem;">
+          <div class="form-group">
+            <label for="modalPm">PM / Coordinatore *</label>
+            <input type="text" id="modalPm" class="form-control" required placeholder="Es. Aurora Parisi (TMI External)">
+          </div>
+          <div class="form-group">
+            <label for="modalRisorsa">Risorsa Coinvolta</label>
+            <input type="text" id="modalRisorsa" class="form-control" placeholder="Es. Marco Rossi">
+          </div>
+        </div>
+
+        <!-- Row 4: Effort Previsto / Residuo / Scadenza / Stato Tempistiche -->
+        <div class="form-grid-4" style="margin-top:0.75rem;">
+          <div class="form-group">
+            <label for="modalEffortPrevisto">Effort Previsto (gg/u)</label>
+            <input type="number" id="modalEffortPrevisto" class="form-control" min="0" step="0.5" placeholder="Es. 10">
+          </div>
+          <div class="form-group">
+            <label for="modalEffortResiduo">Effort Residuo (gg/u)</label>
+            <input type="number" id="modalEffortResiduo" class="form-control" min="0" step="0.5" placeholder="Es. 4">
+          </div>
+          <div class="form-group">
+            <label for="modalScadenza">Scadenza Prevista</label>
+            <input type="date" id="modalScadenza" class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="modalStatoTempistiche">Stato Tempistiche</label>
+            <select id="modalStatoTempistiche" class="form-control">
+              <option value="In linea">🟢 In linea</option>
+              <option value="A rischio">🟡 A rischio</option>
+              <option value="In ritardo">🔴 In ritardo</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Row 5: Descrizione -->
         <div class="form-group" style="margin-top:0.75rem;">
-          <label for="modalPm">PM / Coordinatore</label>
-          <input type="text" id="modalPm" class="form-control" required placeholder="Es. Aurora Parisi (TMI External)">
+          <label for="modalDescrizione">Breve Descrizione Attività</label>
+          <textarea id="modalDescrizione" class="form-control" rows="2" placeholder="Descrivi brevemente le attività svolte su questo progetto..."></textarea>
         </div>
+
+        <!-- Row 6: Criticità -->
+        <div class="form-group" style="margin-top:0.75rem;">
+          <label for="modalCriticita">Criticità / Dipendenze / Necessità di Supporto</label>
+          <textarea id="modalCriticita" class="form-control" rows="2" placeholder="Eventuali blocchi, dipendenze esterne, o necessità di supporto..."></textarea>
+        </div>
+
         <div class="modal-footer">
           <button type="button" id="cancelProjectBtn" class="btn btn-secondary">Annulla</button>
-          <button type="submit" class="btn btn-primary">Salva Progetto</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Salva Progetto</button>
         </div>
       </form>
     </div>

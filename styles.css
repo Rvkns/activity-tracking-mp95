@@ -944,3 +944,130 @@ tr:hover td {
   from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
+
+/* ─── Modal Wide (extended form) ─────────────────────── */
+.modal-wide {
+  max-width: 820px;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+.modal-wide::-webkit-scrollbar { width: 5px; }
+.modal-wide::-webkit-scrollbar-track { background: transparent; }
+.modal-wide::-webkit-scrollbar-thumb { background: var(--border-color-light); border-radius: 9999px; }
+
+/* ─── Form Grid Layouts ───────────────────────────────── */
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.form-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+}
+.form-grid-4 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 1rem;
+}
+
+/* ─── Textarea form control ───────────────────────────── */
+textarea.form-control {
+  resize: vertical;
+  min-height: 64px;
+  line-height: 1.5;
+}
+
+/* ─── Avanzamento Progress Bar in table ──────────────── */
+.avanzamento-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.avanzamento-bar-bg {
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  width: 100%;
+}
+.avanzamento-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.4s ease;
+}
+.avanzamento-bar-fill.av-low    { background: var(--danger); }
+.avanzamento-bar-fill.av-mid    { background: var(--warning); }
+.avanzamento-bar-fill.av-good   { background: var(--success); }
+.avanzamento-bar-fill.av-full   { background: linear-gradient(90deg, var(--mp95-orange), var(--success)); }
+.avanzamento-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+/* ─── Stato Tempistiche Badges ────────────────────────── */
+.badge-in-linea {
+  background: rgba(16, 185, 129, 0.18);
+  color: #10B981;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  border-radius: var(--radius-full);
+  padding: 0.2rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.badge-a-rischio {
+  background: rgba(245, 158, 11, 0.18);
+  color: #F59E0B;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: var(--radius-full);
+  padding: 0.2rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.badge-in-ritardo {
+  background: rgba(239, 68, 68, 0.18);
+  color: #EF4444;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: var(--radius-full);
+  padding: 0.2rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ─── KPI At-Risk Card ─────────────────────────────────── */
+.kpi-card.kpi-risk .kpi-icon { color: var(--danger); }
+
+/* ─── Project detail rows in coordinator dropdown ──────── */
+.pm-project-detail {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  padding: 0.15rem 0;
+}
+.pm-project-detail span:first-child { font-weight: 600; }
+
+/* ─── Scadenza date pill ────────────────────────────────── */
+.date-pill {
+  display: inline-block;
+  font-size: 0.77rem;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-full);
+  background: rgba(40, 114, 252, 0.15);
+  color: var(--mp95-blue);
+  border: 1px solid rgba(40, 114, 252, 0.3);
+  white-space: nowrap;
+}
+.date-pill.past {
+  background: rgba(239, 68, 68, 0.15);
+  color: #EF4444;
+  border-color: rgba(239, 68, 68, 0.3);
+}

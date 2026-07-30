@@ -97,7 +97,21 @@ async function initDatabase() {
 
     console.log("✓ Tabelle 'mp95_projects' e 'mp95_coordinator_resources' verificate/create.");
 
-    // 2. Check if projects exist
+    // 2. Migration: add new columns if they don't exist (non-destructive)
+    await client.query(`
+      ALTER TABLE mp95_projects
+        ADD COLUMN IF NOT EXISTS risorsa VARCHAR(255),
+        ADD COLUMN IF NOT EXISTS descrizione TEXT,
+        ADD COLUMN IF NOT EXISTS effort_previsto NUMERIC(6,1) DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS effort_residuo NUMERIC(6,1) DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS avanzamento INTEGER DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS scadenza DATE,
+        ADD COLUMN IF NOT EXISTS stato_tempistiche VARCHAR(50) DEFAULT 'In linea',
+        ADD COLUMN IF NOT EXISTS criticita TEXT;
+    `);
+    console.log("✓ Migrazione nuove colonne completata (risorsa, descrizione, effort_previsto/residuo, avanzamento, scadenza, stato_tempistiche, criticita).");
+
+    // 3. Check if projects exist
     const prjCheck = await client.query("SELECT COUNT(*) FROM mp95_projects");
     if (parseInt(prjCheck.rows[0].count) === 0) {
       console.log("Popolamento progetti iniziali (36 record)...");

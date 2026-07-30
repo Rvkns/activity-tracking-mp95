@@ -192,6 +192,14 @@ function renderDashboard() {
   const avgEffort = projects.length > 0 ? (totalEffort / projects.length).toFixed(1) : 0;
   document.getElementById('kpiAvgEffort').textContent = `${avgEffort}%`;
 
+  // KPI: A rischio / In ritardo
+  const atRisk = projects.filter(p => {
+    const st = (p.stato_tempistiche || '').toLowerCase();
+    return st === 'a rischio' || st === 'in ritardo';
+  }).length;
+  const kpiRisk = document.getElementById('kpiAtRisk');
+  if (kpiRisk) kpiRisk.textContent = atRisk;
+
   renderStatusDistribution();
   renderPmWorkloadOverview();
 }
@@ -281,6 +289,8 @@ function initProjectsView() {
   document.getElementById('projectSearchInput').addEventListener('input', renderProjectsTable);
   document.getElementById('statusFilter').addEventListener('change', renderProjectsTable);
   document.getElementById('pmFilter').addEventListener('change', renderProjectsTable);
+  const tFilter = document.getElementById('tempisticheFilter');
+  if (tFilter) tFilter.addEventListener('change', renderProjectsTable);
 
   renderProjectsTable();
 }
@@ -302,10 +312,32 @@ function getBadgeClass(status) {
   const st = status.toLowerCase();
   if (st.includes('in corso')) return 'badge-in-corso';
   if (st.includes('manutenzione')) return 'badge-manutenzione';
-  if (st.includes('terminato')) return 'badge-terminato';
-  if (st.includes('stand by')) return 'badge-stand-by';
-  if (st.includes('da iniziare')) return 'badge-da-iniziare';
+  if (st.includes('terminato') || st.includes('completato')) return 'badge-terminato';
+  if (st.includes('stand by') || st.includes('in attesa')) return 'badge-stand-by';
+  if (st.includes('da iniziare') || st.includes('non avviato')) return 'badge-da-iniziare';
   return 'badge-periodica';
+}
+
+function getTempisticheClass(val) {
+  const v = (val || '').toLowerCase();
+  if (v === 'a rischio') return 'badge-a-rischio';
+  if (v === 'in ritardo') return 'badge-in-ritardo';
+  return 'badge-in-linea';
+}
+
+function getAvanzamentoClass(pct) {
+  if (pct >= 100) return 'av-full';
+  if (pct >= 60)  return 'av-good';
+  if (pct >= 30)  return 'av-mid';
+  return 'av-low';
+}
+
+function formatScadenza(dateStr) {
+  if (!dateStr) return '<span style="color:var(--text-dim); font-size:0.78rem;">—</span>';
+  const d = new Date(dateStr);
+  const isPast = d < new Date();
+  const label = d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
+  return `<span class="date-pill ${isPast ? 'past' : ''}">${label}</span>`;
 }
 
 function renderProjectsTable() {
@@ -315,29 +347,44 @@ function renderProjectsTable() {
   const search = document.getElementById('projectSearchInput').value.toLowerCase();
   const statusFilter = document.getElementById('statusFilter').value;
   const pmFilter = document.getElementById('pmFilter').value;
+  const tFilter = document.getElementById('tempisticheFilter');
+  const tempisticheFilter = tFilter ? tFilter.value : '';
 
   const filtered = projects.filter(p => {
-    const matchesSearch = p.progetto.toLowerCase().includes(search) || p.pm.toLowerCase().includes(search);
+    const matchesSearch = p.progetto.toLowerCase().includes(search) || p.pm.toLowerCase().includes(search) ||
+      (p.risorsa || '').toLowerCase().includes(search);
     const matchesStatus = !statusFilter || p.stato.trim().toLowerCase() === statusFilter.toLowerCase();
     const matchesPm = !pmFilter || p.pm.trim() === pmFilter;
-    return matchesSearch && matchesStatus && matchesPm;
+    const matchesTempistiche = !tempisticheFilter ||
+      (p.stato_tempistiche || 'In linea').toLowerCase() === tempisticheFilter.toLowerCase();
+    return matchesSearch && matchesStatus && matchesPm && matchesTempistiche;
   });
 
   tbody.innerHTML = '';
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--text-muted);">Nessun progetto trovato</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:2rem; color:var(--text-muted);">Nessun progetto trovato</td></tr>`;
     return;
   }
 
   filtered.forEach(p => {
     const badgeClass = getBadgeClass(p.stato);
+    const avPct = parseInt(p.avanzamento) || 0;
+    const avClass = getAvanzamentoClass(avPct);
+    const tempisticheLabel = p.stato_tempistiche || 'In linea';
+    const tempisticheClass = getTempisticheClass(tempisticheLabel);
+    const scadenzaHtml = formatScadenza(p.scadenza);
+    const risorsaText = p.risorsa || '<span style="color:var(--text-dim); font-size:0.78rem;">—</span>';
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td style="font-weight:700; color:var(--text-dim); font-size:0.82rem;">${p.id}</td>
-      <td style="font-weight:700;">${p.progetto}</td>
+      <td>
+        <div style="font-weight:700;">${p.progetto}</div>
+        ${p.descrizione ? `<div style="font-size:0.75rem; color:var(--text-dim); margin-top:0.2rem; max-width:220px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${p.descrizione}">${p.descrizione}</div>` : ''}
+      </td>
+      <td style="font-size:0.85rem; color:var(--text-muted);">${risorsaText}</td>
       <td><span class="badge ${badgeClass}">${p.stato}</span></td>
-      <td style="color:var(--text-muted);">${p.pm}</td>
+      <td style="color:var(--text-muted); font-size:0.85rem;">${p.pm}</td>
       <td>
         <div class="effort-bar-container">
           <div class="effort-progress-bg">
@@ -346,6 +393,16 @@ function renderProjectsTable() {
           <span class="effort-val">${p.effort}%</span>
         </div>
       </td>
+      <td>
+        <div class="avanzamento-cell">
+          <div class="avanzamento-bar-bg">
+            <div class="avanzamento-bar-fill ${avClass}" style="width:${avPct}%;"></div>
+          </div>
+          <span class="avanzamento-label">${avPct}%</span>
+        </div>
+      </td>
+      <td>${scadenzaHtml}</td>
+      <td><span class="${tempisticheClass}">${tempisticheLabel}</span></td>
       <td style="text-align:right;">
         <button class="btn btn-secondary btn-sm" onclick="openEditProjectModal('${p.id}')">
           <i class="fa-solid fa-pen-to-square"></i>
@@ -693,9 +750,11 @@ function initReportsView() {
 }
 
 function exportCSV() {
-  let csvContent = "data:text/csv;charset=utf-8,ID,Progetto,Stato,PM,Effort %\n";
+  const headers = 'ID,Progetto,Stato,PM,Risorsa,Effort %,Avanzamento %,Effort Previsto (gg/u),Effort Residuo (gg/u),Scadenza,Stato Tempistiche,Descrizione,Criticità';
+  let csvContent = "data:text/csv;charset=utf-8," + headers + "\n";
   projects.forEach(p => {
-    csvContent += `"${p.id}","${p.progetto}","${p.stato}","${p.pm}",${p.effort}\n`;
+    const scad = p.scadenza ? String(p.scadenza).slice(0, 10) : '';
+    csvContent += `"${p.id}","${p.progetto}","${p.stato}","${p.pm}","${p.risorsa || ''}",${p.effort},${p.avanzamento || 0},${p.effort_previsto || 0},${p.effort_residuo || 0},"${scad}","${p.stato_tempistiche || 'In linea'}","${(p.descrizione || '').replace(/"/g, "''")}","${(p.criticita || '').replace(/"/g, "''")}"\n`;
   });
 
   const encodedUri = encodeURI(csvContent);
@@ -791,7 +850,15 @@ function openAddProjectModal() {
   document.getElementById('modalProgetto').value = "";
   document.getElementById('modalStato').value = "In corso";
   document.getElementById('modalEffort').value = "10";
+  document.getElementById('modalAvanzamento').value = "0";
   document.getElementById('modalPm').value = "";
+  document.getElementById('modalRisorsa').value = "";
+  document.getElementById('modalEffortPrevisto').value = "";
+  document.getElementById('modalEffortResiduo').value = "";
+  document.getElementById('modalScadenza').value = "";
+  document.getElementById('modalStatoTempistiche').value = "In linea";
+  document.getElementById('modalDescrizione').value = "";
+  document.getElementById('modalCriticita').value = "";
   document.getElementById('projectModal').classList.add('active');
 }
 
@@ -804,7 +871,17 @@ window.openEditProjectModal = function(id) {
   document.getElementById('modalProgetto').value = prj.progetto;
   document.getElementById('modalStato').value = prj.stato;
   document.getElementById('modalEffort').value = prj.effort;
+  document.getElementById('modalAvanzamento').value = prj.avanzamento || 0;
   document.getElementById('modalPm').value = prj.pm;
+  document.getElementById('modalRisorsa').value = prj.risorsa || '';
+  document.getElementById('modalEffortPrevisto').value = prj.effort_previsto || '';
+  document.getElementById('modalEffortResiduo').value = prj.effort_residuo || '';
+  // scadenza comes as 'YYYY-MM-DD' from DB (possibly with timestamp)
+  const scadRaw = prj.scadenza ? String(prj.scadenza).slice(0, 10) : '';
+  document.getElementById('modalScadenza').value = scadRaw;
+  document.getElementById('modalStatoTempistiche').value = prj.stato_tempistiche || 'In linea';
+  document.getElementById('modalDescrizione').value = prj.descrizione || '';
+  document.getElementById('modalCriticita').value = prj.criticita || '';
 
   document.getElementById('projectModal').classList.add('active');
 };
@@ -820,16 +897,27 @@ async function handleSaveProject(e) {
   const stato = document.getElementById('modalStato').value;
   const effort = parseInt(document.getElementById('modalEffort').value) || 0;
   const pm = document.getElementById('modalPm').value.trim();
+  const risorsa = document.getElementById('modalRisorsa').value.trim() || null;
+  const descrizione = document.getElementById('modalDescrizione').value.trim() || null;
+  const effort_previsto = parseFloat(document.getElementById('modalEffortPrevisto').value) || 0;
+  const effort_residuo = parseFloat(document.getElementById('modalEffortResiduo').value) || 0;
+  const avanzamento = parseInt(document.getElementById('modalAvanzamento').value) || 0;
+  const scadenza = document.getElementById('modalScadenza').value || null;
+  const stato_tempistiche = document.getElementById('modalStatoTempistiche').value || 'In linea';
+  const criticita = document.getElementById('modalCriticita').value.trim() || null;
+
+  const payload = { progetto, stato, pm, effort, risorsa, descrizione,
+    effort_previsto, effort_residuo, avanzamento, scadenza, stato_tempistiche, criticita };
 
   if (id) {
     const idx = projects.findIndex(p => p.id === id);
     if (idx !== -1) {
-      projects[idx] = { id, progetto, stato, pm, effort };
+      projects[idx] = { id, ...payload };
       try {
         await fetch(`/api/projects/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ progetto, stato, pm, effort })
+          body: JSON.stringify(payload)
         });
       } catch (err) { console.log("Saved local."); }
       showToast('Progetto aggiornato nel DB Neon!');
@@ -837,7 +925,7 @@ async function handleSaveProject(e) {
   } else {
     const nextNum = projects.length + 1;
     const newId = `PRJ-${String(nextNum).padStart(3, '0')}`;
-    const newObj = { id: newId, progetto, stato, pm, effort };
+    const newObj = { id: newId, ...payload };
     projects.push(newObj);
     try {
       await fetch('/api/projects', {
