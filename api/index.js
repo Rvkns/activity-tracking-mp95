@@ -30,7 +30,7 @@ app.get(['/api/projects', '/projects'], async (req, res) => {
     const result = await pool.query(
       `SELECT id, progetto, stato, pm, effort,
               risorsa, descrizione, effort_previsto, effort_residuo,
-              avanzamento, scadenza, stato_tempistiche, criticita
+              avanzamento, scadenza, stato_tempistiche, criticita, reparto
        FROM mp95_projects ORDER BY id ASC`
     );
     res.json(result.rows);
@@ -47,7 +47,7 @@ app.post(['/api/projects', '/projects'], async (req, res) => {
   const {
     id, progetto, stato, pm, effort,
     risorsa, descrizione, effort_previsto, effort_residuo,
-    avanzamento, scadenza, stato_tempistiche, criticita
+    avanzamento, scadenza, stato_tempistiche, criticita, reparto
   } = req.body;
   const pool = getPool();
   try {
@@ -55,15 +55,16 @@ app.post(['/api/projects', '/projects'], async (req, res) => {
       `INSERT INTO mp95_projects
          (id, progetto, stato, pm, effort, risorsa, descrizione,
           effort_previsto, effort_residuo, avanzamento, scadenza,
-          stato_tempistiche, criticita)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+          stato_tempistiche, criticita, reparto)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
        RETURNING *`,
       [
         id, progetto, stato, pm, parseInt(effort) || 0,
         risorsa || null, descrizione || null,
         parseFloat(effort_previsto) || 0, parseFloat(effort_residuo) || 0,
         parseInt(avanzamento) || 0, scadenza || null,
-        stato_tempistiche || 'In linea', criticita || null
+        stato_tempistiche || 'In linea', criticita || null,
+        reparto || null
       ]
     );
     res.status(201).json(result.rows[0]);
@@ -81,7 +82,7 @@ app.put(['/api/projects/:id', '/projects/:id'], async (req, res) => {
   const {
     progetto, stato, pm, effort,
     risorsa, descrizione, effort_previsto, effort_residuo,
-    avanzamento, scadenza, stato_tempistiche, criticita
+    avanzamento, scadenza, stato_tempistiche, criticita, reparto
   } = req.body;
   const pool = getPool();
   try {
@@ -92,8 +93,9 @@ app.put(['/api/projects/:id', '/projects/:id'], async (req, res) => {
          effort_previsto = $7, effort_residuo = $8,
          avanzamento = $9, scadenza = $10,
          stato_tempistiche = $11, criticita = $12,
+         reparto = $13,
          updated_at = CURRENT_TIMESTAMP
-       WHERE id = $13
+       WHERE id = $14
        RETURNING *`,
       [
         progetto, stato, pm, parseInt(effort) || 0,
@@ -101,6 +103,7 @@ app.put(['/api/projects/:id', '/projects/:id'], async (req, res) => {
         parseFloat(effort_previsto) || 0, parseFloat(effort_residuo) || 0,
         parseInt(avanzamento) || 0, scadenza || null,
         stato_tempistiche || 'In linea', criticita || null,
+        reparto || null,
         id
       ]
     );
@@ -151,14 +154,15 @@ app.post(['/api/projects/batch', '/projects/batch'], async (req, res) => {
         `INSERT INTO mp95_projects
            (id, progetto, stato, pm, effort, risorsa, descrizione,
             effort_previsto, effort_residuo, avanzamento, scadenza,
-            stato_tempistiche, criticita)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+            stato_tempistiche, criticita, reparto)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
         [
           prjId, p.progetto, p.stato, p.pm, parseInt(p.effort) || 0,
           p.risorsa || null, p.descrizione || null,
           parseFloat(p.effort_previsto) || 0, parseFloat(p.effort_residuo) || 0,
           parseInt(p.avanzamento) || 0, p.scadenza || null,
-          p.stato_tempistiche || 'In linea', p.criticita || null
+          p.stato_tempistiche || 'In linea', p.criticita || null,
+          p.reparto || null
         ]
       );
     }

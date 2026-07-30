@@ -178,6 +178,14 @@
               <option value="A rischio">🟡 A rischio</option>
               <option value="In ritardo">🔴 In ritardo</option>
             </select>
+            <select id="repartoFilter" class="select-input">
+              <option value="">Tutti i Reparti</option>
+              <option value="Data management">Data management</option>
+              <option value="Innovation">Innovation</option>
+              <option value="Digital">Digital</option>
+              <option value="Corporate">Corporate</option>
+              <option value="Governance">Governance</option>
+            </select>
             <button id="projectsUploadExcelBtn" class="btn btn-secondary btn-sm" style="display:flex; align-items:center; gap:0.4rem;">
               <i class="fa-solid fa-file-excel" style="color:#10B981;"></i> Importa Excel
             </button>
@@ -190,6 +198,7 @@
               <tr>
                 <th>ID</th>
                 <th>Nome Progetto</th>
+                <th>Reparto</th>
                 <th>Risorsa</th>
                 <th>Stato</th>
                 <th>PM / Coordinatore</th>
@@ -401,8 +410,8 @@
           </div>
         </div>
 
-        <!-- Row 3: PM / Risorsa -->
-        <div class="form-grid-2" style="margin-top:0.75rem;">
+        <!-- Row 3: PM / Risorsa / Reparto -->
+        <div class="form-grid-3" style="margin-top:0.75rem;">
           <div class="form-group">
             <label for="modalPm">PM / Coordinatore *</label>
             <input type="text" id="modalPm" class="form-control" required placeholder="Es. Aurora Parisi (TMI External)">
@@ -410,6 +419,17 @@
           <div class="form-group">
             <label for="modalRisorsa">Risorsa Coinvolta</label>
             <input type="text" id="modalRisorsa" class="form-control" placeholder="Es. Marco Rossi">
+          </div>
+          <div class="form-group">
+            <label for="modalReparto">Reparto</label>
+            <select id="modalReparto" class="form-control">
+              <option value="">-- Seleziona Reparto --</option>
+              <option value="Data management">Data management</option>
+              <option value="Innovation">Innovation</option>
+              <option value="Digital">Digital</option>
+              <option value="Corporate">Corporate</option>
+              <option value="Governance">Governance</option>
+            </select>
           </div>
         </div>
 

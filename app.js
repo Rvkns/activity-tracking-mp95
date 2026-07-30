@@ -291,6 +291,8 @@ function initProjectsView() {
   document.getElementById('pmFilter').addEventListener('change', renderProjectsTable);
   const tFilter = document.getElementById('tempisticheFilter');
   if (tFilter) tFilter.addEventListener('change', renderProjectsTable);
+  const rFilter = document.getElementById('repartoFilter');
+  if (rFilter) rFilter.addEventListener('change', renderProjectsTable);
 
   renderProjectsTable();
 }
@@ -332,6 +334,19 @@ function getAvanzamentoClass(pct) {
   return 'av-low';
 }
 
+function getRepartoBadge(reparto) {
+  if (!reparto) return '<span style="color:var(--text-dim); font-size:0.78rem;">—</span>';
+  const colorMap = {
+    'Data management': '#06B6D4',
+    'Innovation':      '#A78BFA',
+    'Digital':         '#2872FA',
+    'Corporate':       '#F59E0B',
+    'Governance':      '#10B981'
+  };
+  const color = colorMap[reparto] || '#94A3B8';
+  return `<span style="display:inline-block;font-size:0.72rem;font-weight:700;padding:0.18rem 0.55rem;border-radius:9999px;background:${color}22;color:${color};border:1px solid ${color}55;white-space:nowrap;">${reparto}</span>`;
+}
+
 function formatScadenza(dateStr) {
   if (!dateStr) return '<span style="color:var(--text-dim); font-size:0.78rem;">—</span>';
   const d = new Date(dateStr);
@@ -349,6 +364,8 @@ function renderProjectsTable() {
   const pmFilter = document.getElementById('pmFilter').value;
   const tFilter = document.getElementById('tempisticheFilter');
   const tempisticheFilter = tFilter ? tFilter.value : '';
+  const rFilter = document.getElementById('repartoFilter');
+  const repartoFilter = rFilter ? rFilter.value : '';
 
   const filtered = projects.filter(p => {
     const matchesSearch = p.progetto.toLowerCase().includes(search) || p.pm.toLowerCase().includes(search) ||
@@ -357,12 +374,13 @@ function renderProjectsTable() {
     const matchesPm = !pmFilter || p.pm.trim() === pmFilter;
     const matchesTempistiche = !tempisticheFilter ||
       (p.stato_tempistiche || 'In linea').toLowerCase() === tempisticheFilter.toLowerCase();
-    return matchesSearch && matchesStatus && matchesPm && matchesTempistiche;
+    const matchesReparto = !repartoFilter || (p.reparto || '') === repartoFilter;
+    return matchesSearch && matchesStatus && matchesPm && matchesTempistiche && matchesReparto;
   });
 
   tbody.innerHTML = '';
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:2rem; color:var(--text-muted);">Nessun progetto trovato</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:2rem; color:var(--text-muted);">Nessun progetto trovato</td></tr>`;
     return;
   }
 
@@ -382,6 +400,7 @@ function renderProjectsTable() {
         <div style="font-weight:700;">${p.progetto}</div>
         ${p.descrizione ? `<div style="font-size:0.75rem; color:var(--text-dim); margin-top:0.2rem; max-width:220px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${p.descrizione}">${p.descrizione}</div>` : ''}
       </td>
+      <td>${getRepartoBadge(p.reparto)}</td>
       <td style="font-size:0.85rem; color:var(--text-muted);">${risorsaText}</td>
       <td><span class="badge ${badgeClass}">${p.stato}</span></td>
       <td style="color:var(--text-muted); font-size:0.85rem;">${p.pm}</td>
@@ -761,11 +780,11 @@ function initReportsView() {
 }
 
 function exportCSV() {
-  const headers = 'ID,Progetto,Stato,PM,Risorsa,Effort %,Avanzamento %,Effort Previsto (gg/u),Effort Residuo (gg/u),Scadenza,Stato Tempistiche,Descrizione,Criticità';
+  const headers = 'ID,Progetto,Reparto,Stato,PM,Risorsa,Effort %,Avanzamento %,Effort Previsto (gg/u),Effort Residuo (gg/u),Scadenza,Stato Tempistiche,Descrizione,Criticità';
   let csvContent = "data:text/csv;charset=utf-8," + headers + "\n";
   projects.forEach(p => {
     const scad = p.scadenza ? String(p.scadenza).slice(0, 10) : '';
-    csvContent += `"${p.id}","${p.progetto}","${p.stato}","${p.pm}","${p.risorsa || ''}",${p.effort},${p.avanzamento || 0},${p.effort_previsto || 0},${p.effort_residuo || 0},"${scad}","${p.stato_tempistiche || 'In linea'}","${(p.descrizione || '').replace(/"/g, "''")}","${(p.criticita || '').replace(/"/g, "''")}"\n`;
+    csvContent += `"${p.id}","${p.progetto}","${p.reparto || ''}","${p.stato}","${p.pm}","${p.risorsa || ''}",${p.effort},${p.avanzamento || 0},${p.effort_previsto || 0},${p.effort_residuo || 0},"${scad}","${p.stato_tempistiche || 'In linea'}","${(p.descrizione || '').replace(/"/g, "''")}","${(p.criticita || '').replace(/"/g, "''")}"\n`;
   });
 
   const encodedUri = encodeURI(csvContent);
@@ -864,6 +883,7 @@ function openAddProjectModal() {
   document.getElementById('modalAvanzamento').value = "0";
   document.getElementById('modalPm').value = "";
   document.getElementById('modalRisorsa').value = "";
+  document.getElementById('modalReparto').value = "";
   document.getElementById('modalEffortPrevisto').value = "";
   document.getElementById('modalEffortResiduo').value = "";
   document.getElementById('modalScadenza').value = "";
@@ -885,6 +905,7 @@ window.openEditProjectModal = function(id) {
   document.getElementById('modalAvanzamento').value = prj.avanzamento || 0;
   document.getElementById('modalPm').value = prj.pm;
   document.getElementById('modalRisorsa').value = prj.risorsa || '';
+  document.getElementById('modalReparto').value = prj.reparto || '';
   document.getElementById('modalEffortPrevisto').value = prj.effort_previsto || '';
   document.getElementById('modalEffortResiduo').value = prj.effort_residuo || '';
   // scadenza comes as 'YYYY-MM-DD' from DB (possibly with timestamp)
@@ -909,6 +930,7 @@ async function handleSaveProject(e) {
   const effort = parseInt(document.getElementById('modalEffort').value) || 0;
   const pm = document.getElementById('modalPm').value.trim();
   const risorsa = document.getElementById('modalRisorsa').value.trim() || null;
+  const reparto = document.getElementById('modalReparto').value || null;
   const descrizione = document.getElementById('modalDescrizione').value.trim() || null;
   const effort_previsto = parseFloat(document.getElementById('modalEffortPrevisto').value) || 0;
   const effort_residuo = parseFloat(document.getElementById('modalEffortResiduo').value) || 0;
@@ -917,7 +939,7 @@ async function handleSaveProject(e) {
   const stato_tempistiche = document.getElementById('modalStatoTempistiche').value || 'In linea';
   const criticita = document.getElementById('modalCriticita').value.trim() || null;
 
-  const payload = { progetto, stato, pm, effort, risorsa, descrizione,
+  const payload = { progetto, stato, pm, effort, risorsa, reparto, descrizione,
     effort_previsto, effort_residuo, avanzamento, scadenza, stato_tempistiche, criticita };
 
   if (id) {

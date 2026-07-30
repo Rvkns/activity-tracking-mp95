@@ -107,9 +107,10 @@ async function initDatabase() {
         ADD COLUMN IF NOT EXISTS avanzamento INTEGER DEFAULT 0,
         ADD COLUMN IF NOT EXISTS scadenza DATE,
         ADD COLUMN IF NOT EXISTS stato_tempistiche VARCHAR(50) DEFAULT 'In linea',
-        ADD COLUMN IF NOT EXISTS criticita TEXT;
+        ADD COLUMN IF NOT EXISTS criticita TEXT,
+        ADD COLUMN IF NOT EXISTS reparto VARCHAR(100);
     `);
-    console.log("✓ Migrazione nuove colonne completata (risorsa, descrizione, effort_previsto/residuo, avanzamento, scadenza, stato_tempistiche, criticita).");
+    console.log("✓ Migrazione nuove colonne completata (risorsa, descrizione, effort_previsto/residuo, avanzamento, scadenza, stato_tempistiche, criticita, reparto).");
 
     // 3. Check if projects exist
     const prjCheck = await client.query("SELECT COUNT(*) FROM mp95_projects");
