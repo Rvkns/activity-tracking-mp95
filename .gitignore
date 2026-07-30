@@ -7,4 +7,3 @@ dist/
 build/
 .next/
 .vercel
-package-lock.json
