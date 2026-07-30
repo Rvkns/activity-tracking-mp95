@@ -1097,3 +1097,67 @@ textarea.form-control {
 .criticita-empty-btn:hover {
   opacity: 1;
 }
+
+/* ─── Light Theme Overrides ────────────────────────────── */
+[data-theme="light"] {
+  --bg-dark: #F8FAFC;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F1F5F9;
+  --bg-input: #F8FAFC;
+  --border-color: #E2E8F0;
+  --border-color-light: #CBD5E1;
+
+  --text-main: #0F172A;
+  --text-muted: #334155;
+  --text-dim: #64748B;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] header.topbar {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+[data-theme="light"] th {
+  background: #F1F5F9;
+}
+
+[data-theme="light"] tr:hover td {
+  background: #F8FAFC;
+}
+
+[data-theme="light"] .effort-progress-bg,
+[data-theme="light"] .avanzamento-bar-bg {
+  background: #E2E8F0;
+}
+
+[data-theme="light"] .pm-accordion-header {
+  background: #F1F5F9;
+}
+
+[data-theme="light"] .pm-project-item {
+  background: #F8FAFC;
+  border-color: #E2E8F0;
+}
+
+[data-theme="light"] .wiki-section-card {
+  background: #FFFFFF;
+  border-color: #E2E8F0;
+}
+
+[data-theme="light"] .wiki-toc {
+  background: #FFFFFF;
+  border-color: #E2E8F0;
+}
+
+[data-theme="light"] .wiki-feature-box {
+  background: #F8FAFC;
+  border-color: #CBD5E1;
+}
+
+[data-theme="light"] .modal-backdrop {
+  background: rgba(15, 23, 42, 0.5);
+}
+

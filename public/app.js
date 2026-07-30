@@ -75,6 +75,7 @@ let coordinatorResources = JSON.parse(localStorage.getItem('mp95_resources')) ||
 
 // DOM Load
 document.addEventListener('DOMContentLoaded', async () => {
+  initTheme();
   initNavigation();
   initProjectsView();
   initCoordinatorsView();
@@ -86,6 +87,43 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Load from Neon DB API if available
   await fetchFromNeonDB();
 });
+
+/* ----------------------------------------------------
+   THEME MANAGEMENT (Light / Dark Mode)
+---------------------------------------------------- */
+function initTheme() {
+  const savedTheme = localStorage.getItem('mp95_theme') || 'dark';
+  applyTheme(savedTheme);
+
+  const themeBtn = document.getElementById('themeToggleBtn');
+  if (themeBtn) {
+    themeBtn.addEventListener('click', () => {
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      const newTheme = isLight ? 'dark' : 'light';
+      applyTheme(newTheme);
+      localStorage.setItem('mp95_theme', newTheme);
+      showToast(`Tema ${newTheme === 'light' ? 'Chiaro (Light)' : 'Scuro (Dark)'} attivato!`);
+    });
+  }
+}
+
+function applyTheme(theme) {
+  const themeBtn = document.getElementById('themeToggleBtn');
+  if (theme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    if (themeBtn) {
+      themeBtn.innerHTML = `<i class="fa-solid fa-moon" style="color:var(--mp95-blue);"></i> Tema Scuro`;
+      themeBtn.title = "Passa al Tema Scuro (Dark)";
+    }
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    if (themeBtn) {
+      themeBtn.innerHTML = `<i class="fa-solid fa-sun" style="color:var(--mp95-orange);"></i> Tema Chiaro`;
+      themeBtn.title = "Passa al Tema Chiaro (Light)";
+    }
+  }
+}
+
 
 // Sync data from Neon DB
 async function fetchFromNeonDB() {
