@@ -379,7 +379,8 @@ function getRepartoBadge(reparto) {
     'Innovation':      '#A78BFA',
     'Digital':         '#2872FA',
     'Corporate':       '#F59E0B',
-    'Governance':      '#10B981'
+    'Governance':      '#10B981',
+    'Infrastructure, Network & Security': '#EC4899'
   };
   const color = colorMap[reparto] || '#94A3B8';
   return `<span style="display:inline-block;font-size:0.72rem;font-weight:700;padding:0.18rem 0.55rem;border-radius:9999px;background:${color}22;color:${color};border:1px solid ${color}55;white-space:nowrap;">${reparto}</span>`;
