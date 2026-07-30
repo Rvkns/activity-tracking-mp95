@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Media Point 95 - Activity & Resource Tracking</title>
+  <!-- FontAwesome icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- SheetJS Library for Excel (.xlsx / .xls) parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo-container">
+          MP95
+        </div>
+        <div class="brand-text">
+          <h1>Media Point 95</h1>
+          <span>Activity & Resource Tracking</span>
+        </div>
+      </div>
+
+      <ul class="nav-list">
+        <li class="nav-item active" data-view="dashboard">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>Dashboard</span>
+        </li>
+        <li class="nav-item" data-view="projects">
+          <i class="fa-solid fa-diagram-project"></i>
+          <span>Progetti & Effort</span>
+        </li>
+        <li class="nav-item" data-view="coordinators">
+          <i class="fa-solid fa-user-gear"></i>
+          <span>Coordinatori (PM)</span>
+        </li>
+        <li class="nav-item" data-view="reports">
+          <i class="fa-solid fa-file-export"></i>
+          <span>Report & Export</span>
+        </li>
+        <li class="nav-item" data-view="wiki">
+          <i class="fa-solid fa-book-bookmark"></i>
+          <span>Wiki & Guida Utente</span>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span>Data Version</span>
+          <span style="font-weight:700; color:var(--mp95-orange);">DIGITAL_4277</span>
+        </div>
+        <button id="resetDataBtn" class="data-reset-btn" title="Ripristina il dataset ai 36 progetti originali da DIGITAL_PROGETTI_EFFORT_4277.xlsx">
+          <i class="fa-solid fa-rotate-left"></i> Ripristina Dati Excel Originali
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Topbar Header -->
+      <header class="topbar">
+        <div class="header-title">
+          <h2 id="sectionTitle">Executive Dashboard</h2>
+          <p id="sectionSubtitle">Panoramica generale dell'effort e delle attività dei coordinatori MP95</p>
+        </div>
+        <div class="header-actions">
+          <button id="openWikiBtn" class="btn btn-secondary">
+            <i class="fa-solid fa-book-open" style="color:var(--mp95-orange);"></i> Guida Wiki
+          </button>
+          <input type="file" id="topbarExcelFileInput" accept=".xlsx,.xls,.csv,.json" style="display:none;">
+          <button id="topbarUploadExcelBtn" class="btn btn-secondary">
+            <i class="fa-solid fa-file-excel" style="color:#10B981;"></i> Carica File Excel (.xlsx)
+          </button>
+          <button id="addProjectBtn" class="btn btn-primary">
+            <i class="fa-solid fa-folder-plus"></i> Nuovo Progetto
+          </button>
+        </div>
+      </header>
+
+      <!-- View: DASHBOARD -->
+      <section id="view-dashboard" class="view-section active">
+        <!-- KPI Row -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <span>Totale Progetti</span>
+              <h3 id="kpiTotalProjects">36</h3>
+              <p>Progetti censiti nel sistema MP95</p>
+            </div>
+            <div class="kpi-icon"><i class="fa-solid fa-folder-open"></i></div>
+          </div>
+          <div class="kpi-card kpi-active">
+            <div class="kpi-info">
+              <span>Progetti In Corso</span>
+              <h3 id="kpiActiveProjects">18</h3>
+              <p>Attivamente in sviluppo</p>
+            </div>
+            <div class="kpi-icon"><i class="fa-solid fa-spinner"></i></div>
+          </div>
+          <div class="kpi-card kpi-blue">
+            <div class="kpi-info">
+              <span>Coordinatori / PM</span>
+              <h3 id="kpiTotalPMs">5</h3>
+              <p>Gestori delle risorse</p>
+            </div>
+            <div class="kpi-icon"><i class="fa-solid fa-users"></i></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <span>Effort Medio Progetto</span>
+              <h3 id="kpiAvgEffort">16.4%</h3>
+              <p>Allocazione media per progetto</p>
+            </div>
+            <div class="kpi-icon"><i class="fa-solid fa-percent"></i></div>
+          </div>
+        </div>
+
+        <!-- Dashboard Charts / Widget Grid -->
+        <div class="dashboard-grid">
+          <!-- Card: Status Distribution -->
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-chart-pie" style="color:var(--mp95-orange);"></i> Distribuzione Stato Progetti</h3>
+            </div>
+            <div id="statusDistributionContainer" style="display:flex; flex-direction:column; gap:0.85rem;">
+              <!-- Dynamic Status Items -->
+            </div>
+          </div>
+
+          <!-- Card: Effort Top PMs -->
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-user-check" style="color:var(--mp95-blue);"></i> Carico di Lavoro Coordinatori (Effort Totale)</h3>
+            </div>
+            <div id="pmWorkloadOverview" style="display:flex; flex-direction:column; gap:1rem;">
+              <!-- Dynamic PM Workload Rows -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- View: PROJECTS -->
+      <section id="view-projects" class="view-section">
+        <div class="filter-bar">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="projectSearchInput" placeholder="Cerca per nome progetto o coordinatore...">
+          </div>
+          <div class="filter-group">
+            <select id="statusFilter" class="select-input">
+              <option value="">Tutti gli Stati</option>
+              <option value="In corso">In corso</option>
+              <option value="Manutenzione">Manutenzione</option>
+              <option value="Terminato">Terminato</option>
+              <option value="Stand by">Stand by</option>
+              <option value="Da iniziare">Da iniziare</option>
+              <option value="Attività periodica">Attività periodica</option>
+            </select>
+            <select id="pmFilter" class="select-input">
+              <option value="">Tutti i PM / Coordinatori</option>
+              <!-- Dynamic PM options -->
+            </select>
+            <button id="projectsUploadExcelBtn" class="btn btn-secondary btn-sm" style="display:flex; align-items:center; gap:0.4rem;">
+              <i class="fa-solid fa-file-excel" style="color:#10B981;"></i> Importa Excel
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nome Progetto</th>
+                <th>Stato</th>
+                <th>PM / Coordinatore</th>
+                <th style="width: 250px;">Effort %</th>
+                <th style="text-align: right;">Azioni</th>
+              </tr>
+            </thead>
+            <tbody id="projectsTableBody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- View: COORDINATORS (WORKLOAD) -->
+      <section id="view-coordinators" class="view-section">
+        <div class="pm-grid" id="coordinatorsGrid">
+          <!-- Rendered via JS -->
+        </div>
+      </section>
+
+      <!-- View: REPORTS & EXPORT -->
+      <section id="view-reports" class="view-section">
+        <div class="dashboard-grid">
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-download" style="color:var(--mp95-orange);"></i> Esportazione Dati MP95</h3>
+            </div>
+            <p style="font-size:0.9rem; color:var(--text-muted);">
+              Esporta il dataset completo dei progetti in formato Excel o JSON, con allocazione percentuale dell'effort e stato dei coordinatori.
+            </p>
+            <div style="display:flex; gap:1rem; margin-top:1rem;">
+              <button id="exportCsvBtn" class="btn btn-primary">
+                <i class="fa-solid fa-file-excel"></i> Esporta Excel / CSV
+              </button>
+              <button id="exportJsonBtn" class="btn btn-secondary">
+                <i class="fa-solid fa-code"></i> Esporta JSON
+              </button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-upload" style="color:var(--mp95-blue);"></i> Caricamento File Excel MP95</h3>
+            </div>
+            <p style="font-size:0.9rem; color:var(--text-muted);">
+              Seleziona un file Excel (<code>.xlsx</code> o <code>.xls</code>) strutturato con le colonne <b>Progetto</b>, <b>Stato</b>, <b>PM</b>, <b>Effort %</b> per popolare istantaneamente l'applicazione.
+            </p>
+            <div style="margin-top:1rem;">
+              <input type="file" id="importFileInput" accept=".xlsx,.xls,.csv,.json" style="display:none;">
+              <button id="triggerImportBtn" class="btn btn-secondary" style="border-color:#10B981;">
+                <i class="fa-solid fa-file-excel" style="color:#10B981;"></i> Seleziona File Excel (.xlsx) / CSV / JSON
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- View: WIKI & USER GUIDE -->
+      <section id="view-wiki" class="view-section">
+        <div class="wiki-container">
+          
+          <!-- Table of Contents -->
+          <div class="wiki-toc">
+            <h4><i class="fa-solid fa-list-ol"></i> Indice della Guida Utente TrackMaster MP95</h4>
+            <ul>
+              <li><a href="#wiki-overview"><i class="fa-solid fa-angle-right"></i> 1. Scopo e Architettura dell'App</a></li>
+              <li><a href="#wiki-dashboard"><i class="fa-solid fa-angle-right"></i> 2. Executive Dashboard & KPI</a></li>
+              <li><a href="#wiki-projects"><i class="fa-solid fa-angle-right"></i> 3. Gestione Progetti & Effort %</a></li>
+              <li><a href="#wiki-coordinators"><i class="fa-solid fa-angle-right"></i> 4. Sezione Coordinatori & Dropdown Menu</a></li>
+              <li><a href="#wiki-excel"><i class="fa-solid fa-angle-right"></i> 5. Caricamento File Excel (.xlsx) & Export</a></li>
+              <li><a href="#wiki-reset"><i class="fa-solid fa-angle-right"></i> 6. Funzione "Ripristina Dati Excel Originali"</a></li>
+            </ul>
+          </div>
+
+          <!-- Section 1 -->
+          <div class="wiki-section-card" id="wiki-overview">
+            <h3><i class="fa-solid fa-compass" style="color:var(--mp95-orange);"></i> 1. Scopo e Architettura dell'Applicazione</h3>
+            <p>
+              <b>TrackMaster MP95</b> è una web application pensata per il tracciamento ad alto livello delle attività, dei progetti e dell'effort allocato dai coordinatori (Project Manager) e dalle risorse operative di Media Point 95.
+            </p>
+            <div class="wiki-feature-box">
+              <b>Caratteristica Chiave:</b> L'app elimina la complessità del timesheet orario "ora per ora", focalizzandosi sul <b>tracking strategico della percentuale di Effort (%)</b> allocata per ciascun progetto e coordinatore.
+            </div>
+          </div>
+
+          <!-- Section 2 -->
+          <div class="wiki-section-card" id="wiki-dashboard">
+            <h3><i class="fa-solid fa-chart-line" style="color:var(--mp95-blue);"></i> 2. Executive Dashboard & KPI</h3>
+            <p>
+              La **Dashboard** offre una vista d'insieme immediata per la direzione aziendale ed i coordinatori:
+            </p>
+            <ul style="margin-left:1.5rem; color:var(--text-muted); font-size:0.9rem; line-height:1.6;">
+              <li><b>Totale Progetti:</b> Numero complessivo dei progetti censiti (36 di default da Excel).</li>
+              <li><b>Progetti In Corso:</b> Conteggio dei progetti in stato attivo di sviluppo.</li>
+              <li><b>Coordinatori / PM:</b> Numero di PM unici censiti a sistema.</li>
+              <li><b>Effort Medio Progetto:</b> Percentuale media dell'effort necessaria per progetto.</li>
+              <li><b>Distribuzione Stato:</b> Grafico a barre con la percentuale dei progetti in <i>In corso, Manutenzione, Terminato, Stand by, Da iniziare, Attività periodica</i>.</li>
+              <li><b>Carico di Lavoro Coordinatori:</b> Riepilogo percentuale del carico totale per ciascun PM.</li>
+            </ul>
+          </div>
+
+          <!-- Section 3 -->
+          <div class="wiki-section-card" id="wiki-projects">
+            <h3><i class="fa-solid fa-diagram-project" style="color:var(--mp95-orange);"></i> 3. Gestione Progetti & Effort %</h3>
+            <p>
+              In questa sezione è possibile consultare e gestire l'elenco dei progetti tramite data grid:
+            </p>
+            <div class="wiki-feature-box orange">
+              <ul>
+                <li><b>Ricerca Live:</b> Digita nel box di ricerca per filtrare istantaneamente per nome progetto o PM.</li>
+                <li><b>Filtri Combinati:</b> Seleziona uno Stato o un PM specifico per restringere la tabella.</li>
+                <li><b>Pulsante "+ Nuovo Progetto":</b> Permette di inserire un nuovo progetto indicando Nome, Stato, Effort % e PM.</li>
+                <li><b>Modifica ed Eliminazione:</b> Usa le icone azionabili sulla destra di ogni riga per modificare l'effort o eliminare il progetto.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Section 4 -->
+          <div class="wiki-section-card" id="wiki-coordinators">
+            <h3><i class="fa-solid fa-user-gear" style="color:var(--accent-cyan);"></i> 4. Sezione Coordinatori & Dropdown Menu</h3>
+            <p>
+              Ciascun coordinatore dispone di una card dedicata con barra di capacity % e <b>3 menu a tendina interattivi</b>:
+            </p>
+            <ul style="margin-left:1.5rem; color:var(--text-muted); font-size:0.9rem; line-height:1.6;">
+              <li><b>📁 Progetti del Coordinatore (Dropdown 1):</b> Mostra l'elenco dei progetti assegnati al PM, con relativo stato ed effort %.</li>
+              <li><b>👥 Risorse del Coordinatore (Dropdown 2):</b> Mostra le risorse operative del team (es. Fullstack Dev, QA Engineer) con pulsante <i>"+ Aggiungi Risorsa"</i> per inserire nuovi membri.</li>
+              <li><b>🔀 Progetti delle Risorse (Dropdown 3):</b> Menu a tendina che permette di selezionare una risorsa e vedere su quali progetti è impegnata e con quale effort.</li>
+            </ul>
+            <div class="wiki-feature-box warning">
+              <b>Alert di Overload:</b> Se l'effort totale del coordinatore supera il 100%, la barra di capacità diventerà ROSSA segnalando una situazione di sovra-allocazione.
+            </div>
+          </div>
+
+          <!-- Section 5 -->
+          <div class="wiki-section-card" id="wiki-excel">
+            <h3><i class="fa-solid fa-file-excel" style="color:#10B981;"></i> 5. Caricamento File Excel (.xlsx) & Export</h3>
+            <p>
+              I coordinatori possono aggiornare i dati direttamente caricando un file Excel:
+            </p>
+            <div class="wiki-feature-box">
+              <ol style="margin-left:1.2rem;">
+                <li>Cliccare sul pulsante verde <b>"Carica File Excel (.xlsx)"</b> in alto a destra o nella sezione Report.</li>
+                <li>Selezionare un file <code>.xlsx</code> o <code>.xls</code> formattato con le colonne: <code>Progetto</code>, <code>Stato</code>, <code>PM</code>, <code>Effort %</code>.</li>
+                <li>L'app leggerà automaticamente il file, aggiornerà tutti i progetti ed il carico dei coordinatori e salverà le informazioni a sistema.</li>
+              </ol>
+            </div>
+          </div>
+
+          <!-- Section 6 -->
+          <div class="wiki-section-card" id="wiki-reset">
+            <h3><i class="fa-solid fa-rotate-left" style="color:#F87171;"></i> 6. Funzione "Ripristina Dati Excel Originali"</h3>
+            <p>
+              In fondo alla barra laterale sinistra troverai il pulsante rosso <b>"Ripristina Dati Excel Originali"</b>.
+            </p>
+            <div class="wiki-feature-box warning">
+              <b>Cosa fa il Ripristino:</b> Questo pulsante cancella tutte le modifiche locali o i file caricati dall'utente e **ripristina istantaneamente l'applicazione allo stato iniziale del file <code>DIGITAL_PROGETTI_EFFORT_4277.xlsx</code>** (con i 36 progetti originali ed i relativi coordinatori di default). Utile per resettare la dashboard alle impostazioni di fabbrica.
+            </div>
+          </div>
+
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal: Add / Edit Project -->
+  <div id="projectModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalProjectTitle">Aggiungi Progetto MP95</h3>
+        <button class="modal-close" id="closeProjectModal">&times;</button>
+      </div>
+      <form id="projectForm">
+        <input type="hidden" id="modalProjectId">
+        <div class="form-group">
+          <label for="modalProgetto">Nome Progetto</label>
+          <input type="text" id="modalProgetto" class="form-control" required placeholder="Es. WIDE-IT-Digital">
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:0.75rem;">
+          <div class="form-group">
+            <label for="modalStato">Stato</label>
+            <select id="modalStato" class="form-control" required>
+              <option value="In corso">In corso</option>
+              <option value="Manutenzione">Manutenzione</option>
+              <option value="Terminato">Terminato</option>
+              <option value="Stand by">Stand by</option>
+              <option value="Da iniziare">Da iniziare</option>
+              <option value="Attività periodica">Attività periodica</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="modalEffort">Effort %</label>
+            <input type="number" id="modalEffort" class="form-control" min="0" max="100" required placeholder="Es. 25">
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:0.75rem;">
+          <label for="modalPm">PM / Coordinatore</label>
+          <input type="text" id="modalPm" class="form-control" required placeholder="Es. Aurora Parisi (TMI External)">
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="cancelProjectBtn" class="btn btn-secondary">Annulla</button>
+          <button type="submit" class="btn btn-primary">Salva Progetto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- App Script -->
+  <script src="app.js"></script>
+</body>
+</html>
