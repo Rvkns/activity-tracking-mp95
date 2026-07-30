@@ -1071,3 +1071,29 @@ textarea.form-control {
   color: #EF4444;
   border-color: rgba(239, 68, 68, 0.3);
 }
+
+/* ─── Criticità table cell ─────────────────────────────── */
+.criticita-cell {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  max-width: 200px;
+}
+.criticita-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.criticita-empty-btn {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.55rem;
+  opacity: 0.6;
+}
+.criticita-empty-btn:hover {
+  opacity: 1;
+}

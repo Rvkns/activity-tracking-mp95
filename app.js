@@ -362,7 +362,7 @@ function renderProjectsTable() {
 
   tbody.innerHTML = '';
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:2rem; color:var(--text-muted);">Nessun progetto trovato</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:2rem; color:var(--text-muted);">Nessun progetto trovato</td></tr>`;
     return;
   }
 
@@ -403,6 +403,17 @@ function renderProjectsTable() {
       </td>
       <td>${scadenzaHtml}</td>
       <td><span class="${tempisticheClass}">${tempisticheLabel}</span></td>
+      <td>
+        ${p.criticita
+          ? `<div class="criticita-cell" title="${p.criticita.replace(/"/g, '&quot;')}">
+               <i class="fa-solid fa-triangle-exclamation" style="color:var(--warning); font-size:0.85rem; flex-shrink:0;"></i>
+               <span class="criticita-text">${p.criticita}</span>
+             </div>`
+          : `<button class="btn btn-secondary btn-sm criticita-empty-btn" onclick="openEditProjectModal('${p.id}')" title="Aggiungi criticit\u00e0">
+               <i class="fa-solid fa-plus" style="font-size:0.75rem;"></i> Aggiungi nota
+             </button>`
+        }
+      </td>
       <td style="text-align:right;">
         <button class="btn btn-secondary btn-sm" onclick="openEditProjectModal('${p.id}')">
           <i class="fa-solid fa-pen-to-square"></i>
