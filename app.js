@@ -694,6 +694,9 @@ window.promptAddResource = async function(encodedPmName) {
 /* ----------------------------------------------------
    EXCEL FILE UPLOAD & IMPORT HANDLERS (.xlsx, .xls)
 ---------------------------------------------------- */
+let pendingImportProjects = [];
+let pendingImportFileName = '';
+
 function initExcelFileHandlers() {
   const topbarBtn = document.getElementById('topbarUploadExcelBtn');
   const topbarInput = document.getElementById('topbarExcelFileInput');
@@ -711,6 +714,172 @@ function initExcelFileHandlers() {
   if (projectsBtn && topbarInput) {
     projectsBtn.addEventListener('click', () => topbarInput.click());
   }
+
+  initCoordinatorModalEvents();
+}
+
+function initCoordinatorModalEvents() {
+  const closeBtn = document.getElementById('closeCoordinatorModal');
+  const cancelBtn = document.getElementById('cancelCoordinatorBtn');
+  const confirmBtn = document.getElementById('confirmCoordinatorBtn');
+  const selectEl = document.getElementById('coordinatorSelectInput');
+  const customGroup = document.getElementById('customCoordinatorGroup');
+
+  if (closeBtn) closeBtn.addEventListener('click', closeCoordinatorModal);
+  if (cancelBtn) cancelBtn.addEventListener('click', closeCoordinatorModal);
+
+  if (selectEl) {
+    selectEl.addEventListener('change', () => {
+      if (selectEl.value === '__NEW__') {
+        customGroup.style.display = 'block';
+        const customInput = document.getElementById('customCoordinatorInput');
+        if (customInput) customInput.focus();
+      } else {
+        customGroup.style.display = 'none';
+      }
+    });
+  }
+
+  if (confirmBtn) {
+    confirmBtn.addEventListener('click', processCoordinatorImportConfirm);
+  }
+}
+
+function openCoordinatorModal(importedList, fileName) {
+  pendingImportProjects = importedList;
+  pendingImportFileName = fileName;
+
+  const modal = document.getElementById('coordinatorModal');
+  const countEl = document.getElementById('coordinatorModalCount');
+  const fileNameEl = document.getElementById('coordinatorModalFileName');
+  const selectEl = document.getElementById('coordinatorSelectInput');
+  const customGroup = document.getElementById('customCoordinatorGroup');
+  const customInput = document.getElementById('customCoordinatorInput');
+
+  if (countEl) countEl.textContent = importedList.length;
+  if (fileNameEl) fileNameEl.textContent = fileName;
+  if (customInput) customInput.value = '';
+  if (customGroup) customGroup.style.display = 'none';
+
+  // Extract list of known PMs from projects & coordinatorResources
+  const pmsSet = new Set(projects.map(p => (p.pm || '').trim()).filter(Boolean));
+  Object.keys(coordinatorResources).forEach(pm => {
+    if (pm.trim()) pmsSet.add(pm.trim());
+  });
+
+  selectEl.innerHTML = '';
+  selectEl.innerHTML += `<option value="">-- Seleziona un Coordinatore Esistente --</option>`;
+  pmsSet.forEach(pm => {
+    selectEl.innerHTML += `<option value="${pm}">${pm}</option>`;
+  });
+  selectEl.innerHTML += `<option value="__NEW__">+ Inserisci Nuovo Coordinatore...</option>`;
+
+  if (modal) modal.classList.add('active');
+}
+
+function closeCoordinatorModal() {
+  const modal = document.getElementById('coordinatorModal');
+  if (modal) modal.classList.remove('active');
+  pendingImportProjects = [];
+  pendingImportFileName = '';
+
+  // Reset file inputs
+  const topbarInput = document.getElementById('topbarExcelFileInput');
+  if (topbarInput) topbarInput.value = '';
+  const fileInput = document.getElementById('importFileInput');
+  if (fileInput) fileInput.value = '';
+}
+
+async function processCoordinatorImportConfirm() {
+  const selectEl = document.getElementById('coordinatorSelectInput');
+  const customInput = document.getElementById('customCoordinatorInput');
+
+  let chosenPm = selectEl.value;
+  if (chosenPm === '__NEW__') {
+    chosenPm = customInput ? customInput.value.trim() : '';
+  }
+
+  if (!chosenPm || chosenPm === '') {
+    alert("Per favore seleziona un Coordinatore esistente o inserisci un nome valido.");
+    return;
+  }
+
+  if (pendingImportProjects.length === 0) {
+    alert("Nessun dato da importare.");
+    closeCoordinatorModal();
+    return;
+  }
+
+  // Set chosen PM on all imported items
+  pendingImportProjects.forEach(p => {
+    p.pm = chosenPm;
+  });
+
+  // Perform client-side MERGE / APPEND into projects array
+  let maxIdNum = 0;
+  projects.forEach(p => {
+    const match = (p.id || '').match(/^PRJ-(\d+)$/);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (num > maxIdNum) maxIdNum = num;
+    }
+  });
+
+  let addedCount = 0;
+  let updatedCount = 0;
+
+  pendingImportProjects.forEach(impPrj => {
+    const existingIndex = projects.findIndex(p =>
+      (p.id && impPrj.id && p.id === impPrj.id) ||
+      (p.progetto.trim().toLowerCase() === impPrj.progetto.trim().toLowerCase() && p.pm.trim().toLowerCase() === chosenPm.toLowerCase())
+    );
+
+    if (existingIndex >= 0) {
+      // Update existing project
+      projects[existingIndex] = {
+        ...projects[existingIndex],
+        ...impPrj,
+        id: projects[existingIndex].id, // Keep existing ID
+        pm: chosenPm
+      };
+      updatedCount++;
+    } else {
+      // Insert new project with unique ID
+      maxIdNum++;
+      const newId = `PRJ-${String(maxIdNum).padStart(3, '0')}`;
+      projects.push({
+        ...impPrj,
+        id: newId,
+        pm: chosenPm
+      });
+      addedCount++;
+    }
+  });
+
+  // Sync to Neon PostgreSQL DB via API
+  try {
+    await fetch('/api/projects/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mode: 'merge',
+        projects: pendingImportProjects
+      })
+    });
+  } catch (err) {
+    console.log("Synced to LocalStorage.");
+  }
+
+  // Ensure coordinator exists in coordinatorResources
+  if (!coordinatorResources[chosenPm]) {
+    coordinatorResources[chosenPm] = [];
+  }
+
+  saveState();
+  const fileName = pendingImportFileName;
+  closeCoordinatorModal();
+
+  showToast(`File '${fileName}' importato per ${chosenPm}! (${addedCount} nuovi, ${updatedCount} aggiornati)`);
 }
 
 function handleExcelFileInput(file) {
@@ -739,38 +908,29 @@ function handleExcelFileInput(file) {
           rawRows.forEach((row, idx) => {
             const progettoVal = row['Progetto'] || row['progetto'] || row['Nome Progetto'] || row['Project'] || '';
             const statoVal = row['Stato'] || row['stato'] || row['Status'] || 'In corso';
-            const pmVal = row['PM'] || row['pm'] || row['Coordinatore'] || row['PM / Coordinatore'] || 'Non Assegnato';
             const effortVal = row['Effort %'] || row['Effort'] || row['effort'] || 0;
+            const risorsaVal = row['Risorsa'] || row['risorsa'] || row['Risorsa Coinvolta'] || '';
+            const descrizioneVal = row['Descrizione'] || row['descrizione'] || '';
+            const repartoVal = row['Reparto'] || row['reparto'] || '';
+            const criticitaVal = row['Criticità'] || row['criticita'] || row['Note'] || '';
 
             if (progettoVal && String(progettoVal).trim().length > 0) {
               importedProjects.push({
-                id: `PRJ-${String(idx + 1).padStart(3, '0')}`,
                 progetto: String(progettoVal).trim(),
                 stato: String(statoVal).trim(),
-                pm: String(pmVal).trim(),
-                effort: parseInt(effortVal) || 0
+                effort: parseInt(effortVal) || 0,
+                risorsa: String(risorsaVal).trim() || null,
+                descrizione: String(descrizioneVal).trim() || null,
+                reparto: String(repartoVal).trim() || null,
+                criticita: String(criticitaVal).trim() || null
               });
             }
           });
 
           if (importedProjects.length > 0) {
-            projects = importedProjects;
-            
-            // Sync to Neon PostgreSQL DB via API
-            try {
-              await fetch('/api/projects/batch', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(projects)
-              });
-            } catch (err) {
-              console.log("Synced to LocalStorage.");
-            }
-
-            saveState();
-            showToast(`File Excel '${file.name}' sincronizzato con il DB Neon! Importati ${projects.length} progetti.`);
+            openCoordinatorModal(importedProjects, file.name);
           } else {
-            alert("Nessun progetto valido trovato nel file Excel. Assicurati che le colonne siano: Progetto, Stato, PM, Effort %.");
+            alert("Nessun progetto valido trovato nel file Excel. Assicurati che ci sia almeno la colonna 'Progetto'.");
           }
         } catch (err) {
           console.error("Excel import error:", err);

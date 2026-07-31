@@ -134,9 +134,12 @@ app.delete(['/api/projects/:id', '/projects/:id'], async (req, res) => {
   }
 });
 
-// 5. POST /api/projects/batch - Replace/Sync array of projects (for Excel Upload)
+// 5. POST /api/projects/batch - Append/Merge array of projects (for Excel Upload)
 app.post(['/api/projects/batch', '/projects/batch'], async (req, res) => {
-  const projectsList = req.body;
+  const payload = req.body;
+  const projectsList = Array.isArray(payload) ? payload : (payload.projects || []);
+  const mode = payload.mode || 'merge'; // 'merge' or 'replace'
+
   if (!Array.isArray(projectsList)) {
     return res.status(400).json({ error: 'Formato payload non valido.' });
   }
@@ -145,26 +148,76 @@ app.post(['/api/projects/batch', '/projects/batch'], async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    await client.query('DELETE FROM mp95_projects');
+
+    if (mode === 'replace') {
+      await client.query('DELETE FROM mp95_projects');
+    }
+
+    // Get maximum numeric ID for generating new IDs if needed
+    const maxRes = await client.query("SELECT id FROM mp95_projects WHERE id LIKE 'PRJ-%'");
+    let maxIdNum = 0;
+    maxRes.rows.forEach(r => {
+      const match = r.id.match(/^PRJ-(\d+)$/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxIdNum) maxIdNum = num;
+      }
+    });
 
     for (let i = 0; i < projectsList.length; i++) {
       const p = projectsList[i];
-      const prjId = p.id || `PRJ-${String(i + 1).padStart(3, '0')}`;
-      await client.query(
-        `INSERT INTO mp95_projects
-           (id, progetto, stato, pm, effort, risorsa, descrizione,
-            effort_previsto, effort_residuo, avanzamento, scadenza,
-            stato_tempistiche, criticita, reparto)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
-        [
-          prjId, p.progetto, p.stato, p.pm, parseInt(p.effort) || 0,
-          p.risorsa || null, p.descrizione || null,
-          parseFloat(p.effort_previsto) || 0, parseFloat(p.effort_residuo) || 0,
-          parseInt(p.avanzamento) || 0, p.scadenza || null,
-          p.stato_tempistiche || 'In linea', p.criticita || null,
-          p.reparto || null
-        ]
+      const progetto = (p.progetto || '').trim();
+      const pm = (p.pm || 'Non Assegnato').trim();
+
+      if (!progetto) continue;
+
+      // Check if project exists by ID or by (progetto + pm)
+      const existing = await client.query(
+        'SELECT id FROM mp95_projects WHERE id = $1 OR (LOWER(progetto) = LOWER($2) AND LOWER(pm) = LOWER($3))',
+        [p.id || '', progetto, pm]
       );
+
+      if (existing.rows.length > 0) {
+        const targetId = existing.rows[0].id;
+        await client.query(
+          `UPDATE mp95_projects SET
+             progetto = $1, stato = $2, pm = $3, effort = $4,
+             risorsa = $5, descrizione = $6,
+             effort_previsto = $7, effort_residuo = $8,
+             avanzamento = $9, scadenza = $10,
+             stato_tempistiche = $11, criticita = $12,
+             reparto = $13,
+             updated_at = CURRENT_TIMESTAMP
+           WHERE id = $14`,
+          [
+            progetto, p.stato || 'In corso', pm, parseInt(p.effort) || 0,
+            p.risorsa || null, p.descrizione || null,
+            parseFloat(p.effort_previsto) || 0, parseFloat(p.effort_residuo) || 0,
+            parseInt(p.avanzamento) || 0, p.scadenza || null,
+            p.stato_tempistiche || 'In linea', p.criticita || null,
+            p.reparto || null,
+            targetId
+          ]
+        );
+      } else {
+        maxIdNum++;
+        const prjId = p.id || `PRJ-${String(maxIdNum).padStart(3, '0')}`;
+        await client.query(
+          `INSERT INTO mp95_projects
+             (id, progetto, stato, pm, effort, risorsa, descrizione,
+              effort_previsto, effort_residuo, avanzamento, scadenza,
+              stato_tempistiche, criticita, reparto)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+          [
+            prjId, progetto, p.stato || 'In corso', pm, parseInt(p.effort) || 0,
+            p.risorsa || null, p.descrizione || null,
+            parseFloat(p.effort_previsto) || 0, parseFloat(p.effort_residuo) || 0,
+            parseInt(p.avanzamento) || 0, p.scadenza || null,
+            p.stato_tempistiche || 'In linea', p.criticita || null,
+            p.reparto || null
+          ]
+        );
+      }
     }
     await client.query('COMMIT');
     res.json({ message: `Sincronizzati ${projectsList.length} progetti con il DB Neon!` });
