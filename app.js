@@ -327,26 +327,38 @@ function renderStatusDistribution() {
   });
 }
 
+function getResourceEffort(resourceName) {
+  if (!resourceName) return 0;
+  const cleanName = resourceName.trim().toLowerCase();
+  return projects.reduce((acc, p) => {
+    const rName = (p.risorsa || p.pm || '').trim().toLowerCase();
+    if (rName === cleanName) {
+      return acc + (p.effort || 0);
+    }
+    return acc;
+  }, 0);
+}
+
 function renderPmWorkloadOverview() {
   const container = document.getElementById('pmWorkloadOverview');
   if (!container) return;
 
-  const pmEfforts = {};
+  const resourceEfforts = {};
   projects.forEach(p => {
-    const pm = sanitizeProjectPM(p.pm);
-    if (!pmEfforts[pm]) {
-      pmEfforts[pm] = { count: 0, totalEffort: 0 };
+    const rName = p.risorsa && p.risorsa.trim() ? p.risorsa.trim() : sanitizeProjectPM(p.pm);
+    if (!resourceEfforts[rName]) {
+      resourceEfforts[rName] = { count: 0, totalEffort: 0, pm: sanitizeProjectPM(p.pm) };
     }
-    pmEfforts[pm].count += 1;
-    pmEfforts[pm].totalEffort += (p.effort || 0);
+    resourceEfforts[rName].count += 1;
+    resourceEfforts[rName].totalEffort += (p.effort || 0);
   });
 
   container.innerHTML = '';
-  Object.keys(pmEfforts).forEach(pmName => {
-    const data = pmEfforts[pmName];
+  Object.keys(resourceEfforts).forEach(rName => {
+    const data = resourceEfforts[rName];
     const totalEffort = data.totalEffort;
     
-    // Scale against CAP 120%
+    // Scale against CAP 120% per resource
     const barPct = Math.min(Math.round((totalEffort / 120) * 100), 100);
 
     let statusText = `${totalEffort}% / 120%`;
@@ -366,12 +378,15 @@ function renderPmWorkloadOverview() {
     const rowHtml = `
       <div style="display:flex; flex-direction:column; gap:0.4rem; padding:0.65rem 0.85rem; background:rgba(255,255,255,0.02); border-radius:var(--radius-md);">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-weight:700; font-size:0.9rem;">${pmName}</span>
+          <div>
+            <span style="font-weight:700; font-size:0.9rem;">${rName}</span>
+            <span style="font-size:0.75rem; color:var(--text-dim); margin-left:0.4rem;">(${data.pm})</span>
+          </div>
           <span style="font-weight:800; font-size:0.82rem; color:${colorStyle};">
-            ${statusText} (${data.count} prj)
+            ${statusText} (${data.count} attività)
           </span>
         </div>
-        <div class="effort-progress-bg" title="Capacità base 100% + 20% Straordinario = CAP Max 120%">
+        <div class="effort-progress-bg" title="Capacità Risorsa: 100% Std + 20% Straordinario = CAP Max 120%">
           <div class="effort-progress-fill" style="width: ${barPct}%; background: ${bgStyle};"></div>
         </div>
       </div>
@@ -418,23 +433,23 @@ function getBadgeClass(status) {
   const st = status.toLowerCase();
   if (st.includes('in corso')) return 'badge-in-corso';
   if (st.includes('manutenzione')) return 'badge-manutenzione';
-  if (st.includes('terminato') || st.includes('completato')) return 'badge-terminato';
-  if (st.includes('stand by') || st.includes('in attesa')) return 'badge-stand-by';
-  if (st.includes('da iniziare') || st.includes('non avviato')) return 'badge-da-iniziare';
-  return 'badge-periodica';
+  if (st.includes('terminato')) return 'badge-terminato';
+  if (st.includes('stand by')) return 'badge-stand-by';
+  if (st.includes('da iniziare')) return 'badge-da-iniziare';
+  if (st.includes('periodica')) return 'badge-periodica';
+  return 'badge-in-corso';
 }
 
-function getTempisticheClass(val) {
-  const v = (val || '').toLowerCase();
-  if (v === 'a rischio') return 'badge-a-rischio';
-  if (v === 'in ritardo') return 'badge-in-ritardo';
-  return 'badge-in-linea';
+function getTempisticheClass(temp) {
+  const t = temp.toLowerCase();
+  if (t.includes('ritardo')) return 'tempistiche-ritardo';
+  if (t.includes('rischio')) return 'tempistiche-rischio';
+  return 'tempistiche-linea';
 }
 
-function getAvanzamentoClass(pct) {
-  if (pct >= 100) return 'av-full';
-  if (pct >= 60)  return 'av-good';
-  if (pct >= 30)  return 'av-mid';
+function getAvanzamentoClass(av) {
+  if (av >= 80) return 'av-high';
+  if (av >= 40) return 'av-mid';
   return 'av-low';
 }
 
@@ -590,27 +605,63 @@ function renderCoordinatorsGrid() {
     const badgeColor = coord.badgeColor || '#2872FA';
 
     const prjList = getProjectsForCoordinator(pmName);
-    const totalEffort = prjList.reduce((acc, p) => acc + (p.effort || 0), 0);
+    const resourcesList = coordinatorResources[pmName] || [];
 
-    // Scale against CAP 120%
-    const barWidthPct = Math.min(Math.round((totalEffort / 120) * 100), 100);
+    // Calculate effort per resource for this coordinator's team
+    let teamEffortsSum = 0;
+    let resourceCount = 0;
+    let overloadedCount = 0;
 
-    let gaugeColor = 'var(--text-main)';
-    let fillGradient = 'linear-gradient(90deg, var(--mp95-blue), var(--success))';
-    let statusBadge = '<span style="color:var(--success); font-weight:700;">🟢 Capacità Standard</span>';
+    const resourceBarsHtml = resourcesList.map(r => {
+      const rName = typeof r === 'string' ? r : r.name;
+      const rRole = typeof r === 'object' && r.role ? r.role : '';
+      const rEffort = getResourceEffort(rName);
 
-    if (totalEffort > 120) {
-      gaugeColor = 'var(--danger)';
-      fillGradient = 'var(--danger)';
-      statusBadge = `<span style="color:var(--danger); font-weight:800;">🔴 CAP 120% SUPERATO (+${totalEffort - 120}%)</span>`;
-    } else if (totalEffort > 100) {
-      gaugeColor = 'var(--warning)';
-      fillGradient = 'linear-gradient(90deg, var(--mp95-orange), var(--warning))';
-      statusBadge = `<span style="color:var(--warning); font-weight:700;">⚡ Straordinario (+${totalEffort - 100}%)</span>`;
+      teamEffortsSum += rEffort;
+      resourceCount++;
+      if (rEffort > 120) overloadedCount++;
+
+      const rBarWidthPct = Math.min(Math.round((rEffort / 120) * 100), 100);
+      let rBadge = '<span style="color:var(--success); font-weight:700;">🟢 Std</span>';
+      let rFill = 'linear-gradient(90deg, var(--mp95-blue), var(--success))';
+      let rColor = 'var(--text-main)';
+
+      if (rEffort > 120) {
+        rBadge = '<span style="color:var(--danger); font-weight:800;">🔴 OVERLOAD</span>';
+        rFill = 'var(--danger)';
+        rColor = 'var(--danger)';
+      } else if (rEffort > 100) {
+        rBadge = '<span style="color:var(--warning); font-weight:700;">⚡ Straordinario</span>';
+        rFill = 'linear-gradient(90deg, var(--mp95-orange), var(--warning))';
+        rColor = 'var(--warning)';
+      }
+
+      return `
+        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:0.5rem 0.75rem; margin-bottom:0.4rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; margin-bottom:0.3rem;">
+            <div>
+              <span style="font-weight:700; color:var(--text-main);">${rName}</span>
+              ${rRole ? `<span style="font-size:0.72rem; color:var(--text-dim); margin-left:0.3rem;">(${rRole})</span>` : ''}
+            </div>
+            <span style="font-weight:800; color:${rColor};">${rEffort}% / 120%</span>
+          </div>
+          <div class="pm-capacity-bar" style="height:6px;" title="Effort individuale di ${rName}">
+            <div class="pm-capacity-fill" style="width:${rBarWidthPct}%; background:${rFill};"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const avgTeamEffort = resourceCount > 0 ? Math.round(teamEffortsSum / resourceCount) : 0;
+
+    let overallBadge = `<span style="color:var(--success); font-weight:700;">🟢 Team in Capacità (Media ${avgTeamEffort}%)</span>`;
+    if (overloadedCount > 0) {
+      overallBadge = `<span style="color:var(--danger); font-weight:800;">🔴 ${overloadedCount} Risorse in Overload (>120%)</span>`;
+    } else if (avgTeamEffort > 100) {
+      overallBadge = `<span style="color:var(--warning); font-weight:700;">⚡ Team in Straordinario (Media ${avgTeamEffort}%)</span>`;
     }
 
     const initials = pmName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
-    const resources = coordinatorResources[pmName] || [];
 
     const card = document.createElement('div');
     card.className = 'pm-card';
@@ -627,22 +678,18 @@ function renderCoordinatorsGrid() {
       </div>
 
       <div class="pm-capacity-gauge">
-        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; font-weight:700;">
-          <span>Effort Team (CAP 120%)</span>
-          <span style="color: ${gaugeColor}; font-weight:800;">${totalEffort}% / 120%</span>
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; font-weight:700; margin-bottom:0.4rem;">
+          <span>Allocazione Risorse Team (${resourcesList.length} persone)</span>
+          <span style="font-size:0.78rem; color:var(--text-dim);">Media: ${avgTeamEffort}% / 120%</span>
         </div>
-        <div class="pm-capacity-bar" title="Base: 100% | Straordinario: +20% | Max CAP: 120%">
-          <div class="pm-capacity-fill" style="width: ${barWidthPct}%; background: ${fillGradient};"></div>
-        </div>
-        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; margin-top:0.35rem;">
-          <span style="color:var(--text-dim);">Std: 100%</span>
-          ${statusBadge}
-          <span style="color:var(--text-dim);">CAP: 120%</span>
+        ${overallBadge}
+        <div style="margin-top:0.65rem;">
+          ${resourceBarsHtml || '<div style="font-size:0.8rem; color:var(--text-dim); font-style:italic;">Nessuna risorsa nel team</div>'}
         </div>
       </div>
 
-      <div class="pm-stat-row">
-        <span style="color:var(--text-muted);">Progetti Assegnati</span>
+      <div class="pm-stat-row" style="margin-top:0.75rem;">
+        <span style="color:var(--text-muted);">Progetti Gestiti dal Coordinatore</span>
         <span style="font-weight:700;">${prjList.length}</span>
       </div>
 
