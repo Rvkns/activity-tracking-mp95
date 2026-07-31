@@ -50,23 +50,26 @@ const INITIAL_PROJECTS = [
 ];
 
 const INITIAL_RESOURCES = [
-  { coordinator: "Aurora Parisi (TMI External)", name: "Marco Rossi", role: "Senior Fullstack Dev", projects: ["WIDE-IT-Digital", "Franchise-IT-Digital"] },
-  { coordinator: "Aurora Parisi (TMI External)", name: "Laura Conti", role: "UI/UX Designer", projects: ["Paperless-IT-Digital", "NRC-IT-Digital - TOYOTA"] },
-  { coordinator: "Aurora Parisi (TMI External)", name: "Stefano Rinaldi", role: "QA Engineer", projects: ["Boe mensa-IT-Digital", "Intouch-IT-Digital"] },
+  { coordinator: "Valerio Andreuccioli", name: "Daniele De Dominicis", role: "Backend Lead", projects: ["CMS-IT-Digital", "CMS - gestione ticket secondo livello-IT-Digital"] },
+  { coordinator: "Valerio Andreuccioli", name: "Giuseppe Neri", role: "Specialista IT", projects: ["CMS-IT-Digital"] },
+  { coordinator: "Valerio Andreuccioli", name: "Elena Moretti", role: "DBA Specialist", projects: ["Flag usato akita-IT-Digital"] },
   
-  { coordinator: "Daniele De Dominicis (TMI External)", name: "Giuseppe Neri", role: "Backend Lead", projects: ["CMS-IT-Digital", "CMS - gestione ticket secondo livello-IT-Digital"] },
-  { coordinator: "Daniele De Dominicis (TMI External)", name: "Elena Moretti", role: "DBA Specialist", projects: ["CMS-IT-Digital", "Flag usato akita-IT-Digital"] },
+  { coordinator: "Serena Lacorte", name: "Aurora Parisi", role: "External PM / Specialist", projects: ["WIDE-IT-Digital", "Franchise-IT-Digital"] },
+  { coordinator: "Serena Lacorte", name: "Marco Rossi", role: "Senior Fullstack Dev", projects: ["WIDE-IT-Digital"] },
+  { coordinator: "Serena Lacorte", name: "Laura Conti", role: "UI/UX Designer", projects: ["Paperless-IT-Digital"] },
+  { coordinator: "Serena Lacorte", name: "Roberto Gatti", role: "System Engineer", projects: ["Warehouse channel -IT-Digital"] },
+  { coordinator: "Serena Lacorte", name: "Simona D'Amico", role: "Data Analyst", projects: ["MIA - KPI Dealer-IT-Digital"] },
   
-  { coordinator: "Federico Arte (TMI External)", name: "Matteo Galli", role: "DevOps Engineer", projects: ["Sailpoint-IT-Digital", "Service Now 2.0-IT-Digital"] },
-  { coordinator: "Federico Arte (TMI External)", name: "Alessia Fontana", role: "AI Specialist", projects: ["AI LAB", "Repository per Product Quality"] },
+  { coordinator: "Stefano Giovannella", name: "Federico Arte", role: "Senior Infrastructure Lead", projects: ["Sailpoint-IT-Digital", "Service Now 2.0-IT-Digital"] },
+  { coordinator: "Stefano Giovannella", name: "Matteo Galli", role: "DevOps Engineer", projects: ["WayTo Apps-IT-Digital"] },
   
-  { coordinator: "Francesca Rozzi (TMI External)", name: "Davide Palmieri", role: "Financial Consultant", projects: ["Digital Finance - Controlling-IT-Digital", "Digital Sales-IT-Digital"] },
-  { coordinator: "Francesca Rozzi (TMI External)", name: "Chiara Ferri", role: "Solution Architect", projects: ["ACT AS A BSS PARTNER - Survey-IT-Digital", "Procedura Service Now-IT-Digital"] },
+  { coordinator: "Emanuela Raschellà", name: "Francesca Rozzi", role: "Corporate Consultant", projects: ["Digital Finance - Controlling-IT-Digital", "Digital Sales-IT-Digital"] },
+  { coordinator: "Emanuela Raschellà", name: "Davide Palmieri", role: "Financial Consultant", projects: ["Digital Finance - Purchasing-IT-Digital"] },
+  { coordinator: "Emanuela Raschellà", name: "Chiara Ferri", role: "Solution Architect", projects: ["Procedura Service Now-IT-Digital"] },
   
-  { coordinator: "Francesca Rozzi (TMI External) - Aurora Parisi (TMI External)", name: "Gianluca Martini", role: "Integration Lead", projects: ["Digital Finance - Purchasing-IT-Digital", "TED-IT-Digital"] },
+  { coordinator: "Lara Tini Brunozzi", name: "Stefano Rinaldi", role: "Support Lead", projects: ["Boe mensa-IT-Digital", "Intouch-IT-Digital"] },
   
-  { coordinator: "Serena Lacorte (TMI External)", name: "Roberto Gatti", role: "System Engineer", projects: ["Warehouse channel -IT-Digital", "MIA - KPI Dealer-IT-Digital"] },
-  { coordinator: "Serena Lacorte (TMI External)", name: "Simona D'Amico", role: "Data Analyst", projects: ["Backlog Bearit -IT-Digital", "BRiT WayDoc-IT-Digital"] }
+  { coordinator: "Francesco Di Legge", name: "Alessia Fontana", role: "AI Specialist", projects: ["AI LAB", "Repository per Product Quality"] }
 ];
 
 async function initDatabase() {

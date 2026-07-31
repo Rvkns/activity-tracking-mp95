@@ -221,8 +221,20 @@
         </div>
       </section>
 
-      <!-- View: COORDINATORS (WORKLOAD) -->
+      <!-- View: COORDINATORS (WORKLOAD & TEAMS) -->
       <section id="view-coordinators" class="view-section">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; background:rgba(255,255,255,0.03); padding:1rem 1.25rem; border-radius:var(--radius-lg); border:1px solid var(--border-color);">
+          <div>
+            <h3 style="margin:0; font-size:1.1rem; font-weight:700;"><i class="fa-solid fa-users-gear" style="color:var(--mp95-blue); margin-right:0.5rem;"></i> Gestione Team & Risorse dei Coordinatori MP95</h3>
+            <p style="margin:0.25rem 0 0 0; font-size:0.85rem; color:var(--text-muted);">
+              Ciascun Coordinatore Ufficiale gestisce il proprio team di risorse operative e monitora l'allocazione dei progetti.
+            </p>
+          </div>
+          <button id="addCoordinatorBtn" class="btn btn-secondary btn-sm" style="border-color:var(--mp95-blue); color:var(--mp95-blue);">
+            <i class="fa-solid fa-user-plus"></i> Nuovo Coordinatore
+          </button>
+        </div>
+
         <div class="pm-grid" id="coordinatorsGrid">
           <!-- Rendered via JS -->
         </div>
@@ -510,6 +522,74 @@
           <i class="fa-solid fa-cloud-arrow-up"></i> Conferma e Importa
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add / Edit Team Resource -->
+  <div id="resourceModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="resourceModalTitle"><i class="fa-solid fa-user-plus" style="color:var(--mp95-blue); margin-right:0.5rem;"></i> Aggiungi Risorsa al Team</h3>
+        <button class="modal-close" id="closeResourceModal">&times;</button>
+      </div>
+      <form id="resourceForm">
+        <input type="hidden" id="resourceCoordinatorInput">
+        <div class="modal-body" style="padding:1rem 0;">
+          <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:1rem;">
+            Inserisci i dettagli della risorsa da assegnare al team del Coordinatore <strong id="resourceCoordinatorNameDisplay" style="color:var(--mp95-orange);">—</strong>.
+          </p>
+          <div class="form-group">
+            <label for="resourceNameInput" style="font-weight:700;">Nome e Cognome Risorsa *</label>
+            <input type="text" id="resourceNameInput" class="form-control" required placeholder="Es. Marco Rossi">
+          </div>
+          <div class="form-group" style="margin-top:0.75rem;">
+            <label for="resourceRoleInput" style="font-weight:700;">Ruolo / Specializzazione</label>
+            <input type="text" id="resourceRoleInput" class="form-control" placeholder="Es. Senior Fullstack Dev, QA Engineer, Data Specialist">
+          </div>
+          <div class="form-group" style="margin-top:0.75rem;">
+            <label for="resourceProjectsInput" style="font-weight:700;">Progetti Assegnati (separati da virgola)</label>
+            <input type="text" id="resourceProjectsInput" class="form-control" placeholder="Es. WIDE-IT-Digital, Franchise-IT-Digital">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="cancelResourceBtn" class="btn btn-secondary">Annulla</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Salva Risorsa</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add New Official Coordinator -->
+  <div id="addCoordinatorModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-user-shield" style="color:var(--mp95-orange); margin-right:0.5rem;"></i> Aggiungi Nuovo Coordinatore Ufficiale</h3>
+        <button class="modal-close" id="closeAddCoordinatorModal">&times;</button>
+      </div>
+      <form id="addCoordinatorForm">
+        <div class="modal-body" style="padding:1rem 0;">
+          <div class="form-group">
+            <label for="newCoordinatorNameInput" style="font-weight:700;">Nome e Cognome Coordinatore *</label>
+            <input type="text" id="newCoordinatorNameInput" class="form-control" required placeholder="Es. Mario Rossi">
+          </div>
+          <div class="form-group" style="margin-top:0.75rem;">
+            <label for="newCoordinatorRepartoInput" style="font-weight:700;">Area / Reparto *</label>
+            <select id="newCoordinatorRepartoInput" class="form-control" required>
+              <option value="Data Management">Data Management</option>
+              <option value="IT&Digital">IT&Digital</option>
+              <option value="Infra">Infra</option>
+              <option value="Corporate">Corporate</option>
+              <option value="Support&Help Desk">Support&Help Desk</option>
+              <option value="Innovation">Innovation</option>
+              <option value="Governance">Governance</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="cancelAddCoordinatorBtn" class="btn btn-secondary">Annulla</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-user-check"></i> Salva Coordinatore</button>
+        </div>
+      </form>
     </div>
   </div>
 

@@ -42,30 +42,48 @@ const INITIAL_PROJECTS = [
   { id: "PRJ-036", progetto: "Service Now Flotte -IT-Digital", stato: "In corso", pm: "Serena Lacorte (TMI External)", effort: 15 }
 ];
 
+const OFFICIAL_COORDINATORS = [
+  { name: "Valerio Andreuccioli", reparto: "Data Management", badgeColor: "#06B6D4" },
+  { name: "Serena Lacorte", reparto: "IT&Digital", badgeColor: "#2872FA" },
+  { name: "Stefano Giovannella", reparto: "Infra", badgeColor: "#EC4899" },
+  { name: "Emanuela Raschellà", reparto: "Corporate", badgeColor: "#F59E0B" },
+  { name: "Lara Tini Brunozzi", reparto: "Support&Help Desk", badgeColor: "#10B981" },
+  { name: "Francesco Di Legge", reparto: "Innovation", badgeColor: "#A78BFA" }
+];
+
+let customCoordinators = JSON.parse(localStorage.getItem('mp95_custom_coordinators')) || [];
+
+function getAllCoordinators() {
+  return [...OFFICIAL_COORDINATORS, ...customCoordinators];
+}
+
 const DEFAULT_COORDINATOR_RESOURCES = {
-  "Aurora Parisi (TMI External)": [
-    { name: "Marco Rossi", role: "Senior Fullstack Dev", projects: ["WIDE-IT-Digital", "Franchise-IT-Digital"] },
-    { name: "Laura Conti", role: "UI/UX Designer", projects: ["Paperless-IT-Digital", "NRC-IT-Digital - TOYOTA"] },
-    { name: "Stefano Rinaldi", role: "QA Engineer", projects: ["Boe mensa-IT-Digital", "Intouch-IT-Digital"] }
+  "Valerio Andreuccioli": [
+    { name: "Daniele De Dominicis", role: "Backend Lead", projects: ["CMS-IT-Digital", "CMS - gestione ticket secondo livello-IT-Digital"] },
+    { name: "Giuseppe Neri", role: "Specialista IT", projects: ["CMS-IT-Digital"] },
+    { name: "Elena Moretti", role: "DBA Specialist", projects: ["Flag usato akita-IT-Digital"] }
   ],
-  "Daniele De Dominicis (TMI External)": [
-    { name: "Giuseppe Neri", role: "Backend Lead", projects: ["CMS-IT-Digital", "CMS - gestione ticket secondo livello-IT-Digital"] },
-    { name: "Elena Moretti", role: "DBA Specialist", projects: ["CMS-IT-Digital", "Flag usato akita-IT-Digital"] }
+  "Serena Lacorte": [
+    { name: "Aurora Parisi", role: "External PM / Specialist", projects: ["WIDE-IT-Digital", "Franchise-IT-Digital"] },
+    { name: "Marco Rossi", role: "Senior Fullstack Dev", projects: ["WIDE-IT-Digital"] },
+    { name: "Laura Conti", role: "UI/UX Designer", projects: ["Paperless-IT-Digital"] },
+    { name: "Roberto Gatti", role: "System Engineer", projects: ["Warehouse channel -IT-Digital"] },
+    { name: "Simona D'Amico", role: "Data Analyst", projects: ["MIA - KPI Dealer-IT-Digital"] }
   ],
-  "Federico Arte (TMI External)": [
-    { name: "Matteo Galli", role: "DevOps Engineer", projects: ["Sailpoint-IT-Digital", "Service Now 2.0-IT-Digital"] },
+  "Stefano Giovannella": [
+    { name: "Federico Arte", role: "Senior Infrastructure Lead", projects: ["Sailpoint-IT-Digital", "Service Now 2.0-IT-Digital"] },
+    { name: "Matteo Galli", role: "DevOps Engineer", projects: ["WayTo Apps-IT-Digital"] }
+  ],
+  "Emanuela Raschellà": [
+    { name: "Francesca Rozzi", role: "Corporate Consultant", projects: ["Digital Finance - Controlling-IT-Digital", "Digital Sales-IT-Digital"] },
+    { name: "Davide Palmieri", role: "Financial Consultant", projects: ["Digital Finance - Purchasing-IT-Digital"] },
+    { name: "Chiara Ferri", role: "Solution Architect", projects: ["Procedura Service Now-IT-Digital"] }
+  ],
+  "Lara Tini Brunozzi": [
+    { name: "Stefano Rinaldi", role: "Support Lead", projects: ["Boe mensa-IT-Digital", "Intouch-IT-Digital"] }
+  ],
+  "Francesco Di Legge": [
     { name: "Alessia Fontana", role: "AI Specialist", projects: ["AI LAB", "Repository per Product Quality"] }
-  ],
-  "Francesca Rozzi (TMI External)": [
-    { name: "Davide Palmieri", role: "Financial Consultant", projects: ["Digital Finance - Controlling-IT-Digital", "Digital Sales-IT-Digital"] },
-    { name: "Chiara Ferri", role: "Solution Architect", projects: ["ACT AS A BSS PARTNER - Survey-IT-Digital", "Procedura Service Now-IT-Digital"] }
-  ],
-  "Francesca Rozzi (TMI External) - Aurora Parisi (TMI External)": [
-    { name: "Gianluca Martini", role: "Integration Lead", projects: ["Digital Finance - Purchasing-IT-Digital", "TED-IT-Digital"] }
-  ],
-  "Serena Lacorte (TMI External)": [
-    { name: "Roberto Gatti", role: "System Engineer", projects: ["Warehouse channel -IT-Digital", "MIA - KPI Dealer-IT-Digital"] },
-    { name: "Simona D'Amico", role: "Data Analyst", projects: ["Backlog Bearit -IT-Digital", "BRiT WayDoc-IT-Digital"] }
   ]
 };
 
@@ -338,10 +356,14 @@ function initProjectsView() {
 function populatePmFilterOptions() {
   const select = document.getElementById('pmFilter');
   if (!select) return;
-  const pmsSet = new Set(projects.map(p => p.pm.trim()));
   
   const currentVal = select.value;
   select.innerHTML = `<option value="">Tutti i PM / Coordinatori</option>`;
+  
+  const pmsSet = new Set();
+  getAllCoordinators().forEach(c => pmsSet.add(c.name));
+  projects.forEach(p => { if (p.pm && p.pm.trim()) pmsSet.add(p.pm.trim()); });
+
   pmsSet.forEach(pm => {
     select.innerHTML += `<option value="${pm}">${pm}</option>`;
   });
@@ -486,30 +508,46 @@ function renderProjectsTable() {
 }
 
 /* ----------------------------------------------------
-   COORDINATORS VIEW
+   COORDINATORS VIEW & TEAM MANAGEMENT
 ---------------------------------------------------- */
 function initCoordinatorsView() {
   renderCoordinatorsGrid();
+  initAddCoordinatorModalEvents();
+  initResourceModalEvents();
+}
+
+function getProjectsForCoordinator(coordName) {
+  const normCoord = coordName.trim().toLowerCase();
+  return projects.filter(p => {
+    const pm = (p.pm || '').trim().toLowerCase();
+    if (pm === normCoord) return true;
+
+    // Fallback mapping for legacy PM strings
+    if (normCoord.includes('valerio') && (pm.includes('daniele') || (p.reparto || '').toLowerCase().includes('data management'))) return true;
+    if (normCoord.includes('serena') && (pm.includes('aurora') || (p.reparto || '').toLowerCase().includes('digital'))) return true;
+    if (normCoord.includes('stefano') && (pm.includes('federico') || (p.reparto || '').toLowerCase().includes('infra'))) return true;
+    if (normCoord.includes('emanuela') && (pm.includes('francesca') || (p.reparto || '').toLowerCase().includes('corporate'))) return true;
+    if (normCoord.includes('lara') && (p.reparto || '').toLowerCase().includes('support')) return true;
+    if (normCoord.includes('francesco') && (pm.includes('alessia') || (p.reparto || '').toLowerCase().includes('innovation'))) return true;
+
+    return false;
+  });
 }
 
 function renderCoordinatorsGrid() {
   const grid = document.getElementById('coordinatorsGrid');
   if (!grid) return;
 
-  const pmMap = {};
-  projects.forEach(p => {
-    const pm = p.pm.trim();
-    if (!pmMap[pm]) {
-      pmMap[pm] = [];
-    }
-    pmMap[pm].push(p);
-  });
+  const allCoords = getAllCoordinators();
 
   grid.innerHTML = '';
-  Object.keys(pmMap).forEach((pmName, pmIndex) => {
-    const prjList = pmMap[pmName];
+  allCoords.forEach((coord, pmIndex) => {
+    const pmName = coord.name;
+    const repartoLabel = coord.reparto || 'Generale';
+    const badgeColor = coord.badgeColor || '#2872FA';
+
+    const prjList = getProjectsForCoordinator(pmName);
     const totalEffort = prjList.reduce((acc, p) => acc + (p.effort || 0), 0);
-    const activePrj = prjList.filter(p => p.stato.trim().toLowerCase() === 'in corso').length;
 
     let fillClass = '';
     if (totalEffort > 100) fillClass = 'overload';
@@ -523,10 +561,12 @@ function renderCoordinatorsGrid() {
 
     card.innerHTML = `
       <div class="pm-header">
-        <div class="pm-avatar">${initials}</div>
+        <div class="pm-avatar" style="background:${badgeColor}22; color:${badgeColor}; border:1px solid ${badgeColor}66;">${initials}</div>
         <div class="pm-info">
           <h4>${pmName}</h4>
-          <p>Coordinatore Progetti MP95</p>
+          <span style="font-size:0.75rem; font-weight:700; padding:0.15rem 0.5rem; border-radius:9999px; background:${badgeColor}22; color:${badgeColor}; border:1px solid ${badgeColor}44;">
+            ${repartoLabel}
+          </span>
         </div>
       </div>
 
@@ -554,6 +594,7 @@ function renderCoordinatorsGrid() {
             <i class="fa-solid fa-chevron-down"></i>
           </div>
           <div class="pm-accordion-body">
+            ${prjList.length === 0 ? '<div style="font-size:0.82rem; color:var(--text-dim);">Nessun progetto assegnato</div>' : ''}
             ${prjList.map(p => `
               <div class="pm-project-item">
                 <div>
@@ -566,27 +607,32 @@ function renderCoordinatorsGrid() {
           </div>
         </div>
 
-        <!-- DROPDOWN 2: RISORSE DEL COORDINATORE -->
+        <!-- DROPDOWN 2: RISORSE DEL TEAM -->
         <div class="pm-accordion" id="accordion-res-${pmIndex}">
           <div class="pm-accordion-header" onclick="toggleAccordion('accordion-res-${pmIndex}')">
-            <span><i class="fa-solid fa-users" style="color:var(--mp95-blue); margin-right:0.4rem;"></i> Risorse del Coordinatore (${resources.length})</span>
+            <span><i class="fa-solid fa-users" style="color:var(--mp95-blue); margin-right:0.4rem;"></i> Risorse del Team (${resources.length})</span>
             <i class="fa-solid fa-chevron-down"></i>
           </div>
           <div class="pm-accordion-body">
-            ${resources.length === 0 ? '<div style="font-size:0.82rem; color:var(--text-dim);">Nessuna risorsa assegnata</div>' : ''}
-            ${resources.map(r => `
-              <div class="pm-project-item" style="flex-direction:column; align-items:flex-start; gap:0.25rem;">
-                <div style="display:flex; justify-content:space-between; width:100%; font-weight:700;">
+            ${resources.length === 0 ? '<div style="font-size:0.82rem; color:var(--text-dim); margin-bottom:0.4rem;">Nessuna risorsa nel team</div>' : ''}
+            ${resources.map((r, rIdx) => `
+              <div class="pm-project-item" style="flex-direction:column; align-items:flex-start; gap:0.25rem; position:relative;">
+                <div style="display:flex; justify-content:space-between; align-items:center; width:100%; font-weight:700;">
                   <span><i class="fa-solid fa-user-check" style="color:var(--success); font-size:0.8rem;"></i> ${r.name}</span>
-                  <span style="font-size:0.75rem; color:var(--text-dim);">${r.role}</span>
+                  <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <span style="font-size:0.75rem; color:var(--text-dim);">${r.role || 'Specialista'}</span>
+                    <button onclick="deleteTeamResource('${encodeURIComponent(pmName)}', ${rIdx})" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:0.85rem;" title="Rimuovi risorsa dal team">
+                      <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                  </div>
                 </div>
                 <div style="font-size:0.75rem; color:var(--text-muted);">
-                  Target: ${r.projects ? r.projects.join(', ') : 'Nessun progetto'}
+                  Target: ${r.projects && r.projects.length > 0 ? r.projects.join(', ') : 'Nessun progetto specifico'}
                 </div>
               </div>
             `).join('')}
-            <button class="btn btn-secondary btn-sm" style="margin-top:0.4rem;" onclick="promptAddResource('${encodeURIComponent(pmName)}')">
-              <i class="fa-solid fa-user-plus"></i> Aggiungi Risorsa
+            <button class="btn btn-secondary btn-sm" style="margin-top:0.5rem; width:100%; justify-content:center;" onclick="openResourceModal('${encodeURIComponent(pmName)}')">
+              <i class="fa-solid fa-user-plus"></i> + Aggiungi Risorsa al Team
             </button>
           </div>
         </div>
@@ -599,10 +645,10 @@ function renderCoordinatorsGrid() {
           </div>
           <div class="pm-accordion-body">
             ${resources.length === 0 ? '<div style="font-size:0.82rem; color:var(--text-dim);">Nessuna risorsa censita</div>' : `
-              <label style="font-size:0.8rem; font-weight:600; color:var(--text-muted);">Seleziona Risorsa:</label>
+              <label style="font-size:0.8rem; font-weight:600; color:var(--text-muted);">Seleziona Risorsa del Team:</label>
               <select class="resource-select-box" onchange="renderResourceProjects(this, '${encodeURIComponent(pmName)}')">
                 <option value="">-- Scegli Risorsa --</option>
-                ${resources.map((r, idx) => `<option value="${idx}">${r.name} (${r.role})</option>`).join('')}
+                ${resources.map((r, idx) => `<option value="${idx}">${r.name} (${r.role || 'Specialista'})</option>`).join('')}
               </select>
               <div class="resource-projects-output" style="display:flex; flex-direction:column; gap:0.4rem; margin-top:0.5rem;">
                 <div style="font-size:0.8rem; color:var(--text-dim); italic;">Seleziona una risorsa per visualizzare i relativi progetti.</div>
@@ -653,23 +699,48 @@ window.renderResourceProjects = function(selectEl, encodedPmName) {
   }).join('');
 };
 
-window.promptAddResource = async function(encodedPmName) {
-  const pmName = decodeURIComponent(encodedPmName);
-  const name = prompt(`Inserisci Nome e Cognome della nuova risorsa per ${pmName}:`);
-  if (!name || name.trim() === '') return;
+/* Resource Modal Handlers */
+function initResourceModalEvents() {
+  const closeBtn = document.getElementById('closeResourceModal');
+  const cancelBtn = document.getElementById('cancelResourceBtn');
+  const form = document.getElementById('resourceForm');
 
-  const role = prompt(`Inserisci il ruolo di ${name} (es. Fullstack Dev, QA Analyst, Data Engineer):`) || "Specialista IT";
+  if (closeBtn) closeBtn.addEventListener('click', closeResourceModal);
+  if (cancelBtn) cancelBtn.addEventListener('click', closeResourceModal);
+  if (form) form.addEventListener('submit', handleSaveResourceForm);
+}
+
+window.openResourceModal = function(encodedPmName) {
+  const pmName = decodeURIComponent(encodedPmName);
+  document.getElementById('resourceCoordinatorInput').value = pmName;
+  document.getElementById('resourceCoordinatorNameDisplay').textContent = pmName;
+  document.getElementById('resourceNameInput').value = '';
+  document.getElementById('resourceRoleInput').value = '';
+  document.getElementById('resourceProjectsInput').value = '';
+  document.getElementById('resourceModal').classList.add('active');
+};
+
+function closeResourceModal() {
+  const modal = document.getElementById('resourceModal');
+  if (modal) modal.classList.remove('active');
+}
+
+async function handleSaveResourceForm(e) {
+  e.preventDefault();
+  const pmName = document.getElementById('resourceCoordinatorInput').value;
+  const name = document.getElementById('resourceNameInput').value.trim();
+  const role = document.getElementById('resourceRoleInput').value.trim() || 'Specialista IT';
+  const projectsStr = document.getElementById('resourceProjectsInput').value.trim();
+
+  if (!name) return;
+
+  const projectsArr = projectsStr ? projectsStr.split(',').map(p => p.trim()).filter(Boolean) : [];
 
   if (!coordinatorResources[pmName]) {
     coordinatorResources[pmName] = [];
   }
 
-  const newRes = {
-    name: name.trim(),
-    role: role.trim(),
-    projects: []
-  };
-
+  const newRes = { name, role, projects: projectsArr };
   coordinatorResources[pmName].push(newRes);
 
   try {
@@ -678,18 +749,86 @@ window.promptAddResource = async function(encodedPmName) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         coordinator_name: pmName,
-        resource_name: newRes.name,
-        role: newRes.role,
-        assigned_projects: []
+        resource_name: name,
+        role: role,
+        assigned_projects: projectsArr
       })
     });
-  } catch (e) {
-    console.log("Saved to LocalStorage.");
+  } catch (err) {
+    console.log("Saved LocalStorage.");
   }
 
   saveState();
-  showToast(`Nuova risorsa ${name} salvata nel DB Neon per ${pmName}!`);
+  closeResourceModal();
+  showToast(`Nuova risorsa ${name} aggiunta al team di ${pmName}!`);
+}
+
+window.deleteTeamResource = async function(encodedPmName, resourceIdx) {
+  const pmName = decodeURIComponent(encodedPmName);
+  if (!coordinatorResources[pmName] || !coordinatorResources[pmName][resourceIdx]) return;
+
+  const resName = coordinatorResources[pmName][resourceIdx].name;
+  if (!confirm(`Sei sicuro di voler rimuovere ${resName} dal team di ${pmName}?`)) return;
+
+  coordinatorResources[pmName].splice(resourceIdx, 1);
+  saveState();
+  showToast(`Risorsa ${resName} rimossa dal team.`);
 };
+
+/* Add Coordinator Modal Handlers */
+function initAddCoordinatorModalEvents() {
+  const addBtn = document.getElementById('addCoordinatorBtn');
+  const closeBtn = document.getElementById('closeAddCoordinatorModal');
+  const cancelBtn = document.getElementById('cancelAddCoordinatorBtn');
+  const form = document.getElementById('addCoordinatorForm');
+
+  if (addBtn) addBtn.addEventListener('click', () => {
+    document.getElementById('newCoordinatorNameInput').value = '';
+    document.getElementById('addCoordinatorModal').classList.add('active');
+  });
+
+  if (closeBtn) closeBtn.addEventListener('click', closeAddCoordinatorModal);
+  if (cancelBtn) cancelBtn.addEventListener('click', closeAddCoordinatorModal);
+
+  if (form) form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = document.getElementById('newCoordinatorNameInput').value.trim();
+    const reparto = document.getElementById('newCoordinatorRepartoInput').value;
+
+    if (!name) return;
+
+    const colorMap = {
+      'Data Management': '#06B6D4',
+      'IT&Digital': '#2872FA',
+      'Infra': '#EC4899',
+      'Corporate': '#F59E0B',
+      'Support&Help Desk': '#10B981',
+      'Innovation': '#A78BFA',
+      'Governance': '#10B981'
+    };
+
+    customCoordinators.push({
+      name,
+      reparto,
+      badgeColor: colorMap[reparto] || '#94A3B8'
+    });
+
+    localStorage.setItem('mp95_custom_coordinators', JSON.stringify(customCoordinators));
+
+    if (!coordinatorResources[name]) {
+      coordinatorResources[name] = [];
+    }
+
+    saveState();
+    closeAddCoordinatorModal();
+    showToast(`Nuovo Coordinatore ${name} (${reparto}) aggiunto!`);
+  });
+}
+
+function closeAddCoordinatorModal() {
+  const modal = document.getElementById('addCoordinatorModal');
+  if (modal) modal.classList.remove('active');
+}
 
 /* ----------------------------------------------------
    EXCEL FILE UPLOAD & IMPORT HANDLERS (.xlsx, .xls)
@@ -761,8 +900,10 @@ function openCoordinatorModal(importedList, fileName) {
   if (customInput) customInput.value = '';
   if (customGroup) customGroup.style.display = 'none';
 
-  // Extract list of known PMs from projects & coordinatorResources
-  const pmsSet = new Set(projects.map(p => (p.pm || '').trim()).filter(Boolean));
+  // Extract list of known PMs from OFFICIAL_COORDINATORS, projects & coordinatorResources
+  const pmsSet = new Set();
+  getAllCoordinators().forEach(c => pmsSet.add(c.name));
+  projects.forEach(p => { if (p.pm && p.pm.trim()) pmsSet.add(p.pm.trim()); });
   Object.keys(coordinatorResources).forEach(pm => {
     if (pm.trim()) pmsSet.add(pm.trim());
   });
@@ -770,7 +911,9 @@ function openCoordinatorModal(importedList, fileName) {
   selectEl.innerHTML = '';
   selectEl.innerHTML += `<option value="">-- Seleziona un Coordinatore Esistente --</option>`;
   pmsSet.forEach(pm => {
-    selectEl.innerHTML += `<option value="${pm}">${pm}</option>`;
+    const matchOfficial = OFFICIAL_COORDINATORS.find(c => c.name.toLowerCase() === pm.toLowerCase());
+    const label = matchOfficial ? `${pm} (${matchOfficial.reparto})` : pm;
+    selectEl.innerHTML += `<option value="${pm}">${label}</option>`;
   });
   selectEl.innerHTML += `<option value="__NEW__">+ Inserisci Nuovo Coordinatore...</option>`;
 
