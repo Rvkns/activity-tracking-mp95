@@ -718,12 +718,12 @@ function renderCoordinatorsGrid() {
         <!-- DROPDOWN 2: RISORSE DEL TEAM -->
         <div class="pm-accordion" id="accordion-res-${pmIndex}">
           <div class="pm-accordion-header" onclick="toggleAccordion('accordion-res-${pmIndex}')">
-            <span><i class="fa-solid fa-users" style="color:var(--mp95-blue); margin-right:0.4rem;"></i> Risorse del Team (${resources.length})</span>
+            <span><i class="fa-solid fa-users" style="color:var(--mp95-blue); margin-right:0.4rem;"></i> Risorse del Team (${resourcesList.length})</span>
             <i class="fa-solid fa-chevron-down"></i>
           </div>
           <div class="pm-accordion-body">
-            ${resources.length === 0 ? '<div style="font-size:0.82rem; color:var(--text-dim); margin-bottom:0.4rem;">Nessuna risorsa nel team</div>' : ''}
-            ${resources.map((r, rIdx) => `
+            ${resourcesList.length === 0 ? '<div style="font-size:0.82rem; color:var(--text-dim); margin-bottom:0.4rem;">Nessuna risorsa nel team</div>' : ''}
+            ${resourcesList.map((r, rIdx) => `
               <div class="pm-project-item" style="flex-direction:column; align-items:flex-start; gap:0.25rem; position:relative;">
                 <div style="display:flex; justify-content:space-between; align-items:center; width:100%; font-weight:700;">
                   <span><i class="fa-solid fa-user-check" style="color:var(--success); font-size:0.8rem;"></i> ${r.name}</span>
@@ -752,11 +752,11 @@ function renderCoordinatorsGrid() {
             <i class="fa-solid fa-chevron-down"></i>
           </div>
           <div class="pm-accordion-body">
-            ${resources.length === 0 ? '<div style="font-size:0.82rem; color:var(--text-dim);">Nessuna risorsa censita</div>' : `
+            ${resourcesList.length === 0 ? '<div style="font-size:0.82rem; color:var(--text-dim);">Nessuna risorsa censita</div>' : `
               <label style="font-size:0.8rem; font-weight:600; color:var(--text-muted);">Seleziona Risorsa del Team:</label>
               <select class="resource-select-box" onchange="renderResourceProjects(this, '${encodeURIComponent(pmName)}')">
                 <option value="">-- Scegli Risorsa --</option>
-                ${resources.map((r, idx) => `<option value="${idx}">${r.name} (${r.role || 'Specialista'})</option>`).join('')}
+                ${resourcesList.map((r, idx) => `<option value="${idx}">${r.name} (${r.role || 'Specialista'})</option>`).join('')}
               </select>
               <div class="resource-projects-output" style="display:flex; flex-direction:column; gap:0.4rem; margin-top:0.5rem;">
                 <div style="font-size:0.8rem; color:var(--text-dim); italic;">Seleziona una risorsa per visualizzare i relativi progetti.</div>
