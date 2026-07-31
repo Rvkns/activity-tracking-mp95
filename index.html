@@ -13,8 +13,11 @@
 </head>
 <body>
   <div id="app">
+    <!-- Sidebar Backdrop Overlay for Mobile -->
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
+
     <!-- Sidebar Navigation -->
-    <aside class="sidebar">
+    <aside id="sidebar" class="sidebar">
       <div class="brand">
         <div class="brand-logo-container">
           MP95
@@ -23,6 +26,9 @@
           <h1>Media Point 95</h1>
           <span>Activity & Resource Tracking</span>
         </div>
+        <button id="closeSidebarBtn" class="close-sidebar-btn" title="Chiudi Menu">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </div>
 
       <ul class="nav-list">
@@ -64,23 +70,28 @@
     <main class="main-content">
       <!-- Topbar Header -->
       <header class="topbar">
-        <div class="header-title">
-          <h2 id="sectionTitle">Executive Dashboard</h2>
-          <p id="sectionSubtitle">Panoramica generale dell'effort e delle attività dei coordinatori MP95</p>
+        <div class="header-title-container">
+          <button id="mobileMenuBtn" class="mobile-menu-btn" title="Apri Menu Navigazione">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="header-title">
+            <h2 id="sectionTitle">Executive Dashboard</h2>
+            <p id="sectionSubtitle">Panoramica generale dell'effort e delle attività dei coordinatori MP95</p>
+          </div>
         </div>
         <div class="header-actions">
           <button id="themeToggleBtn" class="btn btn-secondary" title="Cambia Tema (Light / Dark)">
-            <i class="fa-solid fa-sun" style="color:var(--mp95-orange);"></i> Tema Chiaro
+            <i class="fa-solid fa-sun" style="color:var(--mp95-orange);"></i> <span class="btn-text">Tema Chiaro</span>
           </button>
           <button id="openWikiBtn" class="btn btn-secondary">
-            <i class="fa-solid fa-book-open" style="color:var(--mp95-orange);"></i> Guida Wiki
+            <i class="fa-solid fa-book-open" style="color:var(--mp95-orange);"></i> <span class="btn-text">Guida Wiki</span>
           </button>
           <input type="file" id="topbarExcelFileInput" accept=".xlsx,.xls,.csv,.json" style="display:none;">
           <button id="topbarUploadExcelBtn" class="btn btn-secondary">
-            <i class="fa-solid fa-file-excel" style="color:#10B981;"></i> Carica File Excel (.xlsx)
+            <i class="fa-solid fa-file-excel" style="color:#10B981;"></i> <span class="btn-text">Carica File Excel (.xlsx)</span>
           </button>
           <button id="addProjectBtn" class="btn btn-primary">
-            <i class="fa-solid fa-folder-plus"></i> Nuovo Progetto
+            <i class="fa-solid fa-folder-plus"></i> <span class="btn-text">Nuovo Progetto</span>
           </button>
         </div>
       </header>

@@ -1385,3 +1385,253 @@ textarea.form-control {
   cursor: pointer;
 }
 
+/* ─── MOBILE & RESPONSIVE DESIGN (Media Point 95) ──────── */
+
+.mobile-menu-btn,
+.close-sidebar-btn {
+  display: none;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.mobile-menu-btn:hover,
+.close-sidebar-btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--mp95-orange);
+  color: var(--mp95-orange);
+}
+
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(6px);
+  z-index: 998;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.active {
+  display: block;
+  opacity: 1;
+}
+
+.header-title-container {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+/* Responsive Media Queries */
+@media (max-width: 992px) {
+  #app {
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .mobile-menu-btn {
+    display: inline-flex;
+  }
+
+  .close-sidebar-btn {
+    display: inline-flex;
+    margin-left: auto;
+  }
+
+  .brand {
+    justify-content: space-between;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -300px;
+    width: 280px;
+    height: 100vh;
+    z-index: 999;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-lg);
+    overflow-y: auto;
+  }
+
+  .sidebar.mobile-open {
+    left: 0;
+  }
+
+  .main-content {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: visible;
+  }
+
+  header.topbar {
+    padding: 1rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.85rem;
+  }
+
+  .header-actions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 0.5rem;
+  }
+
+  .header-actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.82rem;
+  }
+
+  .view-section {
+    padding: 1.25rem 1rem;
+    gap: 1.25rem;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pm-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gantt-grid {
+    min-width: 750px;
+  }
+
+  .gantt-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 768px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.85rem;
+  }
+
+  .kpi-card {
+    padding: 1rem;
+  }
+
+  .kpi-info h3 {
+    font-size: 1.5rem;
+  }
+
+  .kpi-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+  }
+
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding: 0.85rem;
+  }
+
+  .filter-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .filter-group .select-input {
+    width: 100%;
+  }
+
+  .search-box {
+    width: 100%;
+  }
+
+  .timeline-banner {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1rem;
+  }
+
+  .calendar-month-grid {
+    gap: 0.25rem;
+  }
+
+  .calendar-day-cell {
+    min-height: 75px;
+    padding: 0.35rem 0.25rem;
+  }
+
+  .calendar-day-header {
+    font-size: 0.72rem;
+    padding: 0.35rem 0.1rem;
+  }
+
+  .modal-wide {
+    width: 95vw;
+    padding: 1.1rem 0.85rem;
+  }
+
+  .form-grid-2,
+  .form-grid-3,
+  .form-grid-4 {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .modal-footer {
+    flex-direction: column-reverse;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .wiki-toc ul {
+    grid-template-columns: 1fr;
+  }
+
+  .wiki-section-card {
+    padding: 1.25rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .header-actions .btn-text {
+    display: inline-block;
+  }
+
+  .header-title h2 {
+    font-size: 1.15rem;
+  }
+
+  .header-title p {
+    font-size: 0.78rem;
+  }
+
+  th, td {
+    padding: 0.6rem 0.5rem;
+    font-size: 0.8rem;
+  }
+}
+
+

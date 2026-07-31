@@ -219,6 +219,10 @@ function initNavigation() {
   const sectionTitle = document.getElementById('sectionTitle');
   const sectionSubtitle = document.getElementById('sectionSubtitle');
   const openWikiBtn = document.getElementById('openWikiBtn');
+  const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+  const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+  const sidebar = document.getElementById('sidebar');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
 
   const titles = {
     dashboard: { title: "Executive Dashboard", subtitle: "Panoramica generale dell'effort e delle attività dei coordinatori MP95" },
@@ -228,6 +232,22 @@ function initNavigation() {
     reports: { title: "Reportistica & Import/Export", subtitle: "Esportazione report CSV/JSON e caricamento file Excel (.xlsx)" },
     wiki: { title: "Wiki & Guida Utente TrackMaster MP95", subtitle: "Manuale d'uso completo dell'applicazione e guida a tutte le funzionalità" }
   };
+
+  function openMobileSidebar() {
+    if (sidebar) sidebar.classList.add('mobile-open');
+    if (sidebarOverlay) sidebarOverlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeMobileSidebar() {
+    if (sidebar) sidebar.classList.remove('mobile-open');
+    if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', openMobileSidebar);
+  if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', closeMobileSidebar);
+  if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeMobileSidebar);
 
   navItems.forEach(item => {
     item.addEventListener('click', () => {
@@ -244,6 +264,9 @@ function initNavigation() {
         sectionTitle.textContent = titles[targetView].title;
         sectionSubtitle.textContent = titles[targetView].subtitle;
       }
+
+      // Close mobile drawer on selection
+      closeMobileSidebar();
     });
   });
 
