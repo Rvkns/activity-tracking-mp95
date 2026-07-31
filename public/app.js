@@ -1546,6 +1546,114 @@ function initModals() {
   document.getElementById('closeProjectModal').addEventListener('click', closeProjectModal);
   document.getElementById('cancelProjectBtn').addEventListener('click', closeProjectModal);
   document.getElementById('projectForm').addEventListener('submit', handleSaveProject);
+  initProjectModalDropdowns();
+}
+
+function initProjectModalDropdowns() {
+  const pmSelect = document.getElementById('modalPm');
+  const risorsaSelect = document.getElementById('modalRisorsa');
+  const customRisorsaInput = document.getElementById('modalCustomRisorsaInput');
+  const repartoSelect = document.getElementById('modalReparto');
+
+  if (!pmSelect || !risorsaSelect) return;
+
+  pmSelect.addEventListener('change', () => {
+    const selectedPm = pmSelect.value;
+    const foundCoord = OFFICIAL_COORDINATORS.find(c => c.name.toLowerCase() === selectedPm.toLowerCase());
+    if (foundCoord && repartoSelect) {
+      const targetReparto = foundCoord.reparto;
+      const options = Array.from(repartoSelect.options);
+      const matchedOpt = options.find(opt => opt.value.toLowerCase() === targetReparto.toLowerCase());
+      if (matchedOpt) repartoSelect.value = matchedOpt.value;
+    }
+    updateModalRisorsaOptions(selectedPm, '');
+  });
+
+  risorsaSelect.addEventListener('change', () => {
+    if (risorsaSelect.value === '__CUSTOM__') {
+      if (customRisorsaInput) {
+        customRisorsaInput.style.display = 'block';
+        customRisorsaInput.focus();
+      }
+    } else {
+      if (customRisorsaInput) customRisorsaInput.style.display = 'none';
+    }
+  });
+}
+
+function populateModalPmOptions(selectedPmValue) {
+  const pmSelect = document.getElementById('modalPm');
+  if (!pmSelect) return;
+
+  pmSelect.innerHTML = `<option value="">-- Seleziona Coordinatore (PM) --</option>`;
+
+  OFFICIAL_COORDINATORS.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.name;
+    opt.textContent = `${c.name} (${c.reparto})`;
+    if (selectedPmValue && c.name.toLowerCase() === selectedPmValue.toLowerCase()) {
+      opt.selected = true;
+    }
+    pmSelect.appendChild(opt);
+  });
+
+  const uniquePms = [...new Set(projects.map(p => sanitizeProjectPM(p.pm)))];
+  uniquePms.forEach(pmName => {
+    if (!pmName) return;
+    const existsInOfficial = OFFICIAL_COORDINATORS.some(c => c.name.toLowerCase() === pmName.toLowerCase());
+    if (!existsInOfficial) {
+      const opt = document.createElement('option');
+      opt.value = pmName;
+      opt.textContent = `${pmName} (PM Esterno)`;
+      if (selectedPmValue && pmName.toLowerCase() === selectedPmValue.toLowerCase()) {
+        opt.selected = true;
+      }
+      pmSelect.appendChild(opt);
+    }
+  });
+}
+
+function updateModalRisorsaOptions(pmName, selectedRisorsaValue) {
+  const risorsaSelect = document.getElementById('modalRisorsa');
+  const customInput = document.getElementById('modalCustomRisorsaInput');
+  if (!risorsaSelect) return;
+
+  risorsaSelect.innerHTML = `<option value="">-- Nessuna / Da Assegnare --</option>`;
+  if (customInput) {
+    customInput.style.display = 'none';
+    customInput.value = '';
+  }
+
+  const cleanPm = sanitizeProjectPM(pmName);
+  const resourcesList = coordinatorResources[cleanPm] || [];
+
+  let foundMatch = false;
+
+  resourcesList.forEach(r => {
+    const rName = typeof r === 'string' ? r : r.name;
+    const rRole = typeof r === 'object' && r.role ? ` (${r.role})` : '';
+    const opt = document.createElement('option');
+    opt.value = rName;
+    opt.textContent = `${rName}${rRole}`;
+    if (selectedRisorsaValue && rName.toLowerCase() === selectedRisorsaValue.toLowerCase()) {
+      opt.selected = true;
+      foundMatch = true;
+    }
+    risorsaSelect.appendChild(opt);
+  });
+
+  const customOpt = document.createElement('option');
+  customOpt.value = '__CUSTOM__';
+  customOpt.textContent = '+ Inserisci Altra Risorsa...';
+  risorsaSelect.appendChild(customOpt);
+
+  if (selectedRisorsaValue && !foundMatch) {
+    customOpt.selected = true;
+    if (customInput) {
+      customInput.style.display = 'block';
+      customInput.value = selectedRisorsaValue;
+    }
+  }
 }
 
 window.openCreateProjectModal = function() {
@@ -1559,8 +1667,10 @@ function openAddProjectModal() {
   document.getElementById('modalStato').value = "In corso";
   document.getElementById('modalEffort').value = "10";
   document.getElementById('modalAvanzamento').value = "0";
-  document.getElementById('modalPm').value = "";
-  document.getElementById('modalRisorsa').value = "";
+
+  populateModalPmOptions("");
+  updateModalRisorsaOptions("", "");
+
   document.getElementById('modalReparto').value = "";
   document.getElementById('modalEffortPrevisto').value = "";
   document.getElementById('modalEffortResiduo').value = "";
@@ -1584,8 +1694,10 @@ window.openEditProjectModal = function(id) {
   document.getElementById('modalStato').value = prj.stato;
   document.getElementById('modalEffort').value = prj.effort;
   document.getElementById('modalAvanzamento').value = prj.avanzamento || 0;
-  document.getElementById('modalPm').value = prj.pm;
-  document.getElementById('modalRisorsa').value = prj.risorsa || '';
+
+  populateModalPmOptions(prj.pm);
+  updateModalRisorsaOptions(prj.pm, prj.risorsa || '');
+
   document.getElementById('modalReparto').value = prj.reparto || '';
   document.getElementById('modalEffortPrevisto').value = prj.effort_previsto || '';
   document.getElementById('modalEffortResiduo').value = prj.effort_residuo || '';
@@ -1614,7 +1726,15 @@ async function handleSaveProject(e) {
   const stato = document.getElementById('modalStato').value;
   const effort = parseInt(document.getElementById('modalEffort').value) || 0;
   const pm = document.getElementById('modalPm').value.trim();
-  const risorsa = document.getElementById('modalRisorsa').value.trim() || null;
+
+  const risorsaSelect = document.getElementById('modalRisorsa');
+  let risorsa = risorsaSelect ? risorsaSelect.value : null;
+  if (risorsa === '__CUSTOM__') {
+    const customEl = document.getElementById('modalCustomRisorsaInput');
+    risorsa = customEl ? customEl.value.trim() : '';
+  }
+  if (!risorsa) risorsa = null;
+
   const reparto = document.getElementById('modalReparto').value || null;
   const descrizione = document.getElementById('modalDescrizione').value.trim() || null;
   const effort_previsto = parseFloat(document.getElementById('modalEffortPrevisto').value) || 0;

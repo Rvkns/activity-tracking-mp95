@@ -527,11 +527,16 @@
         <div class="form-grid-3" style="margin-top:0.75rem;">
           <div class="form-group">
             <label for="modalPm">PM / Coordinatore *</label>
-            <input type="text" id="modalPm" class="form-control" required placeholder="Es. Aurora Parisi (TMI External)">
+            <select id="modalPm" class="form-control" required>
+              <option value="">-- Seleziona Coordinatore --</option>
+            </select>
           </div>
           <div class="form-group">
             <label for="modalRisorsa">Risorsa Coinvolta</label>
-            <input type="text" id="modalRisorsa" class="form-control" placeholder="Es. Marco Rossi">
+            <select id="modalRisorsa" class="form-control">
+              <option value="">-- Seleziona Risorsa --</option>
+            </select>
+            <input type="text" id="modalCustomRisorsaInput" class="form-control" placeholder="Nome risorsa custom..." style="display:none; margin-top:0.35rem;">
           </div>
           <div class="form-group">
             <label for="modalReparto">Reparto</label>
