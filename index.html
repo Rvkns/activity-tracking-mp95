@@ -497,8 +497,8 @@
           <input type="text" id="modalProgetto" class="form-control" required placeholder="Es. WIDE-IT-Digital">
         </div>
 
-        <!-- Row 2: Stato / Effort % / PM -->
-        <div class="form-grid-3" style="margin-top:0.75rem;">
+        <!-- Row 2: Stato / Avanzamento / PM / Reparto -->
+        <div class="form-grid-2" style="margin-top:0.75rem;">
           <div class="form-group">
             <label for="modalStato">Stato *</label>
             <select id="modalStato" class="form-control" required>
@@ -514,29 +514,14 @@
             </select>
           </div>
           <div class="form-group">
-            <label for="modalEffort">Effort % *</label>
-            <input type="number" id="modalEffort" class="form-control" min="0" max="100" required placeholder="Es. 25">
-          </div>
-          <div class="form-group">
             <label for="modalAvanzamento">Avanzamento %</label>
             <input type="number" id="modalAvanzamento" class="form-control" min="0" max="100" placeholder="Es. 60">
           </div>
-        </div>
-
-        <!-- Row 3: PM / Risorsa / Reparto -->
-        <div class="form-grid-3" style="margin-top:0.75rem;">
           <div class="form-group">
             <label for="modalPm">PM / Coordinatore *</label>
             <select id="modalPm" class="form-control" required>
               <option value="">-- Seleziona Coordinatore --</option>
             </select>
-          </div>
-          <div class="form-group">
-            <label for="modalRisorsa">Risorsa Coinvolta</label>
-            <select id="modalRisorsa" class="form-control">
-              <option value="">-- Seleziona Risorsa --</option>
-            </select>
-            <input type="text" id="modalCustomRisorsaInput" class="form-control" placeholder="Nome risorsa custom..." style="display:none; margin-top:0.35rem;">
           </div>
           <div class="form-group">
             <label for="modalReparto">Reparto</label>
@@ -551,6 +536,30 @@
             </select>
           </div>
         </div>
+
+        <!-- Row 3: Multi-Resource Allocation Section -->
+        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:1rem; margin-top:0.85rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+            <label style="font-weight:700; font-size:0.88rem; color:var(--text-main); display:flex; align-items:center; gap:0.4rem;">
+              <i class="fa-solid fa-users" style="color:var(--mp95-blue);"></i> Allocazione Risorse & Effort Individuale (%)
+            </label>
+            <button type="button" id="addResourceRowBtn" class="btn btn-secondary btn-sm" style="font-size:0.78rem;">
+              <i class="fa-solid fa-plus"></i> Aggiungi Altra Risorsa al Progetto
+            </button>
+          </div>
+
+          <div id="resourceRowsContainer" style="display:flex; flex-direction:column; gap:0.6rem;">
+            <!-- Dynamic Resource Rows rendered by JS -->
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.75rem; padding-top:0.6rem; border-top:1px dashed var(--border-color); font-size:0.85rem;">
+            <span style="color:var(--text-dim);">Effort Complessivo Progetto (Somma Risorse):</span>
+            <span id="modalTotalProjectEffortDisplay" style="font-weight:800; color:var(--mp95-orange); font-size:0.95rem;">0%</span>
+          </div>
+        </div>
+
+        <input type="hidden" id="modalEffort" value="0">
+        <input type="hidden" id="modalRisorsa" value="">
 
         <!-- Row 4: Governance Temporale (Data Inizio e Fine) -->
         <div style="background:rgba(40,114,250,0.06); border:1px solid rgba(40,114,250,0.2); border-radius:var(--radius-md); padding:0.85rem 1rem; margin-top:0.85rem;">

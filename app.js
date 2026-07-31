@@ -1594,15 +1594,18 @@ function initModals() {
   document.getElementById('cancelProjectBtn').addEventListener('click', closeProjectModal);
   document.getElementById('projectForm').addEventListener('submit', handleSaveProject);
   initProjectModalDropdowns();
+
+  const addRowBtn = document.getElementById('addResourceRowBtn');
+  if (addRowBtn) {
+    addRowBtn.addEventListener('click', () => addResourceRow('', 10));
+  }
 }
 
 function initProjectModalDropdowns() {
   const pmSelect = document.getElementById('modalPm');
-  const risorsaSelect = document.getElementById('modalRisorsa');
-  const customRisorsaInput = document.getElementById('modalCustomRisorsaInput');
   const repartoSelect = document.getElementById('modalReparto');
 
-  if (!pmSelect || !risorsaSelect) return;
+  if (!pmSelect) return;
 
   pmSelect.addEventListener('change', () => {
     const selectedPm = pmSelect.value;
@@ -1613,18 +1616,8 @@ function initProjectModalDropdowns() {
       const matchedOpt = options.find(opt => opt.value.toLowerCase() === targetReparto.toLowerCase());
       if (matchedOpt) repartoSelect.value = matchedOpt.value;
     }
-    updateModalRisorsaOptions(selectedPm, '');
-  });
-
-  risorsaSelect.addEventListener('change', () => {
-    if (risorsaSelect.value === '__CUSTOM__') {
-      if (customRisorsaInput) {
-        customRisorsaInput.style.display = 'block';
-        customRisorsaInput.focus();
-      }
-    } else {
-      if (customRisorsaInput) customRisorsaInput.style.display = 'none';
-    }
+    // Update all resource select dropdowns to match new PM's team
+    updateAllResourceRowSelects(selectedPm);
   });
 }
 
@@ -1660,46 +1653,130 @@ function populateModalPmOptions(selectedPmValue) {
   });
 }
 
-function updateModalRisorsaOptions(pmName, selectedRisorsaValue) {
-  const risorsaSelect = document.getElementById('modalRisorsa');
-  const customInput = document.getElementById('modalCustomRisorsaInput');
-  if (!risorsaSelect) return;
-
-  risorsaSelect.innerHTML = `<option value="">-- Nessuna / Da Assegnare --</option>`;
-  if (customInput) {
-    customInput.style.display = 'none';
-    customInput.value = '';
-  }
-
+function updateAllResourceRowSelects(pmName) {
   const cleanPm = sanitizeProjectPM(pmName);
-  const resourcesList = coordinatorResources[cleanPm] || [];
+  const teamResources = coordinatorResources[cleanPm] || [];
+  const rows = document.querySelectorAll('#resourceRowsContainer .resource-row');
 
-  let foundMatch = false;
+  rows.forEach(row => {
+    const selectEl = row.querySelector('.resource-select');
+    if (!selectEl) return;
+    const currentVal = selectEl.value;
 
-  resourcesList.forEach(r => {
+    selectEl.innerHTML = `<option value="">-- Nessuna / Da Assegnare --</option>`;
+    let isMatched = false;
+
+    teamResources.forEach(r => {
+      const rName = typeof r === 'string' ? r : r.name;
+      const rRole = typeof r === 'object' && r.role ? ` (${r.role})` : '';
+      const selected = currentVal && rName.toLowerCase() === currentVal.toLowerCase() ? 'selected' : '';
+      if (selected) isMatched = true;
+      selectEl.innerHTML += `<option value="${rName}" ${selected}>${rName}${rRole}</option>`;
+    });
+
+    const customSelected = currentVal && !isMatched && currentVal !== '' ? 'selected' : '';
+    selectEl.innerHTML += `<option value="__CUSTOM__" ${customSelected}>+ Inserisci Altra Risorsa...</option>`;
+  });
+}
+
+function addResourceRow(selectedRisorsa = '', effortVal = 10) {
+  const container = document.getElementById('resourceRowsContainer');
+  if (!container) return;
+
+  const currentPm = (document.getElementById('modalPm') || {}).value || '';
+  const cleanPm = sanitizeProjectPM(currentPm);
+  const teamResources = coordinatorResources[cleanPm] || [];
+
+  const row = document.createElement('div');
+  row.className = 'resource-row';
+  row.style.cssText = 'display:grid; grid-template-columns: 2fr 1fr auto; gap:0.5rem; align-items:center; background:rgba(255,255,255,0.02); padding:0.4rem 0.6rem; border-radius:var(--radius-sm); border:1px solid var(--border-color);';
+
+  let optionsHtml = `<option value="">-- Nessuna / Da Assegnare --</option>`;
+  let isMatched = false;
+
+  teamResources.forEach(r => {
     const rName = typeof r === 'string' ? r : r.name;
     const rRole = typeof r === 'object' && r.role ? ` (${r.role})` : '';
-    const opt = document.createElement('option');
-    opt.value = rName;
-    opt.textContent = `${rName}${rRole}`;
-    if (selectedRisorsaValue && rName.toLowerCase() === selectedRisorsaValue.toLowerCase()) {
-      opt.selected = true;
-      foundMatch = true;
-    }
-    risorsaSelect.appendChild(opt);
+    const selected = selectedRisorsa && rName.toLowerCase() === selectedRisorsa.toLowerCase() ? 'selected' : '';
+    if (selected) isMatched = true;
+    optionsHtml += `<option value="${rName}" ${selected}>${rName}${rRole}</option>`;
   });
 
-  const customOpt = document.createElement('option');
-  customOpt.value = '__CUSTOM__';
-  customOpt.textContent = '+ Inserisci Altra Risorsa...';
-  risorsaSelect.appendChild(customOpt);
+  const customSelected = selectedRisorsa && !isMatched && selectedRisorsa !== '' ? 'selected' : '';
+  optionsHtml += `<option value="__CUSTOM__" ${customSelected}>+ Inserisci Altra Risorsa...</option>`;
 
-  if (selectedRisorsaValue && !foundMatch) {
-    customOpt.selected = true;
-    if (customInput) {
-      customInput.style.display = 'block';
-      customInput.value = selectedRisorsaValue;
+  row.innerHTML = `
+    <div>
+      <select class="form-control resource-select" style="font-size:0.85rem;">
+        ${optionsHtml}
+      </select>
+      <input type="text" class="form-control resource-custom-input" placeholder="Nome risorsa custom..." style="display:${selectedRisorsa && !isMatched ? 'block' : 'none'}; margin-top:0.35rem; font-size:0.85rem;" value="${selectedRisorsa && !isMatched ? selectedRisorsa : ''}">
+    </div>
+    <div>
+      <input type="number" class="form-control resource-effort-input" min="0" max="100" value="${effortVal}" placeholder="Effort %" style="font-size:0.85rem;">
+    </div>
+    <div>
+      <button type="button" class="btn btn-secondary btn-sm remove-resource-row-btn" style="color:var(--danger); border-color:var(--danger); padding:0.4rem 0.6rem;" title="Rimuovi risorsa">
+        <i class="fa-solid fa-trash"></i>
+      </button>
+    </div>
+  `;
+
+  container.appendChild(row);
+
+  const selectEl = row.querySelector('.resource-select');
+  const customEl = row.querySelector('.resource-custom-input');
+  const effortEl = row.querySelector('.resource-effort-input');
+  const removeBtn = row.querySelector('.remove-resource-row-btn');
+
+  selectEl.addEventListener('change', () => {
+    if (selectEl.value === '__CUSTOM__') {
+      customEl.style.display = 'block';
+      customEl.focus();
+    } else {
+      customEl.style.display = 'none';
     }
+  });
+
+  effortEl.addEventListener('input', recalculateProjectTotalEffort);
+
+  removeBtn.addEventListener('click', () => {
+    if (container.children.length > 1) {
+      row.remove();
+      recalculateProjectTotalEffort();
+    } else {
+      showToast('Attenzione: lascia almeno 1 risorsa o assegnala successivamente.');
+      row.remove();
+      recalculateProjectTotalEffort();
+    }
+  });
+
+  recalculateProjectTotalEffort();
+}
+
+function recalculateProjectTotalEffort() {
+  const inputs = document.querySelectorAll('.resource-effort-input');
+  let total = 0;
+  inputs.forEach(input => {
+    total += parseInt(input.value || '0') || 0;
+  });
+  const display = document.getElementById('modalTotalProjectEffortDisplay');
+  if (display) {
+    display.textContent = `${total}%`;
+  }
+}
+
+function renderAllResourceRowsForPm(pmName, initialAllocations = []) {
+  const container = document.getElementById('resourceRowsContainer');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (initialAllocations.length > 0) {
+    initialAllocations.forEach(alloc => {
+      addResourceRow(alloc.risorsa || '', alloc.effort || 10);
+    });
+  } else {
+    addResourceRow('', 10);
   }
 }
 
@@ -1712,11 +1789,10 @@ function openAddProjectModal() {
   document.getElementById('modalProjectId').value = "";
   document.getElementById('modalProgetto').value = "";
   document.getElementById('modalStato').value = "In corso";
-  document.getElementById('modalEffort').value = "10";
   document.getElementById('modalAvanzamento').value = "0";
 
   populateModalPmOptions("");
-  updateModalRisorsaOptions("", "");
+  renderAllResourceRowsForPm("", []);
 
   document.getElementById('modalReparto').value = "";
   document.getElementById('modalEffortPrevisto').value = "";
@@ -1739,11 +1815,14 @@ window.openEditProjectModal = function(id) {
   document.getElementById('modalProjectId').value = prj.id;
   document.getElementById('modalProgetto').value = prj.progetto;
   document.getElementById('modalStato').value = prj.stato;
-  document.getElementById('modalEffort').value = prj.effort;
   document.getElementById('modalAvanzamento').value = prj.avanzamento || 0;
 
   populateModalPmOptions(prj.pm);
-  updateModalRisorsaOptions(prj.pm, prj.risorsa || '');
+
+  // Find all sibling assignments for this project under the same PM
+  const siblings = projects.filter(p => p.progetto.toLowerCase() === prj.progetto.toLowerCase() && sanitizeProjectPM(p.pm).toLowerCase() === sanitizeProjectPM(prj.pm).toLowerCase());
+  const allocs = siblings.map(s => ({ risorsa: s.risorsa, effort: s.effort }));
+  renderAllResourceRowsForPm(prj.pm, allocs.length > 0 ? allocs : [{ risorsa: prj.risorsa, effort: prj.effort }]);
 
   document.getElementById('modalReparto').value = prj.reparto || '';
   document.getElementById('modalEffortPrevisto').value = prj.effort_previsto || '';
@@ -1771,17 +1850,7 @@ async function handleSaveProject(e) {
   const id = document.getElementById('modalProjectId').value;
   const progetto = document.getElementById('modalProgetto').value.trim();
   const stato = document.getElementById('modalStato').value;
-  const effort = parseInt(document.getElementById('modalEffort').value) || 0;
   const pm = document.getElementById('modalPm').value.trim();
-
-  const risorsaSelect = document.getElementById('modalRisorsa');
-  let risorsa = risorsaSelect ? risorsaSelect.value : null;
-  if (risorsa === '__CUSTOM__') {
-    const customEl = document.getElementById('modalCustomRisorsaInput');
-    risorsa = customEl ? customEl.value.trim() : '';
-  }
-  if (!risorsa) risorsa = null;
-
   const reparto = document.getElementById('modalReparto').value || null;
   const descrizione = document.getElementById('modalDescrizione').value.trim() || null;
   const effort_previsto = parseFloat(document.getElementById('modalEffortPrevisto').value) || 0;
@@ -1793,51 +1862,80 @@ async function handleSaveProject(e) {
   const stato_tempistiche = document.getElementById('modalStatoTempistiche').value || 'In linea';
   const criticita = document.getElementById('modalCriticita').value.trim() || null;
 
-  const payload = { progetto, stato, pm, effort, risorsa, reparto, descrizione,
-    effort_previsto, effort_residuo, avanzamento, data_inizio, scadenza, stato_tempistiche, criticita };
+  // Extract allocations from dynamic rows
+  const rowEls = document.querySelectorAll('#resourceRowsContainer .resource-row');
+  const allocations = [];
+  rowEls.forEach(row => {
+    const sel = row.querySelector('.resource-select');
+    const cust = row.querySelector('.resource-custom-input');
+    const eff = row.querySelector('.resource-effort-input');
 
-  if (id) {
-    const idx = projects.findIndex(p => p.id === id);
-    if (idx !== -1) {
-      projects[idx] = { id, ...payload };
-      try {
-        await fetch(`/api/projects/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-      } catch (err) { console.log("Saved local."); }
-      showToast('Progetto aggiornato nel DB Neon!');
+    let rName = sel ? sel.value : '';
+    if (rName === '__CUSTOM__' && cust) {
+      rName = cust.value.trim();
     }
-  } else {
+    const rEffort = parseInt(eff ? eff.value : '0') || 0;
+    if (rName) {
+      allocations.push({ risorsa: rName, effort: rEffort });
+    }
+  });
+
+  if (allocations.length === 0) {
+    allocations.push({ risorsa: null, effort: 0 });
+  }
+
+  // If editing an existing project, remove previous sibling allocations
+  if (id) {
+    const origPrj = projects.find(p => p.id === id);
+    if (origPrj) {
+      const origName = origPrj.progetto.toLowerCase();
+      const origPm = sanitizeProjectPM(origPrj.pm).toLowerCase();
+      const siblingIds = projects.filter(p => p.progetto.toLowerCase() === origName && sanitizeProjectPM(p.pm).toLowerCase() === origPm).map(p => p.id);
+      projects = projects.filter(p => !siblingIds.includes(p.id));
+      for (const sId of siblingIds) {
+        try { await fetch(`/api/projects/${sId}`, { method: 'DELETE' }); } catch(e){}
+      }
+    }
+  }
+
+  // Create project entries for each resource allocation
+  const newProjectsCreated = [];
+  for (let i = 0; i < allocations.length; i++) {
+    const alloc = allocations[i];
     const nextNum = projects.length + 1;
     const newId = `PRJ-${String(nextNum).padStart(3, '0')}`;
-    const newObj = { id: newId, ...payload };
+    const newObj = {
+      id: newId,
+      progetto,
+      stato,
+      pm,
+      effort: alloc.effort,
+      risorsa: alloc.risorsa,
+      reparto,
+      descrizione,
+      effort_previsto,
+      effort_residuo,
+      avanzamento,
+      data_inizio,
+      scadenza,
+      stato_tempistiche,
+      criticita
+    };
     projects.push(newObj);
-    try {
-      await fetch('/api/projects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newObj)
-      });
-    } catch (err) { console.log("Saved local."); }
-    showToast('Nuovo progetto salvato nel DB Neon!');
+    newProjectsCreated.push(newObj);
   }
+
+  try {
+    await fetch('/api/projects/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newProjectsCreated)
+    });
+  } catch (err) { console.log("Saved local."); }
 
   saveState();
   closeProjectModal();
-
-  const targetPm = sanitizeProjectPM(pm);
-  const pmProjects = getProjectsForCoordinator(targetPm);
-  const totalEffort = pmProjects.reduce((acc, p) => acc + (p.effort || 0), 0);
-
-  if (totalEffort > 120) {
-    showToast(`⚠️ Progetto salvato! Effort di ${targetPm} ora al ${totalEffort}% (Superato CAP Max 120%!)`);
-  } else if (totalEffort > 100) {
-    showToast(`⚡ Progetto salvato! Effort di ${targetPm} in straordinario: ${totalEffort}% / 120%.`);
-  } else {
-    showToast('Progetto salvato con successo!');
-  }
+  showToast(`Progetto "${progetto}" salvato con ${allocations.length} risorsa/e assegnata/e!`);
 }
 
 window.deleteProject = async function(id) {
