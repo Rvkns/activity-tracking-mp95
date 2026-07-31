@@ -53,9 +53,6 @@
           <span>Data Version</span>
           <span style="font-weight:700; color:var(--mp95-orange);">DIGITAL_4277</span>
         </div>
-        <button id="resetDataBtn" class="data-reset-btn" title="Ripristina il dataset ai 36 progetti originali da DIGITAL_PROGETTI_EFFORT_4277.xlsx">
-          <i class="fa-solid fa-rotate-left"></i> Ripristina Dati Excel Originali
-        </button>
       </div>
     </aside>
 
@@ -375,12 +372,12 @@
 
           <!-- Section 6 -->
           <div class="wiki-section-card" id="wiki-reset">
-            <h3><i class="fa-solid fa-rotate-left" style="color:#F87171;"></i> 6. Funzione "Ripristina Dati Excel Originali"</h3>
+            <h3><i class="fa-solid fa-shield-halved" style="color:#10B981;"></i> 6. Sicurezza e Persistenza dei Dati</h3>
             <p>
-              In fondo alla barra laterale sinistra troverai il pulsante rosso <b>"Ripristina Dati Excel Originali"</b>.
+              Tutte le modifiche, gli inserimenti ed i caricamenti Excel eseguiti dai coordinatori e dalle risorse sono **sincronizzati e protetti in tempo reale sul database cloud Neon PostgreSQL**.
             </p>
-            <div class="wiki-feature-box warning">
-              <b>Cosa fa il Ripristino:</b> Questo pulsante cancella tutte le modifiche locali o i file caricati dall'utente e **ripristina istantaneamente l'applicazione allo stato iniziale del file <code>DIGITAL_PROGETTI_EFFORT_4277.xlsx</code>** (con i 36 progetti originali ed i relativi coordinatori di default). Utile per resettare la dashboard alle impostazioni di fabbrica.
+            <div class="wiki-feature-box">
+              <b>Protezione Inserimenti:</b> I caricamenti Excel operano in modalità <b>Append & Merge non distruttiva</b> per garantire che le attività inserite da ciascun membro del team rimangano sempre memorizzate in sicurezza e protette da sovrascritture accidentali.
             </div>
           </div>
 

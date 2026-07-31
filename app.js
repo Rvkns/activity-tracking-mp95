@@ -120,7 +120,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   initCoordinatorsView();
   initReportsView();
   initModals();
-  initResetData();
   initExcelFileHandlers();
 
   // Load from Neon DB API if available
@@ -1398,21 +1397,7 @@ window.deleteProject = async function(id) {
 };
 
 /* ----------------------------------------------------
-   RESET DATA
----------------------------------------------------- */
-function initResetData() {
-  document.getElementById('resetDataBtn').addEventListener('click', async () => {
-    if (confirm('Sei sicuro di voler ripristinare i dati originali dal file Excel? Tutte le modifiche locali ed a DB andranno perse.')) {
-      projects = [...INITIAL_PROJECTS];
-      coordinatorResources = DEFAULT_COORDINATOR_RESOURCES;
-      await syncBatchToNeon(projects);
-      saveState();
-      showToast('Dati ripristinati alla versione iniziale Excel ed allineati sul DB Neon!');
-    }
-  });
-}
 
-/* ----------------------------------------------------
    TOAST NOTIFICATION
 ---------------------------------------------------- */
 function showToast(message) {
