@@ -460,6 +460,13 @@ function formatScadenza(dateStr) {
   return `<span class="date-pill ${isPast ? 'past' : ''}">${label}</span>`;
 }
 
+function formatDateInizio(dateStr) {
+  if (!dateStr) return '<span style="color:var(--text-dim); font-size:0.78rem;">—</span>';
+  const d = new Date(dateStr);
+  const label = d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
+  return `<span class="date-pill" style="background:rgba(16,185,129,0.15); color:var(--success); border-color:rgba(16,185,129,0.3);">${label}</span>`;
+}
+
 function renderProjectsTable() {
   const tbody = document.getElementById('projectsTableBody');
   if (!tbody) return;
@@ -485,7 +492,7 @@ function renderProjectsTable() {
 
   tbody.innerHTML = '';
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:2rem; color:var(--text-muted);">Nessun progetto trovato</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="13" style="text-align:center; padding:2rem; color:var(--text-muted);">Nessun progetto trovato</td></tr>`;
     return;
   }
 
@@ -495,6 +502,7 @@ function renderProjectsTable() {
     const avClass = getAvanzamentoClass(avPct);
     const tempisticheLabel = p.stato_tempistiche || 'In linea';
     const tempisticheClass = getTempisticheClass(tempisticheLabel);
+    const startHtml = formatDateInizio(p.data_inizio);
     const scadenzaHtml = formatScadenza(p.scadenza);
     const risorsaText = p.risorsa || '<span style="color:var(--text-dim); font-size:0.78rem;">—</span>';
 
@@ -525,6 +533,7 @@ function renderProjectsTable() {
           <span class="avanzamento-label">${avPct}%</span>
         </div>
       </td>
+      <td>${startHtml}</td>
       <td>${scadenzaHtml}</td>
       <td><span class="${tempisticheClass}">${tempisticheLabel}</span></td>
       <td>
