@@ -38,6 +38,10 @@
           <i class="fa-solid fa-user-gear"></i>
           <span>Coordinatori (PM)</span>
         </li>
+        <li class="nav-item" data-view="timeline">
+          <i class="fa-solid fa-calendar-days"></i>
+          <span>Timeline & Calendario</span>
+        </li>
         <li class="nav-item" data-view="reports">
           <i class="fa-solid fa-file-export"></i>
           <span>Report & Export</span>
@@ -53,9 +57,6 @@
           <span>Data Version</span>
           <span style="font-weight:700; color:var(--mp95-orange);">DIGITAL_4277</span>
         </div>
-        <button id="resetDataBtn" class="data-reset-btn" title="Ripristina il dataset ai 36 progetti originali da DIGITAL_PROGETTI_EFFORT_4277.xlsx">
-          <i class="fa-solid fa-rotate-left"></i> Ripristina Dati Excel Originali
-        </button>
       </div>
     </aside>
 
@@ -221,8 +222,20 @@
         </div>
       </section>
 
-      <!-- View: COORDINATORS (WORKLOAD) -->
+      <!-- View: COORDINATORS (WORKLOAD & TEAMS) -->
       <section id="view-coordinators" class="view-section">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; background:rgba(255,255,255,0.03); padding:1rem 1.25rem; border-radius:var(--radius-lg); border:1px solid var(--border-color);">
+          <div>
+            <h3 style="margin:0; font-size:1.1rem; font-weight:700;"><i class="fa-solid fa-users-gear" style="color:var(--mp95-blue); margin-right:0.5rem;"></i> Gestione Team & Risorse dei Coordinatori MP95</h3>
+            <p style="margin:0.25rem 0 0 0; font-size:0.85rem; color:var(--text-muted);">
+              Ciascun Coordinatore Ufficiale gestisce il proprio team di risorse operative e monitora l'allocazione dei progetti.
+            </p>
+          </div>
+          <button id="addCoordinatorBtn" class="btn btn-secondary btn-sm" style="border-color:var(--mp95-blue); color:var(--mp95-blue);">
+            <i class="fa-solid fa-user-plus"></i> Nuovo Coordinatore
+          </button>
+        </div>
+
         <div class="pm-grid" id="coordinatorsGrid">
           <!-- Rendered via JS -->
         </div>
@@ -261,6 +274,81 @@
                 <i class="fa-solid fa-file-excel" style="color:#10B981;"></i> Seleziona File Excel (.xlsx) / CSV / JSON
               </button>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- View: TIMELINE & CALENDAR (GOVERNANCE TEMPORALE) -->
+      <section id="view-timeline" class="view-section">
+        <!-- Info Banner -->
+        <div class="timeline-banner">
+          <div style="display:flex; align-items:center; gap:1rem;">
+            <div class="timeline-banner-icon">
+              <i class="fa-solid fa-calendar-days"></i>
+            </div>
+            <div>
+              <h3 style="margin:0; font-size:1.1rem; color:var(--text-main);">Governance Temporale & Monitoraggio Attività</h3>
+              <p style="margin:0.25rem 0 0 0; font-size:0.85rem; color:var(--text-muted);">
+                Monitora la durata temporale di ciascun progetto, le date di inizio/scadenza, l'avanzamento ed i picchi di effort nel tempo per ogni Coordinatore.
+              </p>
+            </div>
+          </div>
+          <div style="display:flex; gap:0.5rem; align-items:center;">
+            <button id="toggleGanttViewBtn" class="btn btn-primary btn-sm active">
+              <i class="fa-solid fa-chart-gantt"></i> Timeline Gantt
+            </button>
+            <button id="toggleCalendarViewBtn" class="btn btn-secondary btn-sm">
+              <i class="fa-solid fa-calendar-week"></i> Calendario Mensile
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="card" style="margin-bottom:1.5rem; padding:1rem 1.25rem;">
+          <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:1rem;">
+            <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+              <select id="timelinePmFilter" class="form-select" style="min-width:220px;">
+                <option value="">Tutti i Coordinatori</option>
+              </select>
+              <select id="timelineStatusFilter" class="form-select" style="min-width:160px;">
+                <option value="">Tutti gli Stati</option>
+                <option value="In corso">In corso</option>
+                <option value="Manutenzione">Manutenzione</option>
+                <option value="Terminato">Terminato</option>
+                <option value="Stand by">Stand by</option>
+                <option value="Da iniziare">Da iniziare</option>
+                <option value="Attività periodica">Attività periodica</option>
+              </select>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openCreateProjectModal()">
+              <i class="fa-solid fa-plus"></i> Nuova Attività Temporale
+            </button>
+          </div>
+        </div>
+
+        <!-- Gantt View Container -->
+        <div id="ganttViewSection" class="card">
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <h3><i class="fa-solid fa-chart-gantt" style="color:var(--mp95-blue);"></i> Vista Timeline Gantt Attività</h3>
+            <span style="font-size:0.8rem; color:var(--text-dim);">Fai clic su un'attività per modificarne le date o l'effort</span>
+          </div>
+          <div id="ganttChartContainer" style="overflow-x:auto; margin-top:1rem;">
+            <!-- Rendered dynamically by app.js -->
+          </div>
+        </div>
+
+        <!-- Calendar View Container (Hidden by default) -->
+        <div id="calendarViewSection" class="card" style="display:none;">
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 id="calendarMonthTitle"><i class="fa-solid fa-calendar-days" style="color:var(--mp95-orange);"></i> Calendario Attività MP95</h3>
+            <div style="display:flex; gap:0.5rem;">
+              <button id="prevMonthBtn" class="btn btn-secondary btn-sm"><i class="fa-solid fa-chevron-left"></i> Mese Prec.</button>
+              <button id="todayMonthBtn" class="btn btn-secondary btn-sm">Mese Corrente</button>
+              <button id="nextMonthBtn" class="btn btn-secondary btn-sm">Mese Succ. <i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+          </div>
+          <div id="calendarGridContainer" style="margin-top:1rem;">
+            <!-- Rendered dynamically by app.js -->
           </div>
         </div>
       </section>
@@ -337,7 +425,12 @@
               <li><b>🔀 Progetti delle Risorse (Dropdown 3):</b> Menu a tendina che permette di selezionare una risorsa e vedere su quali progetti è impegnata e con quale effort.</li>
             </ul>
             <div class="wiki-feature-box warning">
-              <b>Alert di Overload:</b> Se l'effort totale del coordinatore supera il 100%, la barra di capacità diventerà ROSSA segnalando una situazione di sovra-allocazione.
+              <b>Logica CAP Effort Max 120%:</b> L'applicazione imposta un CAP massimo del <b>120% totale</b> sull'effort delle attività per ciascun team/coordinatore:
+              <ul style="margin-top:0.35rem; margin-left:1.2rem;">
+                <li><b>0% - 100%:</b> Allocazione ordinaria a capacità standard (Verde/Blu).</li>
+                <li><b>101% - 120%:</b> Straordinario medio (+20% massimo tollerato) (Arancione).</li>
+                <li><b>> 120%:</b> Overload Critico — Superamento del CAP massimo consentito (Rosso con Alert).</li>
+              </ul>
             </div>
           </div>
 
@@ -358,12 +451,27 @@
 
           <!-- Section 6 -->
           <div class="wiki-section-card" id="wiki-reset">
-            <h3><i class="fa-solid fa-rotate-left" style="color:#F87171;"></i> 6. Funzione "Ripristina Dati Excel Originali"</h3>
+            <h3><i class="fa-solid fa-shield-halved" style="color:#10B981;"></i> 6. Sicurezza e Persistenza dei Dati</h3>
             <p>
-              In fondo alla barra laterale sinistra troverai il pulsante rosso <b>"Ripristina Dati Excel Originali"</b>.
+              Tutte le modifiche, gli inserimenti ed i caricamenti Excel eseguiti dai coordinatori e dalle risorse sono **sincronizzati e protetti in tempo reale sul database cloud Neon PostgreSQL**.
             </p>
-            <div class="wiki-feature-box warning">
-              <b>Cosa fa il Ripristino:</b> Questo pulsante cancella tutte le modifiche locali o i file caricati dall'utente e **ripristina istantaneamente l'applicazione allo stato iniziale del file <code>DIGITAL_PROGETTI_EFFORT_4277.xlsx</code>** (con i 36 progetti originali ed i relativi coordinatori di default). Utile per resettare la dashboard alle impostazioni di fabbrica.
+            <div class="wiki-feature-box">
+              <b>Protezione Inserimenti:</b> I caricamenti Excel operano in modalità <b>Append & Merge non distruttiva</b> per garantire che le attività inserite da ciascun membro del team rimangano sempre memorizzate in sicurezza e protette da sovrascritture accidentali.
+            </div>
+          </div>
+
+          <!-- Section 7 -->
+          <div class="wiki-section-card" id="wiki-timeline">
+            <h3><i class="fa-solid fa-calendar-days" style="color:var(--mp95-blue);"></i> 7. Governance Temporale & Timeline Interattiva</h3>
+            <p>
+              La sezione <b>Timeline & Calendario</b> introduce il monitoraggio della durata e delle scadenze delle attività nel tempo:
+            </p>
+            <div class="wiki-feature-box orange">
+              <ul style="margin-left:1.2rem;">
+                <li><b>Vista Gantt Interattiva:</b> Mostra l'estensione temporale di ciascun progetto su base 12 mesi per ciascun Coordinatore, evidenziando le sovrapposizioni.</li>
+                <li><b>Vista Calendario Mensile:</b> Consente di navigare mese per mese per verificare l'avvio e la scadenza esatta delle attività.</li>
+                <li><b>Scelta Rapida Durata:</b> Nel form di creazione/modifica è possibile selezionare pulsanti rapidi (<i>+1 Mese, +3 Mesi, +6 Mesi, Fine Anno</i>) per impostare la durata con 1 solo clic senza complicazioni!</li>
+              </ul>
             </div>
           </div>
 
@@ -438,8 +546,32 @@
           </div>
         </div>
 
-        <!-- Row 4: Effort Previsto / Residuo / Scadenza / Stato Tempistiche -->
-        <div class="form-grid-4" style="margin-top:0.75rem;">
+        <!-- Row 4: Governance Temporale (Data Inizio e Fine) -->
+        <div style="background:rgba(40,114,250,0.06); border:1px solid rgba(40,114,250,0.2); border-radius:var(--radius-md); padding:0.85rem 1rem; margin-top:0.85rem;">
+          <div style="font-size:0.82rem; font-weight:700; color:var(--mp95-blue); margin-bottom:0.6rem; display:flex; align-items:center; gap:0.4rem;">
+            <i class="fa-solid fa-clock-rotate-left"></i> Governance Temporale & Pianificazione Attività
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="modalDataInizio">Data Inizio Attività</label>
+              <input type="date" id="modalDataInizio" class="form-control">
+            </div>
+            <div class="form-group">
+              <label for="modalScadenza">Data Fine / Scadenza</label>
+              <input type="date" id="modalScadenza" class="form-control">
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.4rem; margin-top:0.5rem; flex-wrap:wrap;">
+            <span style="font-size:0.75rem; color:var(--text-dim);">Scelta rapida durata:</span>
+            <button type="button" class="btn btn-secondary btn-sm date-preset-btn" onclick="setPresetDuration(1)">+1 Mese</button>
+            <button type="button" class="btn btn-secondary btn-sm date-preset-btn" onclick="setPresetDuration(3)">+3 Mesi</button>
+            <button type="button" class="btn btn-secondary btn-sm date-preset-btn" onclick="setPresetDuration(6)">+6 Mesi</button>
+            <button type="button" class="btn btn-secondary btn-sm date-preset-btn" onclick="setPresetDuration('yearEnd')">Fine Anno</button>
+          </div>
+        </div>
+
+        <!-- Row 5: Effort Previsto / Residuo / Stato Tempistiche -->
+        <div class="form-grid-3" style="margin-top:0.75rem;">
           <div class="form-group">
             <label for="modalEffortPrevisto">Effort Previsto (gg/u)</label>
             <input type="number" id="modalEffortPrevisto" class="form-control" min="0" step="0.5" placeholder="Es. 10">
@@ -447,10 +579,6 @@
           <div class="form-group">
             <label for="modalEffortResiduo">Effort Residuo (gg/u)</label>
             <input type="number" id="modalEffortResiduo" class="form-control" min="0" step="0.5" placeholder="Es. 4">
-          </div>
-          <div class="form-group">
-            <label for="modalScadenza">Scadenza Prevista</label>
-            <input type="date" id="modalScadenza" class="form-control">
           </div>
           <div class="form-group">
             <label for="modalStatoTempistiche">Stato Tempistiche</label>
@@ -477,6 +605,105 @@
         <div class="modal-footer">
           <button type="button" id="cancelProjectBtn" class="btn btn-secondary">Annulla</button>
           <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Salva Progetto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Select Coordinator for Excel Import -->
+  <div id="coordinatorModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-file-excel" style="color:#10B981; margin-right:0.5rem;"></i> Selezione Coordinatore per Importazione</h3>
+        <button class="modal-close" id="closeCoordinatorModal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:1rem 0;">
+        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:1rem;">
+          Stai caricando <strong id="coordinatorModalCount" style="color:var(--mp95-orange);">0</strong> attività dal file <code id="coordinatorModalFileName">file.xlsx</code>.
+        </p>
+        <div class="form-group">
+          <label for="coordinatorSelectInput" style="font-weight:700;">Seleziona Coordinatore (PM) *</label>
+          <select id="coordinatorSelectInput" class="form-control" style="margin-bottom:0.75rem;">
+            <!-- Populated dynamically via JS -->
+          </select>
+        </div>
+        <div class="form-group" id="customCoordinatorGroup" style="display:none;">
+          <label for="customCoordinatorInput" style="font-weight:700;">Nome Nuovo Coordinatore *</label>
+          <input type="text" id="customCoordinatorInput" class="form-control" placeholder="Es. Stefano Giovannella (TMI External)">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="cancelCoordinatorBtn" class="btn btn-secondary">Annulla</button>
+        <button type="button" id="confirmCoordinatorBtn" class="btn btn-primary" style="background:#10B981; border-color:#10B981;">
+          <i class="fa-solid fa-cloud-arrow-up"></i> Conferma e Importa
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add / Edit Team Resource -->
+  <div id="resourceModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="resourceModalTitle"><i class="fa-solid fa-user-plus" style="color:var(--mp95-blue); margin-right:0.5rem;"></i> Aggiungi Risorsa al Team</h3>
+        <button class="modal-close" id="closeResourceModal">&times;</button>
+      </div>
+      <form id="resourceForm">
+        <input type="hidden" id="resourceCoordinatorInput">
+        <div class="modal-body" style="padding:1rem 0;">
+          <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:1rem;">
+            Inserisci i dettagli della risorsa da assegnare al team del Coordinatore <strong id="resourceCoordinatorNameDisplay" style="color:var(--mp95-orange);">—</strong>.
+          </p>
+          <div class="form-group">
+            <label for="resourceNameInput" style="font-weight:700;">Nome e Cognome Risorsa *</label>
+            <input type="text" id="resourceNameInput" class="form-control" required placeholder="Es. Marco Rossi">
+          </div>
+          <div class="form-group" style="margin-top:0.75rem;">
+            <label for="resourceRoleInput" style="font-weight:700;">Ruolo / Specializzazione</label>
+            <input type="text" id="resourceRoleInput" class="form-control" placeholder="Es. Senior Fullstack Dev, QA Engineer, Data Specialist">
+          </div>
+          <div class="form-group" style="margin-top:0.75rem;">
+            <label for="resourceProjectsInput" style="font-weight:700;">Progetti Assegnati (separati da virgola)</label>
+            <input type="text" id="resourceProjectsInput" class="form-control" placeholder="Es. WIDE-IT-Digital, Franchise-IT-Digital">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="cancelResourceBtn" class="btn btn-secondary">Annulla</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Salva Risorsa</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add New Official Coordinator -->
+  <div id="addCoordinatorModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-user-shield" style="color:var(--mp95-orange); margin-right:0.5rem;"></i> Aggiungi Nuovo Coordinatore Ufficiale</h3>
+        <button class="modal-close" id="closeAddCoordinatorModal">&times;</button>
+      </div>
+      <form id="addCoordinatorForm">
+        <div class="modal-body" style="padding:1rem 0;">
+          <div class="form-group">
+            <label for="newCoordinatorNameInput" style="font-weight:700;">Nome e Cognome Coordinatore *</label>
+            <input type="text" id="newCoordinatorNameInput" class="form-control" required placeholder="Es. Mario Rossi">
+          </div>
+          <div class="form-group" style="margin-top:0.75rem;">
+            <label for="newCoordinatorRepartoInput" style="font-weight:700;">Area / Reparto *</label>
+            <select id="newCoordinatorRepartoInput" class="form-control" required>
+              <option value="Data Management">Data Management</option>
+              <option value="IT&Digital">IT&Digital</option>
+              <option value="Infra">Infra</option>
+              <option value="Corporate">Corporate</option>
+              <option value="Support&Help Desk">Support&Help Desk</option>
+              <option value="Innovation">Innovation</option>
+              <option value="Governance">Governance</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="cancelAddCoordinatorBtn" class="btn btn-secondary">Annulla</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-user-check"></i> Salva Coordinatore</button>
         </div>
       </form>
     </div>

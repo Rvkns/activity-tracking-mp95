@@ -4,73 +4,112 @@
  */
 
 const INITIAL_PROJECTS = [
-  { id: "PRJ-001", progetto: "Boe mensa-IT-Digital", stato: "Manutenzione", pm: "Aurora Parisi (TMI External)", effort: 1 },
-  { id: "PRJ-002", progetto: "Intouch-IT-Digital", stato: "Manutenzione", pm: "Aurora Parisi (TMI External)", effort: 1 },
-  { id: "PRJ-003", progetto: "NRC-IT-Digital - TOYOTA", stato: "In corso", pm: "Aurora Parisi (TMI External)", effort: 5 },
-  { id: "PRJ-004", progetto: "NRC-IT-Digital - LEXUS", stato: "In corso", pm: "Aurora Parisi (TMI External)", effort: 5 },
-  { id: "PRJ-005", progetto: "Paperless-IT-Digital", stato: "In corso", pm: "Aurora Parisi (TMI External)", effort: 5 },
-  { id: "PRJ-006", progetto: "WIDE-IT-Digital", stato: "In corso", pm: "Aurora Parisi (TMI External)", effort: 25 },
-  { id: "PRJ-007", progetto: "Franchise-IT-Digital", stato: "In corso", pm: "Aurora Parisi (TMI External)", effort: 10 },
-  { id: "PRJ-008", progetto: "Rinnovi Digitali-IT-Digital", stato: "Terminato", pm: "Aurora Parisi (TMI External)", effort: 0 },
-  { id: "PRJ-009", progetto: "CMS - gestione ticket secondo livello-IT-Digital", stato: "In corso", pm: "Daniele De Dominicis (TMI External)", effort: 30 },
-  { id: "PRJ-010", progetto: "CMS-IT-Digital", stato: "In corso", pm: "Daniele De Dominicis (TMI External)", effort: 70 },
-  { id: "PRJ-011", progetto: "Dismissione Halley-IT-Corporate", stato: "Stand by", pm: "Daniele De Dominicis (TMI External)", effort: 0 },
-  { id: "PRJ-012", progetto: "Flag usato akita-IT-Digital", stato: "Da iniziare", pm: "Daniele De Dominicis (TMI External)", effort: 10 },
-  { id: "PRJ-013", progetto: "Sailpoint-IT-Digital", stato: "In corso", pm: "Federico Arte (TMI External)", effort: 40 },
-  { id: "PRJ-014", progetto: "Service Now-IT-Digital", stato: "Manutenzione", pm: "Federico Arte (TMI External)", effort: 2 },
-  { id: "PRJ-015", progetto: "WayTo Apps-IT-Digital", stato: "Manutenzione", pm: "Federico Arte (TMI External)", effort: 5 },
-  { id: "PRJ-016", progetto: "WayTo-IT-Digital", stato: "Manutenzione", pm: "Federico Arte (TMI External)", effort: 10 },
-  { id: "PRJ-017", progetto: "Service Now 2.0-IT-Digital", stato: "In corso", pm: "Federico Arte (TMI External)", effort: 5 },
-  { id: "PRJ-018", progetto: "Repository per Product Quality", stato: "In corso", pm: "Federico Arte (TMI External)", effort: 10 },
-  { id: "PRJ-019", progetto: "AI LAB", stato: "In corso", pm: "Federico Arte (TMI External)", effort: 15 },
-  { id: "PRJ-020", progetto: "ACT AS A BSS PARTNER - Survey-IT-Digital", stato: "Attività periodica", pm: "Francesca Rozzi (TMI External)", effort: 15 },
-  { id: "PRJ-021", progetto: "Digital Finance - Controlling-IT-Digital", stato: "In corso", pm: "Francesca Rozzi (TMI External)", effort: 15 },
-  { id: "PRJ-022", progetto: "Digital Sales-IT-Digital", stato: "In corso", pm: "Francesca Rozzi (TMI External)", effort: 35 },
-  { id: "PRJ-023", progetto: "Procedura Service Now-IT-Digital", stato: "Terminato", pm: "Francesca Rozzi (TMI External)", effort: 100 },
-  { id: "PRJ-024", progetto: "Digital Finance - Purchasing-IT-Digital", stato: "In corso", pm: "Francesca Rozzi (TMI External) - Aurora Parisi (TMI External)", effort: 20 },
-  { id: "PRJ-025", progetto: "TED-IT-Digital", stato: "Manutenzione", pm: "Francesca Rozzi (TMI External) - Aurora Parisi (TMI External)", effort: 20 },
-  { id: "PRJ-026", progetto: "BRiT WayDoc-IT-Digital", stato: "Terminato", pm: "Serena Lacorte (TMI External)", effort: 20 },
-  { id: "PRJ-027", progetto: "Calendario chiusure-IT-Digital", stato: "In corso", pm: "Serena Lacorte (TMI External)", effort: 0 },
-  { id: "PRJ-028", progetto: "DEALER RISK-IT-Digital", stato: "Attività periodica", pm: "Serena Lacorte (TMI External)", effort: 1 },
-  { id: "PRJ-029", progetto: "Backlog Bearit -IT-Digital", stato: "In corso", pm: "Serena Lacorte (TMI External)", effort: 20 },
-  { id: "PRJ-030", progetto: "MIA - KPI Dealer-IT-Digital", stato: "In corso", pm: "Serena Lacorte (TMI External)", effort: 20 },
-  { id: "PRJ-031", progetto: "OWE-IT-Digital", stato: "Attività periodica", pm: "Serena Lacorte (TMI External)", effort: 0 },
-  { id: "PRJ-032", progetto: "Riaddebbiti/fatturazione-IT-Digital", stato: "Attività periodica", pm: "Serena Lacorte (TMI External)", effort: 10 },
-  { id: "PRJ-033", progetto: "Warehouse channel -IT-Digital", stato: "Manutenzione", pm: "Serena Lacorte (TMI External)", effort: 30 },
-  { id: "PRJ-034", progetto: "WayTo Kinto-IT-Digital", stato: "Manutenzione", pm: "Serena Lacorte (TMI External)", effort: 5 },
-  { id: "PRJ-035", progetto: "WayTo-IT-Digital", stato: "Manutenzione", pm: "Serena Lacorte (TMI External)", effort: 15 },
-  { id: "PRJ-036", progetto: "Service Now Flotte -IT-Digital", stato: "In corso", pm: "Serena Lacorte (TMI External)", effort: 15 }
+  { id: "PRJ-001", progetto: "Boe mensa-IT-Digital", stato: "Manutenzione", pm: "Lara Tini Brunozzi", effort: 1 },
+  { id: "PRJ-002", progetto: "Intouch-IT-Digital", stato: "Manutenzione", pm: "Lara Tini Brunozzi", effort: 1 },
+  { id: "PRJ-003", progetto: "NRC-IT-Digital - TOYOTA", stato: "In corso", pm: "Serena Lacorte", effort: 5 },
+  { id: "PRJ-004", progetto: "NRC-IT-Digital - LEXUS", stato: "In corso", pm: "Serena Lacorte", effort: 5 },
+  { id: "PRJ-005", progetto: "Paperless-IT-Digital", stato: "In corso", pm: "Serena Lacorte", effort: 5 },
+  { id: "PRJ-006", progetto: "WIDE-IT-Digital", stato: "In corso", pm: "Serena Lacorte", effort: 25 },
+  { id: "PRJ-007", progetto: "Franchise-IT-Digital", stato: "In corso", pm: "Serena Lacorte", effort: 10 },
+  { id: "PRJ-008", progetto: "Rinnovi Digitali-IT-Digital", stato: "Terminato", pm: "Serena Lacorte", effort: 0 },
+  { id: "PRJ-009", progetto: "CMS - gestione ticket secondo livello-IT-Digital", stato: "In corso", pm: "Valerio Andreuccioli", effort: 30 },
+  { id: "PRJ-010", progetto: "CMS-IT-Digital", stato: "In corso", pm: "Valerio Andreuccioli", effort: 70 },
+  { id: "PRJ-011", progetto: "Dismissione Halley-IT-Corporate", stato: "Stand by", pm: "Emanuela Raschellà", effort: 0 },
+  { id: "PRJ-012", progetto: "Flag usato akita-IT-Digital", stato: "Da iniziare", pm: "Valerio Andreuccioli", effort: 10 },
+  { id: "PRJ-013", progetto: "Sailpoint-IT-Digital", stato: "In corso", pm: "Stefano Giovannella", effort: 40 },
+  { id: "PRJ-014", progetto: "Service Now-IT-Digital", stato: "Manutenzione", pm: "Stefano Giovannella", effort: 2 },
+  { id: "PRJ-015", progetto: "WayTo Apps-IT-Digital", stato: "Manutenzione", pm: "Stefano Giovannella", effort: 5 },
+  { id: "PRJ-016", progetto: "WayTo-IT-Digital", stato: "Manutenzione", pm: "Stefano Giovannella", effort: 10 },
+  { id: "PRJ-017", progetto: "Service Now 2.0-IT-Digital", stato: "In corso", pm: "Stefano Giovannella", effort: 5 },
+  { id: "PRJ-018", progetto: "Repository per Product Quality", stato: "In corso", pm: "Francesco Di Legge", effort: 10 },
+  { id: "PRJ-019", progetto: "AI LAB", stato: "In corso", pm: "Francesco Di Legge", effort: 15 },
+  { id: "PRJ-020", progetto: "ACT AS A BSS PARTNER - Survey-IT-Digital", stato: "Attività periodica", pm: "Emanuela Raschellà", effort: 15 },
+  { id: "PRJ-021", progetto: "Digital Finance - Controlling-IT-Digital", stato: "In corso", pm: "Emanuela Raschellà", effort: 15 },
+  { id: "PRJ-022", progetto: "Digital Sales-IT-Digital", stato: "In corso", pm: "Emanuela Raschellà", effort: 35 },
+  { id: "PRJ-023", progetto: "Procedura Service Now-IT-Digital", stato: "Terminato", pm: "Emanuela Raschellà", effort: 100 },
+  { id: "PRJ-024", progetto: "Digital Finance - Purchasing-IT-Digital", stato: "In corso", pm: "Emanuela Raschellà", effort: 20 },
+  { id: "PRJ-025", progetto: "TED-IT-Digital", stato: "Manutenzione", pm: "Emanuela Raschellà", effort: 20 },
+  { id: "PRJ-026", progetto: "BRiT WayDoc-IT-Digital", stato: "Terminato", pm: "Serena Lacorte", effort: 20 },
+  { id: "PRJ-027", progetto: "Calendario chiusure-IT-Digital", stato: "In corso", pm: "Serena Lacorte", effort: 0 },
+  { id: "PRJ-028", progetto: "DEALER RISK-IT-Digital", stato: "Attività periodica", pm: "Serena Lacorte", effort: 1 },
+  { id: "PRJ-029", progetto: "Backlog Bearit -IT-Digital", stato: "In corso", pm: "Serena Lacorte", effort: 20 },
+  { id: "PRJ-030", progetto: "MIA - KPI Dealer-IT-Digital", stato: "In corso", pm: "Serena Lacorte", effort: 20 },
+  { id: "PRJ-031", progetto: "OWE-IT-Digital", stato: "Attività periodica", pm: "Serena Lacorte", effort: 0 },
+  { id: "PRJ-032", progetto: "Riaddebbiti/fatturazione-IT-Digital", stato: "Attività periodica", pm: "Serena Lacorte", effort: 10 },
+  { id: "PRJ-033", progetto: "Warehouse channel -IT-Digital", stato: "Manutenzione", pm: "Serena Lacorte", effort: 30 },
+  { id: "PRJ-034", progetto: "WayTo Kinto-IT-Digital", stato: "Manutenzione", pm: "Serena Lacorte", effort: 5 },
+  { id: "PRJ-035", progetto: "WayTo-IT-Digital", stato: "Manutenzione", pm: "Serena Lacorte", effort: 15 },
+  { id: "PRJ-036", progetto: "Service Now Flotte -IT-Digital", stato: "In corso", pm: "Serena Lacorte", effort: 15 }
 ];
 
+const OFFICIAL_COORDINATORS = [
+  { name: "Valerio Andreuccioli", reparto: "Data Management", badgeColor: "#06B6D4" },
+  { name: "Serena Lacorte", reparto: "IT&Digital", badgeColor: "#2872FA" },
+  { name: "Stefano Giovannella", reparto: "Infra", badgeColor: "#EC4899" },
+  { name: "Emanuela Raschellà", reparto: "Corporate", badgeColor: "#F59E0B" },
+  { name: "Lara Tini Brunozzi", reparto: "Support&Help Desk", badgeColor: "#10B981" },
+  { name: "Francesco Di Legge", reparto: "Innovation", badgeColor: "#A78BFA" }
+];
+
+let customCoordinators = JSON.parse(localStorage.getItem('mp95_custom_coordinators')) || [];
+
+function getAllCoordinators() {
+  return [...OFFICIAL_COORDINATORS, ...customCoordinators];
+}
+
 const DEFAULT_COORDINATOR_RESOURCES = {
-  "Aurora Parisi (TMI External)": [
-    { name: "Marco Rossi", role: "Senior Fullstack Dev", projects: ["WIDE-IT-Digital", "Franchise-IT-Digital"] },
-    { name: "Laura Conti", role: "UI/UX Designer", projects: ["Paperless-IT-Digital", "NRC-IT-Digital - TOYOTA"] },
-    { name: "Stefano Rinaldi", role: "QA Engineer", projects: ["Boe mensa-IT-Digital", "Intouch-IT-Digital"] }
+  "Valerio Andreuccioli": [
+    { name: "Daniele De Dominicis", role: "Backend Lead", projects: ["CMS-IT-Digital", "CMS - gestione ticket secondo livello-IT-Digital"] },
+    { name: "Giuseppe Neri", role: "Specialista IT", projects: ["CMS-IT-Digital"] },
+    { name: "Elena Moretti", role: "DBA Specialist", projects: ["Flag usato akita-IT-Digital"] }
   ],
-  "Daniele De Dominicis (TMI External)": [
-    { name: "Giuseppe Neri", role: "Backend Lead", projects: ["CMS-IT-Digital", "CMS - gestione ticket secondo livello-IT-Digital"] },
-    { name: "Elena Moretti", role: "DBA Specialist", projects: ["CMS-IT-Digital", "Flag usato akita-IT-Digital"] }
+  "Serena Lacorte": [
+    { name: "Aurora Parisi", role: "External PM / Specialist", projects: ["WIDE-IT-Digital", "Franchise-IT-Digital"] },
+    { name: "Marco Rossi", role: "Senior Fullstack Dev", projects: ["WIDE-IT-Digital"] },
+    { name: "Laura Conti", role: "UI/UX Designer", projects: ["Paperless-IT-Digital"] },
+    { name: "Roberto Gatti", role: "System Engineer", projects: ["Warehouse channel -IT-Digital"] },
+    { name: "Simona D'Amico", role: "Data Analyst", projects: ["MIA - KPI Dealer-IT-Digital"] }
   ],
-  "Federico Arte (TMI External)": [
-    { name: "Matteo Galli", role: "DevOps Engineer", projects: ["Sailpoint-IT-Digital", "Service Now 2.0-IT-Digital"] },
+  "Stefano Giovannella": [
+    { name: "Federico Arte", role: "Senior Infrastructure Lead", projects: ["Sailpoint-IT-Digital", "Service Now 2.0-IT-Digital"] },
+    { name: "Matteo Galli", role: "DevOps Engineer", projects: ["WayTo Apps-IT-Digital"] }
+  ],
+  "Emanuela Raschellà": [
+    { name: "Francesca Rozzi", role: "Corporate Consultant", projects: ["Digital Finance - Controlling-IT-Digital", "Digital Sales-IT-Digital"] },
+    { name: "Davide Palmieri", role: "Financial Consultant", projects: ["Digital Finance - Purchasing-IT-Digital"] },
+    { name: "Chiara Ferri", role: "Solution Architect", projects: ["Procedura Service Now-IT-Digital"] }
+  ],
+  "Lara Tini Brunozzi": [
+    { name: "Stefano Rinaldi", role: "Support Lead", projects: ["Boe mensa-IT-Digital", "Intouch-IT-Digital"] }
+  ],
+  "Francesco Di Legge": [
     { name: "Alessia Fontana", role: "AI Specialist", projects: ["AI LAB", "Repository per Product Quality"] }
-  ],
-  "Francesca Rozzi (TMI External)": [
-    { name: "Davide Palmieri", role: "Financial Consultant", projects: ["Digital Finance - Controlling-IT-Digital", "Digital Sales-IT-Digital"] },
-    { name: "Chiara Ferri", role: "Solution Architect", projects: ["ACT AS A BSS PARTNER - Survey-IT-Digital", "Procedura Service Now-IT-Digital"] }
-  ],
-  "Francesca Rozzi (TMI External) - Aurora Parisi (TMI External)": [
-    { name: "Gianluca Martini", role: "Integration Lead", projects: ["Digital Finance - Purchasing-IT-Digital", "TED-IT-Digital"] }
-  ],
-  "Serena Lacorte (TMI External)": [
-    { name: "Roberto Gatti", role: "System Engineer", projects: ["Warehouse channel -IT-Digital", "MIA - KPI Dealer-IT-Digital"] },
-    { name: "Simona D'Amico", role: "Data Analyst", projects: ["Backlog Bearit -IT-Digital", "BRiT WayDoc-IT-Digital"] }
   ]
 };
 
+function sanitizeProjectPM(pm) {
+  if (!pm) return 'Serena Lacorte';
+  const str = pm.trim();
+  const lower = str.toLowerCase();
+
+  if (lower.includes('aurora') || lower.includes('serena')) return 'Serena Lacorte';
+  if (lower.includes('daniele') || lower.includes('valerio')) return 'Valerio Andreuccioli';
+  if (lower.includes('federico') || lower.includes('stefano')) return 'Stefano Giovannella';
+  if (lower.includes('francesca') || lower.includes('emanuela')) return 'Emanuela Raschellà';
+  if (lower.includes('lara')) return 'Lara Tini Brunozzi';
+  if (lower.includes('alessia') || lower.includes('francesco')) return 'Francesco Di Legge';
+
+  const matched = OFFICIAL_COORDINATORS.find(c => c.name.toLowerCase() === lower);
+  if (matched) return matched.name;
+
+  return str;
+}
+
 // App State
-let projects = JSON.parse(localStorage.getItem('mp95_projects')) || [...INITIAL_PROJECTS];
+let projects = (JSON.parse(localStorage.getItem('mp95_projects')) || [...INITIAL_PROJECTS]).map(p => ({
+  ...p,
+  pm: sanitizeProjectPM(p.pm)
+}));
 let coordinatorResources = JSON.parse(localStorage.getItem('mp95_resources')) || DEFAULT_COORDINATOR_RESOURCES;
 
 // DOM Load
@@ -79,9 +118,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   initNavigation();
   initProjectsView();
   initCoordinatorsView();
+  initTimelineView();
   initReportsView();
   initModals();
-  initResetData();
   initExcelFileHandlers();
 
   // Load from Neon DB API if available
@@ -132,7 +171,10 @@ async function fetchFromNeonDB() {
     if (resPrj.ok) {
       const data = await resPrj.json();
       if (Array.isArray(data) && data.length > 0) {
-        projects = data;
+        projects = data.map(p => ({
+          ...p,
+          pm: sanitizeProjectPM(p.pm)
+        }));
         localStorage.setItem('mp95_projects', JSON.stringify(projects));
       }
     }
@@ -164,6 +206,8 @@ function refreshAllViews() {
   renderProjectsTable();
   renderCoordinatorsGrid();
   populatePmFilterOptions();
+  populateTimelinePmFilter();
+  refreshTimelineView();
 }
 
 /* ----------------------------------------------------
@@ -180,6 +224,7 @@ function initNavigation() {
     dashboard: { title: "Executive Dashboard", subtitle: "Panoramica generale dell'effort e delle attività dei coordinatori MP95" },
     projects: { title: "Gestione Progetti & Effort", subtitle: "Elenco completo dei progetti censiti con allocazioni percentuale" },
     coordinators: { title: "Carico di Lavoro & Risorse Coordinatori", subtitle: "Analisi della capacità, progetti e risorse gestite per ciascun PM" },
+    timeline: { title: "Governance Temporale & Timeline", subtitle: "Monitoraggio della durata, pianificazione e calendario delle attività MP95" },
     reports: { title: "Reportistica & Import/Export", subtitle: "Esportazione report CSV/JSON e caricamento file Excel (.xlsx)" },
     wiki: { title: "Wiki & Guida Utente TrackMaster MP95", subtitle: "Manuale d'uso completo dell'applicazione e guida a tutte le funzionalità" }
   };
@@ -288,7 +333,7 @@ function renderPmWorkloadOverview() {
 
   const pmEfforts = {};
   projects.forEach(p => {
-    const pm = p.pm.trim();
+    const pm = sanitizeProjectPM(p.pm);
     if (!pmEfforts[pm]) {
       pmEfforts[pm] = { count: 0, totalEffort: 0 };
     }
@@ -299,18 +344,35 @@ function renderPmWorkloadOverview() {
   container.innerHTML = '';
   Object.keys(pmEfforts).forEach(pmName => {
     const data = pmEfforts[pmName];
-    const isOverload = data.totalEffort > 100;
+    const totalEffort = data.totalEffort;
+    
+    // Scale against CAP 120%
+    const barPct = Math.min(Math.round((totalEffort / 120) * 100), 100);
+
+    let statusText = `${totalEffort}% / 120%`;
+    let colorStyle = 'var(--mp95-blue)';
+    let bgStyle = 'linear-gradient(90deg, var(--mp95-blue), var(--success))';
+
+    if (totalEffort > 120) {
+      statusText = `${totalEffort}% / 120% ⚠️ Overload (+${totalEffort - 120}%)`;
+      colorStyle = 'var(--danger)';
+      bgStyle = 'var(--danger)';
+    } else if (totalEffort > 100) {
+      statusText = `${totalEffort}% / 120% ⚡ Straordinario (+${totalEffort - 100}%)`;
+      colorStyle = 'var(--warning)';
+      bgStyle = 'linear-gradient(90deg, var(--mp95-orange), var(--warning))';
+    }
 
     const rowHtml = `
       <div style="display:flex; flex-direction:column; gap:0.4rem; padding:0.65rem 0.85rem; background:rgba(255,255,255,0.02); border-radius:var(--radius-md);">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <span style="font-weight:700; font-size:0.9rem;">${pmName}</span>
-          <span style="font-weight:800; font-size:0.92rem; color:${isOverload ? 'var(--danger)' : 'var(--mp95-orange)'}">
-            ${data.totalEffort}% effort (${data.count} prj)
+          <span style="font-weight:800; font-size:0.82rem; color:${colorStyle};">
+            ${statusText} (${data.count} prj)
           </span>
         </div>
-        <div class="effort-progress-bg">
-          <div class="effort-progress-fill" style="width: ${Math.min(data.totalEffort, 100)}%; background: ${isOverload ? 'var(--danger)' : 'linear-gradient(90deg, var(--mp95-orange), var(--mp95-blue))'};"></div>
+        <div class="effort-progress-bg" title="Capacità base 100% + 20% Straordinario = CAP Max 120%">
+          <div class="effort-progress-fill" style="width: ${barPct}%; background: ${bgStyle};"></div>
         </div>
       </div>
     `;
@@ -338,10 +400,14 @@ function initProjectsView() {
 function populatePmFilterOptions() {
   const select = document.getElementById('pmFilter');
   if (!select) return;
-  const pmsSet = new Set(projects.map(p => p.pm.trim()));
   
   const currentVal = select.value;
   select.innerHTML = `<option value="">Tutti i PM / Coordinatori</option>`;
+  
+  const pmsSet = new Set();
+  getAllCoordinators().forEach(c => pmsSet.add(c.name));
+  projects.forEach(p => { if (p.pm && p.pm.trim()) pmsSet.add(p.pm.trim()); });
+
   pmsSet.forEach(pm => {
     select.innerHTML += `<option value="${pm}">${pm}</option>`;
   });
@@ -486,34 +552,53 @@ function renderProjectsTable() {
 }
 
 /* ----------------------------------------------------
-   COORDINATORS VIEW
+   COORDINATORS VIEW & TEAM MANAGEMENT
 ---------------------------------------------------- */
 function initCoordinatorsView() {
   renderCoordinatorsGrid();
+  initAddCoordinatorModalEvents();
+  initResourceModalEvents();
+}
+
+function getProjectsForCoordinator(coordName) {
+  const normCoord = coordName.trim().toLowerCase();
+  return projects.filter(p => {
+    const sanitizedPM = sanitizeProjectPM(p.pm).toLowerCase();
+    return sanitizedPM === normCoord;
+  });
 }
 
 function renderCoordinatorsGrid() {
   const grid = document.getElementById('coordinatorsGrid');
   if (!grid) return;
 
-  const pmMap = {};
-  projects.forEach(p => {
-    const pm = p.pm.trim();
-    if (!pmMap[pm]) {
-      pmMap[pm] = [];
-    }
-    pmMap[pm].push(p);
-  });
+  const allCoords = getAllCoordinators();
 
   grid.innerHTML = '';
-  Object.keys(pmMap).forEach((pmName, pmIndex) => {
-    const prjList = pmMap[pmName];
-    const totalEffort = prjList.reduce((acc, p) => acc + (p.effort || 0), 0);
-    const activePrj = prjList.filter(p => p.stato.trim().toLowerCase() === 'in corso').length;
+  allCoords.forEach((coord, pmIndex) => {
+    const pmName = coord.name;
+    const repartoLabel = coord.reparto || 'Generale';
+    const badgeColor = coord.badgeColor || '#2872FA';
 
-    let fillClass = '';
-    if (totalEffort > 100) fillClass = 'overload';
-    else if (totalEffort >= 80) fillClass = 'high';
+    const prjList = getProjectsForCoordinator(pmName);
+    const totalEffort = prjList.reduce((acc, p) => acc + (p.effort || 0), 0);
+
+    // Scale against CAP 120%
+    const barWidthPct = Math.min(Math.round((totalEffort / 120) * 100), 100);
+
+    let gaugeColor = 'var(--text-main)';
+    let fillGradient = 'linear-gradient(90deg, var(--mp95-blue), var(--success))';
+    let statusBadge = '<span style="color:var(--success); font-weight:700;">🟢 Capacità Standard</span>';
+
+    if (totalEffort > 120) {
+      gaugeColor = 'var(--danger)';
+      fillGradient = 'var(--danger)';
+      statusBadge = `<span style="color:var(--danger); font-weight:800;">🔴 CAP 120% SUPERATO (+${totalEffort - 120}%)</span>`;
+    } else if (totalEffort > 100) {
+      gaugeColor = 'var(--warning)';
+      fillGradient = 'linear-gradient(90deg, var(--mp95-orange), var(--warning))';
+      statusBadge = `<span style="color:var(--warning); font-weight:700;">⚡ Straordinario (+${totalEffort - 100}%)</span>`;
+    }
 
     const initials = pmName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
     const resources = coordinatorResources[pmName] || [];
@@ -523,20 +608,27 @@ function renderCoordinatorsGrid() {
 
     card.innerHTML = `
       <div class="pm-header">
-        <div class="pm-avatar">${initials}</div>
+        <div class="pm-avatar" style="background:${badgeColor}22; color:${badgeColor}; border:1px solid ${badgeColor}66;">${initials}</div>
         <div class="pm-info">
           <h4>${pmName}</h4>
-          <p>Coordinatore Progetti MP95</p>
+          <span style="font-size:0.75rem; font-weight:700; padding:0.15rem 0.5rem; border-radius:9999px; background:${badgeColor}22; color:${badgeColor}; border:1px solid ${badgeColor}44;">
+            ${repartoLabel}
+          </span>
         </div>
       </div>
 
       <div class="pm-capacity-gauge">
-        <div style="display:flex; justify-content:space-between; font-size:0.85rem; font-weight:700;">
-          <span>Allocazione Effort Totale</span>
-          <span style="color: ${totalEffort > 100 ? 'var(--danger)' : 'var(--text-main)'};">${totalEffort}% / 100%</span>
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; font-weight:700;">
+          <span>Effort Team (CAP 120%)</span>
+          <span style="color: ${gaugeColor}; font-weight:800;">${totalEffort}% / 120%</span>
         </div>
-        <div class="pm-capacity-bar">
-          <div class="pm-capacity-fill ${fillClass}" style="width: ${Math.min(totalEffort, 100)}%;"></div>
+        <div class="pm-capacity-bar" title="Base: 100% | Straordinario: +20% | Max CAP: 120%">
+          <div class="pm-capacity-fill" style="width: ${barWidthPct}%; background: ${fillGradient};"></div>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; margin-top:0.35rem;">
+          <span style="color:var(--text-dim);">Std: 100%</span>
+          ${statusBadge}
+          <span style="color:var(--text-dim);">CAP: 120%</span>
         </div>
       </div>
 
@@ -554,6 +646,7 @@ function renderCoordinatorsGrid() {
             <i class="fa-solid fa-chevron-down"></i>
           </div>
           <div class="pm-accordion-body">
+            ${prjList.length === 0 ? '<div style="font-size:0.82rem; color:var(--text-dim);">Nessun progetto assegnato</div>' : ''}
             ${prjList.map(p => `
               <div class="pm-project-item">
                 <div>
@@ -566,27 +659,32 @@ function renderCoordinatorsGrid() {
           </div>
         </div>
 
-        <!-- DROPDOWN 2: RISORSE DEL COORDINATORE -->
+        <!-- DROPDOWN 2: RISORSE DEL TEAM -->
         <div class="pm-accordion" id="accordion-res-${pmIndex}">
           <div class="pm-accordion-header" onclick="toggleAccordion('accordion-res-${pmIndex}')">
-            <span><i class="fa-solid fa-users" style="color:var(--mp95-blue); margin-right:0.4rem;"></i> Risorse del Coordinatore (${resources.length})</span>
+            <span><i class="fa-solid fa-users" style="color:var(--mp95-blue); margin-right:0.4rem;"></i> Risorse del Team (${resources.length})</span>
             <i class="fa-solid fa-chevron-down"></i>
           </div>
           <div class="pm-accordion-body">
-            ${resources.length === 0 ? '<div style="font-size:0.82rem; color:var(--text-dim);">Nessuna risorsa assegnata</div>' : ''}
-            ${resources.map(r => `
-              <div class="pm-project-item" style="flex-direction:column; align-items:flex-start; gap:0.25rem;">
-                <div style="display:flex; justify-content:space-between; width:100%; font-weight:700;">
+            ${resources.length === 0 ? '<div style="font-size:0.82rem; color:var(--text-dim); margin-bottom:0.4rem;">Nessuna risorsa nel team</div>' : ''}
+            ${resources.map((r, rIdx) => `
+              <div class="pm-project-item" style="flex-direction:column; align-items:flex-start; gap:0.25rem; position:relative;">
+                <div style="display:flex; justify-content:space-between; align-items:center; width:100%; font-weight:700;">
                   <span><i class="fa-solid fa-user-check" style="color:var(--success); font-size:0.8rem;"></i> ${r.name}</span>
-                  <span style="font-size:0.75rem; color:var(--text-dim);">${r.role}</span>
+                  <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <span style="font-size:0.75rem; color:var(--text-dim);">${r.role || 'Specialista'}</span>
+                    <button onclick="deleteTeamResource('${encodeURIComponent(pmName)}', ${rIdx})" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:0.85rem;" title="Rimuovi risorsa dal team">
+                      <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                  </div>
                 </div>
                 <div style="font-size:0.75rem; color:var(--text-muted);">
-                  Target: ${r.projects ? r.projects.join(', ') : 'Nessun progetto'}
+                  Target: ${r.projects && r.projects.length > 0 ? r.projects.join(', ') : 'Nessun progetto specifico'}
                 </div>
               </div>
             `).join('')}
-            <button class="btn btn-secondary btn-sm" style="margin-top:0.4rem;" onclick="promptAddResource('${encodeURIComponent(pmName)}')">
-              <i class="fa-solid fa-user-plus"></i> Aggiungi Risorsa
+            <button class="btn btn-secondary btn-sm" style="margin-top:0.5rem; width:100%; justify-content:center;" onclick="openResourceModal('${encodeURIComponent(pmName)}')">
+              <i class="fa-solid fa-user-plus"></i> + Aggiungi Risorsa al Team
             </button>
           </div>
         </div>
@@ -599,10 +697,10 @@ function renderCoordinatorsGrid() {
           </div>
           <div class="pm-accordion-body">
             ${resources.length === 0 ? '<div style="font-size:0.82rem; color:var(--text-dim);">Nessuna risorsa censita</div>' : `
-              <label style="font-size:0.8rem; font-weight:600; color:var(--text-muted);">Seleziona Risorsa:</label>
+              <label style="font-size:0.8rem; font-weight:600; color:var(--text-muted);">Seleziona Risorsa del Team:</label>
               <select class="resource-select-box" onchange="renderResourceProjects(this, '${encodeURIComponent(pmName)}')">
                 <option value="">-- Scegli Risorsa --</option>
-                ${resources.map((r, idx) => `<option value="${idx}">${r.name} (${r.role})</option>`).join('')}
+                ${resources.map((r, idx) => `<option value="${idx}">${r.name} (${r.role || 'Specialista'})</option>`).join('')}
               </select>
               <div class="resource-projects-output" style="display:flex; flex-direction:column; gap:0.4rem; margin-top:0.5rem;">
                 <div style="font-size:0.8rem; color:var(--text-dim); italic;">Seleziona una risorsa per visualizzare i relativi progetti.</div>
@@ -653,23 +751,48 @@ window.renderResourceProjects = function(selectEl, encodedPmName) {
   }).join('');
 };
 
-window.promptAddResource = async function(encodedPmName) {
-  const pmName = decodeURIComponent(encodedPmName);
-  const name = prompt(`Inserisci Nome e Cognome della nuova risorsa per ${pmName}:`);
-  if (!name || name.trim() === '') return;
+/* Resource Modal Handlers */
+function initResourceModalEvents() {
+  const closeBtn = document.getElementById('closeResourceModal');
+  const cancelBtn = document.getElementById('cancelResourceBtn');
+  const form = document.getElementById('resourceForm');
 
-  const role = prompt(`Inserisci il ruolo di ${name} (es. Fullstack Dev, QA Analyst, Data Engineer):`) || "Specialista IT";
+  if (closeBtn) closeBtn.addEventListener('click', closeResourceModal);
+  if (cancelBtn) cancelBtn.addEventListener('click', closeResourceModal);
+  if (form) form.addEventListener('submit', handleSaveResourceForm);
+}
+
+window.openResourceModal = function(encodedPmName) {
+  const pmName = decodeURIComponent(encodedPmName);
+  document.getElementById('resourceCoordinatorInput').value = pmName;
+  document.getElementById('resourceCoordinatorNameDisplay').textContent = pmName;
+  document.getElementById('resourceNameInput').value = '';
+  document.getElementById('resourceRoleInput').value = '';
+  document.getElementById('resourceProjectsInput').value = '';
+  document.getElementById('resourceModal').classList.add('active');
+};
+
+function closeResourceModal() {
+  const modal = document.getElementById('resourceModal');
+  if (modal) modal.classList.remove('active');
+}
+
+async function handleSaveResourceForm(e) {
+  e.preventDefault();
+  const pmName = document.getElementById('resourceCoordinatorInput').value;
+  const name = document.getElementById('resourceNameInput').value.trim();
+  const role = document.getElementById('resourceRoleInput').value.trim() || 'Specialista IT';
+  const projectsStr = document.getElementById('resourceProjectsInput').value.trim();
+
+  if (!name) return;
+
+  const projectsArr = projectsStr ? projectsStr.split(',').map(p => p.trim()).filter(Boolean) : [];
 
   if (!coordinatorResources[pmName]) {
     coordinatorResources[pmName] = [];
   }
 
-  const newRes = {
-    name: name.trim(),
-    role: role.trim(),
-    projects: []
-  };
-
+  const newRes = { name, role, projects: projectsArr };
   coordinatorResources[pmName].push(newRes);
 
   try {
@@ -678,22 +801,355 @@ window.promptAddResource = async function(encodedPmName) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         coordinator_name: pmName,
-        resource_name: newRes.name,
-        role: newRes.role,
-        assigned_projects: []
+        resource_name: name,
+        role: role,
+        assigned_projects: projectsArr
       })
     });
-  } catch (e) {
-    console.log("Saved to LocalStorage.");
+  } catch (err) {
+    console.log("Saved LocalStorage.");
   }
 
   saveState();
-  showToast(`Nuova risorsa ${name} salvata nel DB Neon per ${pmName}!`);
+  closeResourceModal();
+  showToast(`Nuova risorsa ${name} aggiunta al team di ${pmName}!`);
+}
+
+window.deleteTeamResource = async function(encodedPmName, resourceIdx) {
+  const pmName = decodeURIComponent(encodedPmName);
+  if (!coordinatorResources[pmName] || !coordinatorResources[pmName][resourceIdx]) return;
+
+  const resName = coordinatorResources[pmName][resourceIdx].name;
+  if (!confirm(`Sei sicuro di voler rimuovere ${resName} dal team di ${pmName}?`)) return;
+
+  coordinatorResources[pmName].splice(resourceIdx, 1);
+  saveState();
+  showToast(`Risorsa ${resName} rimossa dal team.`);
+};
+
+/* Add Coordinator Modal Handlers */
+function initAddCoordinatorModalEvents() {
+  const addBtn = document.getElementById('addCoordinatorBtn');
+  const closeBtn = document.getElementById('closeAddCoordinatorModal');
+  const cancelBtn = document.getElementById('cancelAddCoordinatorBtn');
+  const form = document.getElementById('addCoordinatorForm');
+
+  if (addBtn) addBtn.addEventListener('click', () => {
+    document.getElementById('newCoordinatorNameInput').value = '';
+    document.getElementById('addCoordinatorModal').classList.add('active');
+  });
+
+  if (closeBtn) closeBtn.addEventListener('click', closeAddCoordinatorModal);
+  if (cancelBtn) cancelBtn.addEventListener('click', closeAddCoordinatorModal);
+
+  if (form) form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = document.getElementById('newCoordinatorNameInput').value.trim();
+    const reparto = document.getElementById('newCoordinatorRepartoInput').value;
+
+    if (!name) return;
+
+    const colorMap = {
+      'Data Management': '#06B6D4',
+      'IT&Digital': '#2872FA',
+      'Infra': '#EC4899',
+      'Corporate': '#F59E0B',
+      'Support&Help Desk': '#10B981',
+      'Innovation': '#A78BFA',
+      'Governance': '#10B981'
+    };
+
+    customCoordinators.push({
+      name,
+      reparto,
+      badgeColor: colorMap[reparto] || '#94A3B8'
+    });
+
+    localStorage.setItem('mp95_custom_coordinators', JSON.stringify(customCoordinators));
+
+    if (!coordinatorResources[name]) {
+      coordinatorResources[name] = [];
+    }
+
+    saveState();
+    closeAddCoordinatorModal();
+    showToast(`Nuovo Coordinatore ${name} (${reparto}) aggiunto!`);
+  });
+}
+
+function closeAddCoordinatorModal() {
+  const modal = document.getElementById('addCoordinatorModal');
+  if (modal) modal.classList.remove('active');
+}
+
+/* ----------------------------------------------------
+   TIMELINE & CALENDAR VIEW (GOVERNANCE TEMPORALE)
+---------------------------------------------------- */
+let currentCalendarDate = new Date();
+let currentTimelineViewMode = 'gantt'; // 'gantt' or 'calendar'
+
+function initTimelineView() {
+  const pmFilter = document.getElementById('timelinePmFilter');
+  const statusFilter = document.getElementById('timelineStatusFilter');
+
+  if (pmFilter) pmFilter.addEventListener('change', refreshTimelineView);
+  if (statusFilter) statusFilter.addEventListener('change', refreshTimelineView);
+
+  const toggleGanttBtn = document.getElementById('toggleGanttViewBtn');
+  const toggleCalendarBtn = document.getElementById('toggleCalendarViewBtn');
+
+  if (toggleGanttBtn && toggleCalendarBtn) {
+    toggleGanttBtn.addEventListener('click', () => {
+      currentTimelineViewMode = 'gantt';
+      toggleGanttBtn.className = 'btn btn-primary btn-sm active';
+      toggleCalendarBtn.className = 'btn btn-secondary btn-sm';
+      document.getElementById('ganttViewSection').style.display = 'block';
+      document.getElementById('calendarViewSection').style.display = 'none';
+      renderGanttChart();
+    });
+
+    toggleCalendarBtn.addEventListener('click', () => {
+      currentTimelineViewMode = 'calendar';
+      toggleCalendarBtn.className = 'btn btn-primary btn-sm active';
+      toggleGanttBtn.className = 'btn btn-secondary btn-sm';
+      document.getElementById('calendarViewSection').style.display = 'block';
+      document.getElementById('ganttViewSection').style.display = 'none';
+      renderCalendarGrid();
+    });
+  }
+
+  const prevBtn = document.getElementById('prevMonthBtn');
+  const todayBtn = document.getElementById('todayMonthBtn');
+  const nextBtn = document.getElementById('nextMonthBtn');
+
+  if (prevBtn) prevBtn.addEventListener('click', () => {
+    currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+    renderCalendarGrid();
+  });
+  if (todayBtn) todayBtn.addEventListener('click', () => {
+    currentCalendarDate = new Date();
+    renderCalendarGrid();
+  });
+  if (nextBtn) nextBtn.addEventListener('click', () => {
+    currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+    renderCalendarGrid();
+  });
+
+  populateTimelinePmFilter();
+  refreshTimelineView();
+}
+
+function populateTimelinePmFilter() {
+  const select = document.getElementById('timelinePmFilter');
+  if (!select) return;
+
+  const curVal = select.value;
+  select.innerHTML = `<option value="">Tutti i Coordinatori</option>`;
+  OFFICIAL_COORDINATORS.forEach(c => {
+    select.innerHTML += `<option value="${c.name}">${c.name} (${c.reparto})</option>`;
+  });
+  select.value = curVal;
+}
+
+function refreshTimelineView() {
+  if (currentTimelineViewMode === 'gantt') {
+    renderGanttChart();
+  } else {
+    renderCalendarGrid();
+  }
+}
+
+function renderGanttChart() {
+  const container = document.getElementById('ganttChartContainer');
+  if (!container) return;
+
+  const pmFilterVal = (document.getElementById('timelinePmFilter').value || '').toLowerCase();
+  const statusFilterVal = (document.getElementById('timelineStatusFilter').value || '').toLowerCase();
+
+  const currentYear = new Date().getFullYear();
+  const months = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giug', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+
+  let html = `
+    <div class="gantt-grid">
+      <div class="gantt-header-row">
+        <div>Coordinatore / Attività</div>
+        ${months.map(m => `<div>${m} ${currentYear}</div>`).join('')}
+      </div>
+  `;
+
+  const coordsToDisplay = OFFICIAL_COORDINATORS.filter(c => !pmFilterVal || c.name.toLowerCase().includes(pmFilterVal));
+
+  coordsToDisplay.forEach(coord => {
+    const pmName = coord.name;
+    let pmProjects = getProjectsForCoordinator(pmName);
+
+    if (statusFilterVal) {
+      pmProjects = pmProjects.filter(p => p.stato.toLowerCase().includes(statusFilterVal));
+    }
+
+    if (pmProjects.length === 0) return;
+
+    html += `
+      <div class="gantt-coord-group">
+        <div class="gantt-coord-title">
+          <span><i class="fa-solid fa-user-tie"></i> ${pmName} (${coord.reparto})</span>
+          <span style="font-size:0.78rem; font-weight:700; color:var(--text-muted);">${pmProjects.length} attività temporali</span>
+        </div>
+    `;
+
+    pmProjects.forEach(p => {
+      const startDate = p.data_inizio ? new Date(p.data_inizio) : new Date(currentYear, 0, 1);
+      const endDate = p.scadenza ? new Date(p.scadenza) : new Date(currentYear, 11, 31);
+
+      const yearStart = new Date(currentYear, 0, 1);
+      const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59);
+      const totalYearMs = yearEnd - yearStart;
+
+      let startOffsetMs = startDate - yearStart;
+      if (startOffsetMs < 0) startOffsetMs = 0;
+      let leftPct = (startOffsetMs / totalYearMs) * 100;
+      if (leftPct > 95) leftPct = 95;
+
+      let durationMs = endDate - startDate;
+      if (durationMs <= 0) durationMs = 30 * 24 * 60 * 60 * 1000;
+      let widthPct = (durationMs / totalYearMs) * 100;
+      if (leftPct + widthPct > 100) widthPct = 100 - leftPct;
+      if (widthPct < 5) widthPct = 5;
+
+      const effortVal = p.effort || 0;
+      const avPct = p.avanzamento || 0;
+
+      html += `
+        <div class="gantt-task-row">
+          <div class="gantt-task-info">
+            <div class="gantt-task-name" title="${p.progetto}">${p.progetto}</div>
+            <div style="font-size:0.72rem; color:var(--text-dim);">
+              <span class="badge ${getBadgeClass(p.stato)}" style="font-size:0.68rem; padding:0.1rem 0.4rem;">${p.stato}</span>
+              ${p.risorsa ? ` • ${p.risorsa}` : ''}
+            </div>
+          </div>
+          <div class="gantt-timeline-track">
+            <div class="gantt-bar" style="left:${leftPct}%; width:${widthPct}%;" onclick="openEditProjectModal('${p.id}')" title="Attività: ${p.progetto} (${effortVal}% effort, Avanzamento ${avPct}%)\nDal ${startDate.toLocaleDateString('it-IT')} al ${endDate.toLocaleDateString('it-IT')}">
+              <span>${p.progetto.length > 18 ? p.progetto.slice(0, 16) + '...' : p.progetto}</span>
+              <span>${effortVal}%</span>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+
+    html += `</div>`;
+  });
+
+  html += `</div>`;
+  container.innerHTML = html;
+}
+
+function renderCalendarGrid() {
+  const container = document.getElementById('calendarGridContainer');
+  const titleEl = document.getElementById('calendarMonthTitle');
+  if (!container) return;
+
+  const year = currentCalendarDate.getFullYear();
+  const month = currentCalendarDate.getMonth();
+  const monthNames = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+  
+  if (titleEl) {
+    titleEl.innerHTML = `<i class="fa-solid fa-calendar-days" style="color:var(--mp95-orange);"></i> Calendario Attività MP95 — ${monthNames[month]} ${year}`;
+  }
+
+  const pmFilterVal = (document.getElementById('timelinePmFilter').value || '').toLowerCase();
+  const statusFilterVal = (document.getElementById('timelineStatusFilter').value || '').toLowerCase();
+
+  let filteredProjects = projects;
+  if (pmFilterVal) {
+    filteredProjects = filteredProjects.filter(p => sanitizeProjectPM(p.pm).toLowerCase().includes(pmFilterVal));
+  }
+  if (statusFilterVal) {
+    filteredProjects = filteredProjects.filter(p => p.stato.toLowerCase().includes(statusFilterVal));
+  }
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7;
+
+  const dayHeaders = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+
+  let html = `
+    <div class="calendar-month-grid">
+      ${dayHeaders.map(d => `<div class="calendar-day-header">${d}</div>`).join('')}
+  `;
+
+  const prevMonthDays = new Date(year, month, 0).getDate();
+  for (let i = firstDayIndex - 1; i >= 0; i--) {
+    const dayNum = prevMonthDays - i;
+    html += `
+      <div class="calendar-day-cell other-month">
+        <span class="calendar-day-num">${dayNum}</span>
+      </div>
+    `;
+  }
+
+  const today = new Date();
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday = today.getDate() === d && today.getMonth() === month && today.getFullYear() === year;
+    const dayDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+    const dayProjects = filteredProjects.filter(p => {
+      if (!p.scadenza && !p.data_inizio) return false;
+      const startStr = p.data_inizio ? String(p.data_inizio).slice(0, 10) : '';
+      const endStr = p.scadenza ? String(p.scadenza).slice(0, 10) : '';
+      return startStr === dayDateStr || endStr === dayDateStr;
+    });
+
+    html += `
+      <div class="calendar-day-cell ${isToday ? 'today' : ''}">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="calendar-day-num">${d}</span>
+          ${isToday ? `<span style="font-size:0.65rem; font-weight:800; color:var(--mp95-orange);">OGGI</span>` : ''}
+        </div>
+        ${dayProjects.map(p => `
+          <div class="calendar-project-pill" onclick="openEditProjectModal('${p.id}')" title="${p.progetto} (${p.pm}) - ${p.effort}% effort">
+            ${p.progetto.length > 14 ? p.progetto.slice(0, 12) + '..' : p.progetto} (${p.effort}%)
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  html += `</div>`;
+  container.innerHTML = html;
+}
+
+window.setPresetDuration = function(mode) {
+  const startEl = document.getElementById('modalDataInizio');
+  const endEl = document.getElementById('modalScadenza');
+  if (!startEl || !endEl) return;
+
+  const today = new Date();
+  let startDate = startEl.value ? new Date(startEl.value) : today;
+  if (isNaN(startDate.getTime())) startDate = today;
+
+  const startISO = startDate.toISOString().slice(0, 10);
+  startEl.value = startISO;
+
+  let endDate = new Date(startDate);
+  if (mode === 'yearEnd') {
+    endDate = new Date(startDate.getFullYear(), 11, 31);
+  } else if (typeof mode === 'number') {
+    endDate.setMonth(endDate.getMonth() + mode);
+  }
+
+  const endISO = endDate.toISOString().slice(0, 10);
+  endEl.value = endISO;
+  showToast(`Durata impostata: dal ${startISO} al ${endISO}`);
 };
 
 /* ----------------------------------------------------
    EXCEL FILE UPLOAD & IMPORT HANDLERS (.xlsx, .xls)
 ---------------------------------------------------- */
+let pendingImportProjects = [];
+let pendingImportFileName = '';
+
 function initExcelFileHandlers() {
   const topbarBtn = document.getElementById('topbarUploadExcelBtn');
   const topbarInput = document.getElementById('topbarExcelFileInput');
@@ -710,6 +1166,185 @@ function initExcelFileHandlers() {
 
   if (projectsBtn && topbarInput) {
     projectsBtn.addEventListener('click', () => topbarInput.click());
+  }
+
+  initCoordinatorModalEvents();
+}
+
+function initCoordinatorModalEvents() {
+  const closeBtn = document.getElementById('closeCoordinatorModal');
+  const cancelBtn = document.getElementById('cancelCoordinatorBtn');
+  const confirmBtn = document.getElementById('confirmCoordinatorBtn');
+  const selectEl = document.getElementById('coordinatorSelectInput');
+  const customGroup = document.getElementById('customCoordinatorGroup');
+
+  if (closeBtn) closeBtn.addEventListener('click', closeCoordinatorModal);
+  if (cancelBtn) cancelBtn.addEventListener('click', closeCoordinatorModal);
+
+  if (selectEl) {
+    selectEl.addEventListener('change', () => {
+      if (selectEl.value === '__NEW__') {
+        customGroup.style.display = 'block';
+        const customInput = document.getElementById('customCoordinatorInput');
+        if (customInput) customInput.focus();
+      } else {
+        customGroup.style.display = 'none';
+      }
+    });
+  }
+
+  if (confirmBtn) {
+    confirmBtn.addEventListener('click', processCoordinatorImportConfirm);
+  }
+}
+
+function openCoordinatorModal(importedList, fileName) {
+  pendingImportProjects = importedList;
+  pendingImportFileName = fileName;
+
+  const modal = document.getElementById('coordinatorModal');
+  const countEl = document.getElementById('coordinatorModalCount');
+  const fileNameEl = document.getElementById('coordinatorModalFileName');
+  const selectEl = document.getElementById('coordinatorSelectInput');
+  const customGroup = document.getElementById('customCoordinatorGroup');
+  const customInput = document.getElementById('customCoordinatorInput');
+
+  if (countEl) countEl.textContent = importedList.length;
+  if (fileNameEl) fileNameEl.textContent = fileName;
+  if (customInput) customInput.value = '';
+  if (customGroup) customGroup.style.display = 'none';
+
+  // Extract list of known PMs from OFFICIAL_COORDINATORS, projects & coordinatorResources
+  const pmsSet = new Set();
+  getAllCoordinators().forEach(c => pmsSet.add(c.name));
+  projects.forEach(p => { if (p.pm && p.pm.trim()) pmsSet.add(p.pm.trim()); });
+  Object.keys(coordinatorResources).forEach(pm => {
+    if (pm.trim()) pmsSet.add(pm.trim());
+  });
+
+  selectEl.innerHTML = '';
+  selectEl.innerHTML += `<option value="">-- Seleziona un Coordinatore Esistente --</option>`;
+  pmsSet.forEach(pm => {
+    const matchOfficial = OFFICIAL_COORDINATORS.find(c => c.name.toLowerCase() === pm.toLowerCase());
+    const label = matchOfficial ? `${pm} (${matchOfficial.reparto})` : pm;
+    selectEl.innerHTML += `<option value="${pm}">${label}</option>`;
+  });
+  selectEl.innerHTML += `<option value="__NEW__">+ Inserisci Nuovo Coordinatore...</option>`;
+
+  if (modal) modal.classList.add('active');
+}
+
+function closeCoordinatorModal() {
+  const modal = document.getElementById('coordinatorModal');
+  if (modal) modal.classList.remove('active');
+  pendingImportProjects = [];
+  pendingImportFileName = '';
+
+  // Reset file inputs
+  const topbarInput = document.getElementById('topbarExcelFileInput');
+  if (topbarInput) topbarInput.value = '';
+  const fileInput = document.getElementById('importFileInput');
+  if (fileInput) fileInput.value = '';
+}
+
+async function processCoordinatorImportConfirm() {
+  const selectEl = document.getElementById('coordinatorSelectInput');
+  const customInput = document.getElementById('customCoordinatorInput');
+
+  let chosenPm = selectEl.value;
+  if (chosenPm === '__NEW__') {
+    chosenPm = customInput ? customInput.value.trim() : '';
+  }
+
+  if (!chosenPm || chosenPm === '') {
+    alert("Per favore seleziona un Coordinatore esistente o inserisci un nome valido.");
+    return;
+  }
+
+  if (pendingImportProjects.length === 0) {
+    alert("Nessun dato da importare.");
+    closeCoordinatorModal();
+    return;
+  }
+
+  // Set chosen PM on all imported items
+  pendingImportProjects.forEach(p => {
+    p.pm = chosenPm;
+  });
+
+  // Perform client-side MERGE / APPEND into projects array
+  let maxIdNum = 0;
+  projects.forEach(p => {
+    const match = (p.id || '').match(/^PRJ-(\d+)$/);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (num > maxIdNum) maxIdNum = num;
+    }
+  });
+
+  let addedCount = 0;
+  let updatedCount = 0;
+
+  pendingImportProjects.forEach(impPrj => {
+    const existingIndex = projects.findIndex(p =>
+      (p.id && impPrj.id && p.id === impPrj.id) ||
+      (p.progetto.trim().toLowerCase() === impPrj.progetto.trim().toLowerCase() && p.pm.trim().toLowerCase() === chosenPm.toLowerCase())
+    );
+
+    if (existingIndex >= 0) {
+      // Update existing project
+      projects[existingIndex] = {
+        ...projects[existingIndex],
+        ...impPrj,
+        id: projects[existingIndex].id, // Keep existing ID
+        pm: chosenPm
+      };
+      updatedCount++;
+    } else {
+      // Insert new project with unique ID
+      maxIdNum++;
+      const newId = `PRJ-${String(maxIdNum).padStart(3, '0')}`;
+      projects.push({
+        ...impPrj,
+        id: newId,
+        pm: chosenPm
+      });
+      addedCount++;
+    }
+  });
+
+  // Sync to Neon PostgreSQL DB via API
+  try {
+    await fetch('/api/projects/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mode: 'merge',
+        projects: pendingImportProjects
+      })
+    });
+  } catch (err) {
+    console.log("Synced to LocalStorage.");
+  }
+
+  // Ensure coordinator exists in coordinatorResources
+  if (!coordinatorResources[chosenPm]) {
+    coordinatorResources[chosenPm] = [];
+  }
+
+  saveState();
+  const fileName = pendingImportFileName;
+  closeCoordinatorModal();
+
+  const pmProjects = getProjectsForCoordinator(chosenPm);
+  const totalEffort = pmProjects.reduce((acc, p) => acc + (p.effort || 0), 0);
+
+  if (totalEffort > 120) {
+    showToast(`⚠️ Importato per ${chosenPm}! Effort totale: ${totalEffort}% (Superato CAP Max del 120% con +${totalEffort - 100}% straordinario!)`);
+  } else if (totalEffort > 100) {
+    showToast(`⚡ Importato per ${chosenPm}! Effort totale: ${totalEffort}% / 120% (+${totalEffort - 100}% Straordinario).`);
+  } else {
+    showToast(`File '${fileName}' importato per ${chosenPm}! (${addedCount} nuovi, ${updatedCount} aggiornati)`);
   }
 }
 
@@ -739,38 +1374,29 @@ function handleExcelFileInput(file) {
           rawRows.forEach((row, idx) => {
             const progettoVal = row['Progetto'] || row['progetto'] || row['Nome Progetto'] || row['Project'] || '';
             const statoVal = row['Stato'] || row['stato'] || row['Status'] || 'In corso';
-            const pmVal = row['PM'] || row['pm'] || row['Coordinatore'] || row['PM / Coordinatore'] || 'Non Assegnato';
             const effortVal = row['Effort %'] || row['Effort'] || row['effort'] || 0;
+            const risorsaVal = row['Risorsa'] || row['risorsa'] || row['Risorsa Coinvolta'] || '';
+            const descrizioneVal = row['Descrizione'] || row['descrizione'] || '';
+            const repartoVal = row['Reparto'] || row['reparto'] || '';
+            const criticitaVal = row['Criticità'] || row['criticita'] || row['Note'] || '';
 
             if (progettoVal && String(progettoVal).trim().length > 0) {
               importedProjects.push({
-                id: `PRJ-${String(idx + 1).padStart(3, '0')}`,
                 progetto: String(progettoVal).trim(),
                 stato: String(statoVal).trim(),
-                pm: String(pmVal).trim(),
-                effort: parseInt(effortVal) || 0
+                effort: parseInt(effortVal) || 0,
+                risorsa: String(risorsaVal).trim() || null,
+                descrizione: String(descrizioneVal).trim() || null,
+                reparto: String(repartoVal).trim() || null,
+                criticita: String(criticitaVal).trim() || null
               });
             }
           });
 
           if (importedProjects.length > 0) {
-            projects = importedProjects;
-            
-            // Sync to Neon PostgreSQL DB via API
-            try {
-              await fetch('/api/projects/batch', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(projects)
-              });
-            } catch (err) {
-              console.log("Synced to LocalStorage.");
-            }
-
-            saveState();
-            showToast(`File Excel '${file.name}' sincronizzato con il DB Neon! Importati ${projects.length} progetti.`);
+            openCoordinatorModal(importedProjects, file.name);
           } else {
-            alert("Nessun progetto valido trovato nel file Excel. Assicurati che le colonne siano: Progetto, Stato, PM, Effort %.");
+            alert("Nessun progetto valido trovato nel file Excel. Assicurati che ci sia almeno la colonna 'Progetto'.");
           }
         } catch (err) {
           console.error("Excel import error:", err);
@@ -913,6 +1539,10 @@ function initModals() {
   document.getElementById('projectForm').addEventListener('submit', handleSaveProject);
 }
 
+window.openCreateProjectModal = function() {
+  openAddProjectModal();
+};
+
 function openAddProjectModal() {
   document.getElementById('modalProjectTitle').textContent = "Aggiungi Progetto MP95";
   document.getElementById('modalProjectId').value = "";
@@ -925,6 +1555,9 @@ function openAddProjectModal() {
   document.getElementById('modalReparto').value = "";
   document.getElementById('modalEffortPrevisto').value = "";
   document.getElementById('modalEffortResiduo').value = "";
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const dataInizioEl = document.getElementById('modalDataInizio');
+  if (dataInizioEl) dataInizioEl.value = todayISO;
   document.getElementById('modalScadenza').value = "";
   document.getElementById('modalStatoTempistiche').value = "In linea";
   document.getElementById('modalDescrizione').value = "";
@@ -947,7 +1580,11 @@ window.openEditProjectModal = function(id) {
   document.getElementById('modalReparto').value = prj.reparto || '';
   document.getElementById('modalEffortPrevisto').value = prj.effort_previsto || '';
   document.getElementById('modalEffortResiduo').value = prj.effort_residuo || '';
-  // scadenza comes as 'YYYY-MM-DD' from DB (possibly with timestamp)
+  
+  const startRaw = prj.data_inizio ? String(prj.data_inizio).slice(0, 10) : '';
+  const dataInizioEl = document.getElementById('modalDataInizio');
+  if (dataInizioEl) dataInizioEl.value = startRaw;
+
   const scadRaw = prj.scadenza ? String(prj.scadenza).slice(0, 10) : '';
   document.getElementById('modalScadenza').value = scadRaw;
   document.getElementById('modalStatoTempistiche').value = prj.stato_tempistiche || 'In linea';
@@ -974,12 +1611,14 @@ async function handleSaveProject(e) {
   const effort_previsto = parseFloat(document.getElementById('modalEffortPrevisto').value) || 0;
   const effort_residuo = parseFloat(document.getElementById('modalEffortResiduo').value) || 0;
   const avanzamento = parseInt(document.getElementById('modalAvanzamento').value) || 0;
+  const dataInizioEl = document.getElementById('modalDataInizio');
+  const data_inizio = dataInizioEl ? dataInizioEl.value || null : null;
   const scadenza = document.getElementById('modalScadenza').value || null;
   const stato_tempistiche = document.getElementById('modalStatoTempistiche').value || 'In linea';
   const criticita = document.getElementById('modalCriticita').value.trim() || null;
 
   const payload = { progetto, stato, pm, effort, risorsa, reparto, descrizione,
-    effort_previsto, effort_residuo, avanzamento, scadenza, stato_tempistiche, criticita };
+    effort_previsto, effort_residuo, avanzamento, data_inizio, scadenza, stato_tempistiche, criticita };
 
   if (id) {
     const idx = projects.findIndex(p => p.id === id);
@@ -1011,6 +1650,18 @@ async function handleSaveProject(e) {
 
   saveState();
   closeProjectModal();
+
+  const targetPm = sanitizeProjectPM(pm);
+  const pmProjects = getProjectsForCoordinator(targetPm);
+  const totalEffort = pmProjects.reduce((acc, p) => acc + (p.effort || 0), 0);
+
+  if (totalEffort > 120) {
+    showToast(`⚠️ Progetto salvato! Effort di ${targetPm} ora al ${totalEffort}% (Superato CAP Max 120%!)`);
+  } else if (totalEffort > 100) {
+    showToast(`⚡ Progetto salvato! Effort di ${targetPm} in straordinario: ${totalEffort}% / 120%.`);
+  } else {
+    showToast('Progetto salvato con successo!');
+  }
 }
 
 window.deleteProject = async function(id) {
@@ -1025,21 +1676,7 @@ window.deleteProject = async function(id) {
 };
 
 /* ----------------------------------------------------
-   RESET DATA
----------------------------------------------------- */
-function initResetData() {
-  document.getElementById('resetDataBtn').addEventListener('click', async () => {
-    if (confirm('Sei sicuro di voler ripristinare i dati originali dal file Excel? Tutte le modifiche locali ed a DB andranno perse.')) {
-      projects = [...INITIAL_PROJECTS];
-      coordinatorResources = DEFAULT_COORDINATOR_RESOURCES;
-      await syncBatchToNeon(projects);
-      saveState();
-      showToast('Dati ripristinati alla versione iniziale Excel ed allineati sul DB Neon!');
-    }
-  });
-}
 
-/* ----------------------------------------------------
    TOAST NOTIFICATION
 ---------------------------------------------------- */
 function showToast(message) {
