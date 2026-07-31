@@ -330,7 +330,7 @@ function renderPmWorkloadOverview() {
 
   const pmEfforts = {};
   projects.forEach(p => {
-    const pm = p.pm.trim();
+    const pm = sanitizeProjectPM(p.pm);
     if (!pmEfforts[pm]) {
       pmEfforts[pm] = { count: 0, totalEffort: 0 };
     }
@@ -341,18 +341,35 @@ function renderPmWorkloadOverview() {
   container.innerHTML = '';
   Object.keys(pmEfforts).forEach(pmName => {
     const data = pmEfforts[pmName];
-    const isOverload = data.totalEffort > 100;
+    const totalEffort = data.totalEffort;
+    
+    // Scale against CAP 120%
+    const barPct = Math.min(Math.round((totalEffort / 120) * 100), 100);
+
+    let statusText = `${totalEffort}% / 120%`;
+    let colorStyle = 'var(--mp95-blue)';
+    let bgStyle = 'linear-gradient(90deg, var(--mp95-blue), var(--success))';
+
+    if (totalEffort > 120) {
+      statusText = `${totalEffort}% / 120% ⚠️ Overload (+${totalEffort - 120}%)`;
+      colorStyle = 'var(--danger)';
+      bgStyle = 'var(--danger)';
+    } else if (totalEffort > 100) {
+      statusText = `${totalEffort}% / 120% ⚡ Straordinario (+${totalEffort - 100}%)`;
+      colorStyle = 'var(--warning)';
+      bgStyle = 'linear-gradient(90deg, var(--mp95-orange), var(--warning))';
+    }
 
     const rowHtml = `
       <div style="display:flex; flex-direction:column; gap:0.4rem; padding:0.65rem 0.85rem; background:rgba(255,255,255,0.02); border-radius:var(--radius-md);">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <span style="font-weight:700; font-size:0.9rem;">${pmName}</span>
-          <span style="font-weight:800; font-size:0.92rem; color:${isOverload ? 'var(--danger)' : 'var(--mp95-orange)'}">
-            ${data.totalEffort}% effort (${data.count} prj)
+          <span style="font-weight:800; font-size:0.82rem; color:${colorStyle};">
+            ${statusText} (${data.count} prj)
           </span>
         </div>
-        <div class="effort-progress-bg">
-          <div class="effort-progress-fill" style="width: ${Math.min(data.totalEffort, 100)}%; background: ${isOverload ? 'var(--danger)' : 'linear-gradient(90deg, var(--mp95-orange), var(--mp95-blue))'};"></div>
+        <div class="effort-progress-bg" title="Capacità base 100% + 20% Straordinario = CAP Max 120%">
+          <div class="effort-progress-fill" style="width: ${barPct}%; background: ${bgStyle};"></div>
         </div>
       </div>
     `;
@@ -563,9 +580,22 @@ function renderCoordinatorsGrid() {
     const prjList = getProjectsForCoordinator(pmName);
     const totalEffort = prjList.reduce((acc, p) => acc + (p.effort || 0), 0);
 
-    let fillClass = '';
-    if (totalEffort > 100) fillClass = 'overload';
-    else if (totalEffort >= 80) fillClass = 'high';
+    // Scale against CAP 120%
+    const barWidthPct = Math.min(Math.round((totalEffort / 120) * 100), 100);
+
+    let gaugeColor = 'var(--text-main)';
+    let fillGradient = 'linear-gradient(90deg, var(--mp95-blue), var(--success))';
+    let statusBadge = '<span style="color:var(--success); font-weight:700;">🟢 Capacità Standard</span>';
+
+    if (totalEffort > 120) {
+      gaugeColor = 'var(--danger)';
+      fillGradient = 'var(--danger)';
+      statusBadge = `<span style="color:var(--danger); font-weight:800;">🔴 CAP 120% SUPERATO (+${totalEffort - 120}%)</span>`;
+    } else if (totalEffort > 100) {
+      gaugeColor = 'var(--warning)';
+      fillGradient = 'linear-gradient(90deg, var(--mp95-orange), var(--warning))';
+      statusBadge = `<span style="color:var(--warning); font-weight:700;">⚡ Straordinario (+${totalEffort - 100}%)</span>`;
+    }
 
     const initials = pmName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
     const resources = coordinatorResources[pmName] || [];
@@ -585,12 +615,17 @@ function renderCoordinatorsGrid() {
       </div>
 
       <div class="pm-capacity-gauge">
-        <div style="display:flex; justify-content:space-between; font-size:0.85rem; font-weight:700;">
-          <span>Allocazione Effort Totale</span>
-          <span style="color: ${totalEffort > 100 ? 'var(--danger)' : 'var(--text-main)'};">${totalEffort}% / 100%</span>
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; font-weight:700;">
+          <span>Effort Team (CAP 120%)</span>
+          <span style="color: ${gaugeColor}; font-weight:800;">${totalEffort}% / 120%</span>
         </div>
-        <div class="pm-capacity-bar">
-          <div class="pm-capacity-fill ${fillClass}" style="width: ${Math.min(totalEffort, 100)}%;"></div>
+        <div class="pm-capacity-bar" title="Base: 100% | Straordinario: +20% | Max CAP: 120%">
+          <div class="pm-capacity-fill" style="width: ${barWidthPct}%; background: ${fillGradient};"></div>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; margin-top:0.35rem;">
+          <span style="color:var(--text-dim);">Std: 100%</span>
+          ${statusBadge}
+          <span style="color:var(--text-dim);">CAP: 120%</span>
         </div>
       </div>
 
@@ -1036,7 +1071,16 @@ async function processCoordinatorImportConfirm() {
   const fileName = pendingImportFileName;
   closeCoordinatorModal();
 
-  showToast(`File '${fileName}' importato per ${chosenPm}! (${addedCount} nuovi, ${updatedCount} aggiornati)`);
+  const pmProjects = getProjectsForCoordinator(chosenPm);
+  const totalEffort = pmProjects.reduce((acc, p) => acc + (p.effort || 0), 0);
+
+  if (totalEffort > 120) {
+    showToast(`⚠️ Importato per ${chosenPm}! Effort totale: ${totalEffort}% (Superato CAP Max del 120% con +${totalEffort - 100}% straordinario!)`);
+  } else if (totalEffort > 100) {
+    showToast(`⚡ Importato per ${chosenPm}! Effort totale: ${totalEffort}% / 120% (+${totalEffort - 100}% Straordinario).`);
+  } else {
+    showToast(`File '${fileName}' importato per ${chosenPm}! (${addedCount} nuovi, ${updatedCount} aggiornati)`);
+  }
 }
 
 function handleExcelFileInput(file) {
@@ -1328,6 +1372,18 @@ async function handleSaveProject(e) {
 
   saveState();
   closeProjectModal();
+
+  const targetPm = sanitizeProjectPM(pm);
+  const pmProjects = getProjectsForCoordinator(targetPm);
+  const totalEffort = pmProjects.reduce((acc, p) => acc + (p.effort || 0), 0);
+
+  if (totalEffort > 120) {
+    showToast(`⚠️ Progetto salvato! Effort di ${targetPm} ora al ${totalEffort}% (Superato CAP Max 120%!)`);
+  } else if (totalEffort > 100) {
+    showToast(`⚡ Progetto salvato! Effort di ${targetPm} in straordinario: ${totalEffort}% / 120%.`);
+  } else {
+    showToast('Progetto salvato con successo!');
+  }
 }
 
 window.deleteProject = async function(id) {

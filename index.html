@@ -349,7 +349,12 @@
               <li><b>🔀 Progetti delle Risorse (Dropdown 3):</b> Menu a tendina che permette di selezionare una risorsa e vedere su quali progetti è impegnata e con quale effort.</li>
             </ul>
             <div class="wiki-feature-box warning">
-              <b>Alert di Overload:</b> Se l'effort totale del coordinatore supera il 100%, la barra di capacità diventerà ROSSA segnalando una situazione di sovra-allocazione.
+              <b>Logica CAP Effort Max 120%:</b> L'applicazione imposta un CAP massimo del <b>120% totale</b> sull'effort delle attività per ciascun team/coordinatore:
+              <ul style="margin-top:0.35rem; margin-left:1.2rem;">
+                <li><b>0% - 100%:</b> Allocazione ordinaria a capacità standard (Verde/Blu).</li>
+                <li><b>101% - 120%:</b> Straordinario medio (+20% massimo tollerato) (Arancione).</li>
+                <li><b>> 120%:</b> Overload Critico — Superamento del CAP massimo consentito (Rosso con Alert).</li>
+              </ul>
             </div>
           </div>
 
