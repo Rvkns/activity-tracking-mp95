@@ -1025,6 +1025,11 @@ function renderGanttChart() {
   const currentYear = new Date().getFullYear();
   const months = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giug', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
 
+  let totalTasksRendered = 0;
+  const allCoordinatorsList = getAllCoordinators();
+
+  const coordsToDisplay = allCoordinatorsList.filter(c => !pmFilterVal || c.name.toLowerCase().includes(pmFilterVal));
+
   let html = `
     <div class="gantt-grid">
       <div class="gantt-header-row">
@@ -1032,8 +1037,6 @@ function renderGanttChart() {
         ${months.map(m => `<div>${m} ${currentYear}</div>`).join('')}
       </div>
   `;
-
-  const coordsToDisplay = OFFICIAL_COORDINATORS.filter(c => !pmFilterVal || c.name.toLowerCase().includes(pmFilterVal));
 
   coordsToDisplay.forEach(coord => {
     const pmName = coord.name;
@@ -1045,10 +1048,12 @@ function renderGanttChart() {
 
     if (pmProjects.length === 0) return;
 
+    totalTasksRendered += pmProjects.length;
+
     html += `
       <div class="gantt-coord-group">
         <div class="gantt-coord-title">
-          <span><i class="fa-solid fa-user-tie"></i> ${pmName} (${coord.reparto})</span>
+          <span><i class="fa-solid fa-user-tie"></i> ${pmName} (${coord.reparto || 'Generale'})</span>
           <span style="font-size:0.78rem; font-weight:700; color:var(--text-muted);">${pmProjects.length} attività temporali</span>
         </div>
     `;
@@ -1098,7 +1103,23 @@ function renderGanttChart() {
   });
 
   html += `</div>`;
-  container.innerHTML = html;
+
+  if (totalTasksRendered === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:3rem 1.5rem; color:var(--text-muted);">
+        <i class="fa-solid fa-calendar-xmark" style="font-size:2.5rem; color:var(--mp95-orange); margin-bottom:1rem;"></i>
+        <h4 style="margin:0 0 0.5rem 0; font-size:1.1rem; color:var(--text-main);">Nessuna attività temporale trovata</h4>
+        <p style="font-size:0.88rem; color:var(--text-dim); max-width:480px; margin:0 auto 1.25rem auto;">
+          Nessun progetto soddisfa i filtri selezionati. Prova a selezionare "Tutti i Coordinatori" oppure aggiungi una nuova attività temporale!
+        </p>
+        <button class="btn btn-primary btn-sm" onclick="openCreateProjectModal()">
+          <i class="fa-solid fa-plus"></i> Nuova Attività Temporale
+        </button>
+      </div>
+    `;
+  } else {
+    container.innerHTML = html;
+  }
 }
 
 function renderCalendarGrid() {
