@@ -1,29 +1,29 @@
 /* Media Point 95 (MP95) Visual Identity & Styling for Activity & Resource Tracking System */
 
-@import url('https://fonts.googleapis.com/css2?family=Titillium+Web:wght@300;400;600;700;900&family=Josefin+Sans:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 
 :root {
-  /* MP95 Official Theme Palette */
-  --bg-dark: #121620;
-  --bg-card: #1C2230;
-  --bg-card-hover: #242B3D;
-  --bg-input: #171C28;
-  --border-color: #2D374D;
-  --border-color-light: #3D4B68;
+  /* High-Contrast Modern Slate Palette */
+  --bg-dark: #0F172A;           /* Deep Slate Navy */
+  --bg-card: #1E293B;           /* Crisp Elevated Surface */
+  --bg-card-hover: #334155;
+  --bg-input: #0F172A;
+  --border-color: #334155;      /* Crisp Defined Borders */
+  --border-color-light: #475569;
   
-  /* MP95 Brand Colors */
-  --mp95-orange: #DB8908;       /* Primary Warm Gold / Orange */
-  --mp95-orange-glow: rgba(219, 137, 8, 0.35);
-  --mp95-blue: #2872FA;         /* Corporate Blue */
-  --mp95-blue-hover: #1559ED;
-  --mp95-blue-glow: rgba(40, 114, 252, 0.35);
+  /* Vibrant Accent Colors */
+  --mp95-orange: #FF9800;       /* High-Contrast Amber Gold */
+  --mp95-orange-glow: rgba(255, 152, 0, 0.4);
+  --mp95-blue: #3B82F6;         /* High-Contrast Sapphire Blue */
+  --mp95-blue-hover: #2563EB;
+  --mp95-blue-glow: rgba(59, 130, 246, 0.4);
   
   --primary: var(--mp95-blue);
   --primary-hover: var(--mp95-blue-hover);
-  --primary-light: rgba(40, 114, 252, 0.15);
+  --primary-light: rgba(59, 130, 246, 0.18);
   
   --accent-gold: var(--mp95-orange);
-  --accent-gold-light: rgba(219, 137, 8, 0.15);
+  --accent-gold-light: rgba(255, 152, 0, 0.18);
   --accent-cyan: #06B6D4;
   
   --success: #10B981;
@@ -31,18 +31,19 @@
   --danger: #EF4444;
   --info: #3B82F6;
 
-  --text-main: #FFFFFF;
-  --text-muted: #CBD5E1;
-  --text-dim: #94A3B8;
+  /* Ultra-Readable High Contrast Text */
+  --text-main: #FFFFFF;         /* Pure Bright White */
+  --text-muted: #E2E8F0;        /* High Contrast Light Silver */
+  --text-dim: #94A3B8;          /* Secondary Muted Text */
 
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
   --radius-full: 9999px;
 
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.25);
-  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.45);
   --shadow-orange: 0 0 20px var(--mp95-orange-glow);
 
   --transition-fast: 0.15s ease;
@@ -56,12 +57,14 @@
 }
 
 body {
-  font-family: 'Titillium Web', 'Josefin Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--bg-dark);
   color: var(--text-main);
   min-height: 100vh;
   display: flex;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #app {
@@ -102,13 +105,13 @@ body {
   color: white;
   font-weight: 900;
   font-size: 1.2rem;
-  font-family: 'Josefin Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
   box-shadow: var(--shadow-orange);
   letter-spacing: -1px;
 }
 
 .brand-text h1 {
-  font-family: 'Josefin Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
   font-size: 1.15rem;
   font-weight: 700;
   letter-spacing: 0.5px;
@@ -215,7 +218,7 @@ header.topbar {
 }
 
 .header-title h2 {
-  font-family: 'Josefin Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
   font-size: 1.4rem;
   font-weight: 700;
   letter-spacing: 0.3px;
@@ -335,7 +338,7 @@ header.topbar {
 }
 
 .kpi-info h3 {
-  font-family: 'Josefin Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
   font-size: 2rem;
   font-weight: 700;
   margin: 0.3rem 0;
@@ -391,7 +394,7 @@ header.topbar {
 }
 
 .card-header h3 {
-  font-family: 'Josefin Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
   font-size: 1.1rem;
   font-weight: 700;
   display: flex;
