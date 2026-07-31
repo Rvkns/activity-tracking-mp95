@@ -11,42 +11,42 @@ const pool = new Pool({
 });
 
 const INITIAL_PROJECTS = [
-  { id: "PRJ-001", progetto: "Boe mensa-IT-Digital", stato: "Manutenzione", pm: "Aurora Parisi (TMI External)", effort: 1 },
-  { id: "PRJ-002", progetto: "Intouch-IT-Digital", stato: "Manutenzione", pm: "Aurora Parisi (TMI External)", effort: 1 },
-  { id: "PRJ-003", progetto: "NRC-IT-Digital - TOYOTA", stato: "In corso", pm: "Aurora Parisi (TMI External)", effort: 5 },
-  { id: "PRJ-004", progetto: "NRC-IT-Digital - LEXUS", stato: "In corso", pm: "Aurora Parisi (TMI External)", effort: 5 },
-  { id: "PRJ-005", progetto: "Paperless-IT-Digital", stato: "In corso", pm: "Aurora Parisi (TMI External)", effort: 5 },
-  { id: "PRJ-006", progetto: "WIDE-IT-Digital", stato: "In corso", pm: "Aurora Parisi (TMI External)", effort: 25 },
-  { id: "PRJ-007", progetto: "Franchise-IT-Digital", stato: "In corso", pm: "Aurora Parisi (TMI External)", effort: 10 },
-  { id: "PRJ-008", progetto: "Rinnovi Digitali-IT-Digital", stato: "Terminato", pm: "Aurora Parisi (TMI External)", effort: 0 },
-  { id: "PRJ-009", progetto: "CMS - gestione ticket secondo livello-IT-Digital", stato: "In corso", pm: "Daniele De Dominicis (TMI External)", effort: 30 },
-  { id: "PRJ-010", progetto: "CMS-IT-Digital", stato: "In corso", pm: "Daniele De Dominicis (TMI External)", effort: 70 },
-  { id: "PRJ-011", progetto: "Dismissione Halley-IT-Corporate", stato: "Stand by", pm: "Daniele De Dominicis (TMI External)", effort: 0 },
-  { id: "PRJ-012", progetto: "Flag usato akita-IT-Digital", stato: "Da iniziare", pm: "Daniele De Dominicis (TMI External)", effort: 10 },
-  { id: "PRJ-013", progetto: "Sailpoint-IT-Digital", stato: "In corso", pm: "Federico Arte (TMI External)", effort: 40 },
-  { id: "PRJ-014", progetto: "Service Now-IT-Digital", stato: "Manutenzione", pm: "Federico Arte (TMI External)", effort: 2 },
-  { id: "PRJ-015", progetto: "WayTo Apps-IT-Digital", stato: "Manutenzione", pm: "Federico Arte (TMI External)", effort: 5 },
-  { id: "PRJ-016", progetto: "WayTo-IT-Digital", stato: "Manutenzione", pm: "Federico Arte (TMI External)", effort: 10 },
-  { id: "PRJ-017", progetto: "Service Now 2.0-IT-Digital", stato: "In corso", pm: "Federico Arte (TMI External)", effort: 5 },
-  { id: "PRJ-018", progetto: "Repository per Product Quality", stato: "In corso", pm: "Federico Arte (TMI External)", effort: 10 },
-  { id: "PRJ-019", progetto: "AI LAB", stato: "In corso", pm: "Federico Arte (TMI External)", effort: 15 },
-  { id: "PRJ-020", progetto: "ACT AS A BSS PARTNER - Survey-IT-Digital", stato: "Attività periodica", pm: "Francesca Rozzi (TMI External)", effort: 15 },
-  { id: "PRJ-021", progetto: "Digital Finance - Controlling-IT-Digital", stato: "In corso", pm: "Francesca Rozzi (TMI External)", effort: 15 },
-  { id: "PRJ-022", progetto: "Digital Sales-IT-Digital", stato: "In corso", pm: "Francesca Rozzi (TMI External)", effort: 35 },
-  { id: "PRJ-023", progetto: "Procedura Service Now-IT-Digital", stato: "Terminato", pm: "Francesca Rozzi (TMI External)", effort: 100 },
-  { id: "PRJ-024", progetto: "Digital Finance - Purchasing-IT-Digital", stato: "In corso", pm: "Francesca Rozzi (TMI External) - Aurora Parisi (TMI External)", effort: 20 },
-  { id: "PRJ-025", progetto: "TED-IT-Digital", stato: "Manutenzione", pm: "Francesca Rozzi (TMI External) - Aurora Parisi (TMI External)", effort: 20 },
-  { id: "PRJ-026", progetto: "BRiT WayDoc-IT-Digital", stato: "Terminato", pm: "Serena Lacorte (TMI External)", effort: 20 },
-  { id: "PRJ-027", progetto: "Calendario chiusure-IT-Digital", stato: "In corso", pm: "Serena Lacorte (TMI External)", effort: 0 },
-  { id: "PRJ-028", progetto: "DEALER RISK-IT-Digital", stato: "Attività periodica", pm: "Serena Lacorte (TMI External)", effort: 1 },
-  { id: "PRJ-029", progetto: "Backlog Bearit -IT-Digital", stato: "In corso", pm: "Serena Lacorte (TMI External)", effort: 20 },
-  { id: "PRJ-030", progetto: "MIA - KPI Dealer-IT-Digital", stato: "In corso", pm: "Serena Lacorte (TMI External)", effort: 20 },
-  { id: "PRJ-031", progetto: "OWE-IT-Digital", stato: "Attività periodica", pm: "Serena Lacorte (TMI External)", effort: 0 },
-  { id: "PRJ-032", progetto: "Riaddebbiti/fatturazione-IT-Digital", stato: "Attività periodica", pm: "Serena Lacorte (TMI External)", effort: 10 },
-  { id: "PRJ-033", progetto: "Warehouse channel -IT-Digital", stato: "Manutenzione", pm: "Serena Lacorte (TMI External)", effort: 30 },
-  { id: "PRJ-034", progetto: "WayTo Kinto-IT-Digital", stato: "Manutenzione", pm: "Serena Lacorte (TMI External)", effort: 5 },
-  { id: "PRJ-035", progetto: "WayTo-IT-Digital", stato: "Manutenzione", pm: "Serena Lacorte (TMI External)", effort: 15 },
-  { id: "PRJ-036", progetto: "Service Now Flotte -IT-Digital", stato: "In corso", pm: "Serena Lacorte (TMI External)", effort: 15 }
+  { id: "PRJ-001", progetto: "Boe mensa-IT-Digital", stato: "Manutenzione", pm: "Lara Tini Brunozzi", effort: 1 },
+  { id: "PRJ-002", progetto: "Intouch-IT-Digital", stato: "Manutenzione", pm: "Lara Tini Brunozzi", effort: 1 },
+  { id: "PRJ-003", progetto: "NRC-IT-Digital - TOYOTA", stato: "In corso", pm: "Serena Lacorte", effort: 5 },
+  { id: "PRJ-004", progetto: "NRC-IT-Digital - LEXUS", stato: "In corso", pm: "Serena Lacorte", effort: 5 },
+  { id: "PRJ-005", progetto: "Paperless-IT-Digital", stato: "In corso", pm: "Serena Lacorte", effort: 5 },
+  { id: "PRJ-006", progetto: "WIDE-IT-Digital", stato: "In corso", pm: "Serena Lacorte", effort: 25 },
+  { id: "PRJ-007", progetto: "Franchise-IT-Digital", stato: "In corso", pm: "Serena Lacorte", effort: 10 },
+  { id: "PRJ-008", progetto: "Rinnovi Digitali-IT-Digital", stato: "Terminato", pm: "Serena Lacorte", effort: 0 },
+  { id: "PRJ-009", progetto: "CMS - gestione ticket secondo livello-IT-Digital", stato: "In corso", pm: "Valerio Andreuccioli", effort: 30 },
+  { id: "PRJ-010", progetto: "CMS-IT-Digital", stato: "In corso", pm: "Valerio Andreuccioli", effort: 70 },
+  { id: "PRJ-011", progetto: "Dismissione Halley-IT-Corporate", stato: "Stand by", pm: "Emanuela Raschellà", effort: 0 },
+  { id: "PRJ-012", progetto: "Flag usato akita-IT-Digital", stato: "Da iniziare", pm: "Valerio Andreuccioli", effort: 10 },
+  { id: "PRJ-013", progetto: "Sailpoint-IT-Digital", stato: "In corso", pm: "Stefano Giovannella", effort: 40 },
+  { id: "PRJ-014", progetto: "Service Now-IT-Digital", stato: "Manutenzione", pm: "Stefano Giovannella", effort: 2 },
+  { id: "PRJ-015", progetto: "WayTo Apps-IT-Digital", stato: "Manutenzione", pm: "Stefano Giovannella", effort: 5 },
+  { id: "PRJ-016", progetto: "WayTo-IT-Digital", stato: "Manutenzione", pm: "Stefano Giovannella", effort: 10 },
+  { id: "PRJ-017", progetto: "Service Now 2.0-IT-Digital", stato: "In corso", pm: "Stefano Giovannella", effort: 5 },
+  { id: "PRJ-018", progetto: "Repository per Product Quality", stato: "In corso", pm: "Francesco Di Legge", effort: 10 },
+  { id: "PRJ-019", progetto: "AI LAB", stato: "In corso", pm: "Francesco Di Legge", effort: 15 },
+  { id: "PRJ-020", progetto: "ACT AS A BSS PARTNER - Survey-IT-Digital", stato: "Attività periodica", pm: "Emanuela Raschellà", effort: 15 },
+  { id: "PRJ-021", progetto: "Digital Finance - Controlling-IT-Digital", stato: "In corso", pm: "Emanuela Raschellà", effort: 15 },
+  { id: "PRJ-022", progetto: "Digital Sales-IT-Digital", stato: "In corso", pm: "Emanuela Raschellà", effort: 35 },
+  { id: "PRJ-023", progetto: "Procedura Service Now-IT-Digital", stato: "Terminato", pm: "Emanuela Raschellà", effort: 100 },
+  { id: "PRJ-024", progetto: "Digital Finance - Purchasing-IT-Digital", stato: "In corso", pm: "Emanuela Raschellà", effort: 20 },
+  { id: "PRJ-025", progetto: "TED-IT-Digital", stato: "Manutenzione", pm: "Emanuela Raschellà", effort: 20 },
+  { id: "PRJ-026", progetto: "BRiT WayDoc-IT-Digital", stato: "Terminato", pm: "Serena Lacorte", effort: 20 },
+  { id: "PRJ-027", progetto: "Calendario chiusure-IT-Digital", stato: "In corso", pm: "Serena Lacorte", effort: 0 },
+  { id: "PRJ-028", progetto: "DEALER RISK-IT-Digital", stato: "Attività periodica", pm: "Serena Lacorte", effort: 1 },
+  { id: "PRJ-029", progetto: "Backlog Bearit -IT-Digital", stato: "In corso", pm: "Serena Lacorte", effort: 20 },
+  { id: "PRJ-030", progetto: "MIA - KPI Dealer-IT-Digital", stato: "In corso", pm: "Serena Lacorte", effort: 20 },
+  { id: "PRJ-031", progetto: "OWE-IT-Digital", stato: "Attività periodica", pm: "Serena Lacorte", effort: 0 },
+  { id: "PRJ-032", progetto: "Riaddebbiti/fatturazione-IT-Digital", stato: "Attività periodica", pm: "Serena Lacorte", effort: 10 },
+  { id: "PRJ-033", progetto: "Warehouse channel -IT-Digital", stato: "Manutenzione", pm: "Serena Lacorte", effort: 30 },
+  { id: "PRJ-034", progetto: "WayTo Kinto-IT-Digital", stato: "Manutenzione", pm: "Serena Lacorte", effort: 5 },
+  { id: "PRJ-035", progetto: "WayTo-IT-Digital", stato: "Manutenzione", pm: "Serena Lacorte", effort: 15 },
+  { id: "PRJ-036", progetto: "Service Now Flotte -IT-Digital", stato: "In corso", pm: "Serena Lacorte", effort: 15 }
 ];
 
 const INITIAL_RESOURCES = [
@@ -112,8 +112,13 @@ async function initDatabase() {
         ADD COLUMN IF NOT EXISTS stato_tempistiche VARCHAR(50) DEFAULT 'In linea',
         ADD COLUMN IF NOT EXISTS criticita TEXT,
         ADD COLUMN IF NOT EXISTS reparto VARCHAR(100);
+
+      UPDATE mp95_projects SET pm = 'Serena Lacorte' WHERE pm LIKE '%Aurora Parisi%';
+      UPDATE mp95_projects SET pm = 'Valerio Andreuccioli' WHERE pm LIKE '%Daniele De Dominicis%';
+      UPDATE mp95_projects SET pm = 'Stefano Giovannella' WHERE pm LIKE '%Federico Arte%';
+      UPDATE mp95_projects SET pm = 'Emanuela Raschellà' WHERE pm LIKE '%Francesca Rozzi%';
     `);
-    console.log("✓ Migrazione nuove colonne completata (risorsa, descrizione, effort_previsto/residuo, avanzamento, scadenza, stato_tempistiche, criticita, reparto).");
+    console.log("✓ Migrazione nuove colonne e allineamento Coordinatori ufficiali completato.");
 
     // 3. Check if projects exist
     const prjCheck = await client.query("SELECT COUNT(*) FROM mp95_projects");
