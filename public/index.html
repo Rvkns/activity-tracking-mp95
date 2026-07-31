@@ -362,117 +362,411 @@
           <div class="wiki-toc">
             <h4><i class="fa-solid fa-list-ol"></i> Indice della Guida Utente TrackMaster MP95</h4>
             <ul>
-              <li><a href="#wiki-overview"><i class="fa-solid fa-angle-right"></i> 1. Scopo e Architettura dell'App</a></li>
-              <li><a href="#wiki-dashboard"><i class="fa-solid fa-angle-right"></i> 2. Executive Dashboard & KPI</a></li>
-              <li><a href="#wiki-projects"><i class="fa-solid fa-angle-right"></i> 3. Gestione Progetti & Effort %</a></li>
-              <li><a href="#wiki-coordinators"><i class="fa-solid fa-angle-right"></i> 4. Sezione Coordinatori & Dropdown Menu</a></li>
-              <li><a href="#wiki-excel"><i class="fa-solid fa-angle-right"></i> 5. Caricamento File Excel (.xlsx) & Export</a></li>
-              <li><a href="#wiki-reset"><i class="fa-solid fa-angle-right"></i> 6. Funzione "Ripristina Dati Excel Originali"</a></li>
+              <li><a href="#wiki-overview"><i class="fa-solid fa-angle-right"></i> 1. Panoramica e Navigazione</a></li>
+              <li><a href="#wiki-theme"><i class="fa-solid fa-angle-right"></i> 2. Tema Chiaro / Scuro</a></li>
+              <li><a href="#wiki-dashboard"><i class="fa-solid fa-angle-right"></i> 3. Executive Dashboard & KPI</a></li>
+              <li><a href="#wiki-projects"><i class="fa-solid fa-angle-right"></i> 4. Gestione Progetti & Effort</a></li>
+              <li><a href="#wiki-projects-filters"><i class="fa-solid fa-angle-right"></i> 5. Filtri e Ricerca Progetti</a></li>
+              <li><a href="#wiki-projects-crud"><i class="fa-solid fa-angle-right"></i> 6. Creare, Modificare ed Eliminare un Progetto</a></li>
+              <li><a href="#wiki-coordinators"><i class="fa-solid fa-angle-right"></i> 7. Coordinatori (PM) & Gestione Team</a></li>
+              <li><a href="#wiki-resources"><i class="fa-solid fa-angle-right"></i> 8. Gestione Risorse del Team</a></li>
+              <li><a href="#wiki-timeline"><i class="fa-solid fa-angle-right"></i> 9. Timeline Gantt & Calendario</a></li>
+              <li><a href="#wiki-excel"><i class="fa-solid fa-angle-right"></i> 10. Importazione File Excel (.xlsx / .xls)</a></li>
+              <li><a href="#wiki-export"><i class="fa-solid fa-angle-right"></i> 11. Esportazione Dati (CSV / JSON)</a></li>
+              <li><a href="#wiki-data"><i class="fa-solid fa-angle-right"></i> 12. Persistenza, Sicurezza e Sincronizzazione Dati</a></li>
             </ul>
           </div>
 
-          <!-- Section 1 -->
+          <!-- Section 1: Panoramica -->
           <div class="wiki-section-card" id="wiki-overview">
-            <h3><i class="fa-solid fa-compass" style="color:var(--mp95-orange);"></i> 1. Scopo e Architettura dell'Applicazione</h3>
+            <h3><i class="fa-solid fa-compass" style="color:var(--mp95-orange);"></i> 1. Panoramica e Navigazione</h3>
             <p>
-              <b>TrackMaster MP95</b> è una web application pensata per il tracciamento ad alto livello delle attività, dei progetti e dell'effort allocato dai coordinatori (Project Manager) e dalle risorse operative di Media Point 95.
+              <b>TrackMaster MP95</b> è la web application di Media Point 95 per il tracciamento strategico delle attività, dei progetti e dell'effort allocato dai Coordinatori (PM) e dalle risorse operative.
             </p>
             <div class="wiki-feature-box">
-              <b>Caratteristica Chiave:</b> L'app elimina la complessità del timesheet orario "ora per ora", focalizzandosi sul <b>tracking strategico della percentuale di Effort (%)</b> allocata per ciascun progetto e coordinatore.
+              <b>Concetto Chiave:</b> L'app elimina la complessità del timesheet orario, focalizzandosi sulla <b>percentuale di Effort (%)</b> allocata per ciascun progetto e risorsa. Ogni dato è sincronizzato in tempo reale sul database cloud Neon PostgreSQL.
             </div>
-          </div>
-
-          <!-- Section 2 -->
-          <div class="wiki-section-card" id="wiki-dashboard">
-            <h3><i class="fa-solid fa-chart-line" style="color:var(--mp95-blue);"></i> 2. Executive Dashboard & KPI</h3>
-            <p>
-              La **Dashboard** offre una vista d'insieme immediata per la direzione aziendale ed i coordinatori:
-            </p>
-            <ul style="margin-left:1.5rem; color:var(--text-muted); font-size:0.9rem; line-height:1.6;">
-              <li><b>Totale Progetti:</b> Numero complessivo dei progetti censiti (36 di default da Excel).</li>
-              <li><b>Progetti In Corso:</b> Conteggio dei progetti in stato attivo di sviluppo.</li>
-              <li><b>Coordinatori / PM:</b> Numero di PM unici censiti a sistema.</li>
-              <li><b>Effort Medio Progetto:</b> Percentuale media dell'effort necessaria per progetto.</li>
-              <li><b>Distribuzione Stato:</b> Grafico a barre con la percentuale dei progetti in <i>In corso, Manutenzione, Terminato, Stand by, Da iniziare, Attività periodica</i>.</li>
-              <li><b>Carico di Lavoro Coordinatori:</b> Riepilogo percentuale del carico totale per ciascun PM.</li>
+            <p style="margin-top:1rem; font-weight:700;">Come navigare nell'app:</p>
+            <ul style="margin-left:1.5rem; color:var(--text-muted); font-size:0.9rem; line-height:1.8;">
+              <li><i class="fa-solid fa-chart-line" style="color:var(--mp95-orange); margin-right:0.3rem;"></i> <b>Dashboard</b> — Panoramica generale con KPI, distribuzioni e carichi di lavoro.</li>
+              <li><i class="fa-solid fa-diagram-project" style="color:var(--mp95-orange); margin-right:0.3rem;"></i> <b>Progetti & Effort</b> — Tabella completa dei progetti con filtri, ricerca, creazione e modifica.</li>
+              <li><i class="fa-solid fa-user-gear" style="color:var(--mp95-orange); margin-right:0.3rem;"></i> <b>Coordinatori (PM)</b> — Card individuali per ogni coordinatore con dettaglio team, risorse e allocazioni.</li>
+              <li><i class="fa-solid fa-calendar-days" style="color:var(--mp95-orange); margin-right:0.3rem;"></i> <b>Timeline & Calendario</b> — Diagramma di Gantt e calendario mensile per la governance temporale.</li>
+              <li><i class="fa-solid fa-file-export" style="color:var(--mp95-orange); margin-right:0.3rem;"></i> <b>Report & Export</b> — Esportazione CSV/JSON e importazione file Excel.</li>
+              <li><i class="fa-solid fa-book-bookmark" style="color:var(--mp95-orange); margin-right:0.3rem;"></i> <b>Wiki & Guida</b> — Questa guida utente completa (la stai leggendo ora!).</li>
             </ul>
+            <p style="margin-top:0.8rem; font-size:0.88rem; color:var(--text-muted);">
+              Nella <b>barra superiore</b> (topbar) trovi sempre disponibili i pulsanti: <b>Tema Chiaro/Scuro</b>, <b>Guida Wiki</b>, <b>Carica File Excel</b> e <b>Nuovo Progetto</b>. Questi sono accessibili da qualunque sezione.
+            </p>
           </div>
 
-          <!-- Section 3 -->
-          <div class="wiki-section-card" id="wiki-projects">
-            <h3><i class="fa-solid fa-diagram-project" style="color:var(--mp95-orange);"></i> 3. Gestione Progetti & Effort %</h3>
-            <p>
-              In questa sezione è possibile consultare e gestire l'elenco dei progetti tramite data grid:
-            </p>
-            <div class="wiki-feature-box orange">
-              <ul>
-                <li><b>Ricerca Live:</b> Digita nel box di ricerca per filtrare istantaneamente per nome progetto o PM.</li>
-                <li><b>Filtri Combinati:</b> Seleziona uno Stato o un PM specifico per restringere la tabella.</li>
-                <li><b>Pulsante "+ Nuovo Progetto":</b> Permette di inserire un nuovo progetto indicando Nome, Stato, Effort % e PM.</li>
-                <li><b>Modifica ed Eliminazione:</b> Usa le icone azionabili sulla destra di ogni riga per modificare l'effort o eliminare il progetto.</li>
-              </ul>
-            </div>
-          </div>
-
-          <!-- Section 4 -->
-          <div class="wiki-section-card" id="wiki-coordinators">
-            <h3><i class="fa-solid fa-user-gear" style="color:var(--accent-cyan);"></i> 4. Sezione Coordinatori & Dropdown Menu</h3>
-            <p>
-              Ciascun coordinatore dispone di una card dedicata con barra di capacity % e <b>3 menu a tendina interattivi</b>:
-            </p>
-            <ul style="margin-left:1.5rem; color:var(--text-muted); font-size:0.9rem; line-height:1.6;">
-              <li><b>📁 Progetti del Coordinatore (Dropdown 1):</b> Mostra l'elenco dei progetti assegnati al PM, con relativo stato ed effort %.</li>
-              <li><b>👥 Risorse del Coordinatore (Dropdown 2):</b> Mostra le risorse operative del team (es. Fullstack Dev, QA Engineer) con pulsante <i>"+ Aggiungi Risorsa"</i> per inserire nuovi membri.</li>
-              <li><b>🔀 Progetti delle Risorse (Dropdown 3):</b> Menu a tendina che permette di selezionare una risorsa e vedere su quali progetti è impegnata e con quale effort.</li>
-            </ul>
-            <div class="wiki-feature-box warning">
-              <b>Logica CAP Effort Max 120%:</b> L'applicazione imposta un CAP massimo del <b>120% totale</b> sull'effort delle attività per ciascun team/coordinatore:
-              <ul style="margin-top:0.35rem; margin-left:1.2rem;">
-                <li><b>0% - 100%:</b> Allocazione ordinaria a capacità standard (Verde/Blu).</li>
-                <li><b>101% - 120%:</b> Straordinario medio (+20% massimo tollerato) (Arancione).</li>
-                <li><b>> 120%:</b> Overload Critico — Superamento del CAP massimo consentito (Rosso con Alert).</li>
-              </ul>
-            </div>
-          </div>
-
-          <!-- Section 5 -->
-          <div class="wiki-section-card" id="wiki-excel">
-            <h3><i class="fa-solid fa-file-excel" style="color:#10B981;"></i> 5. Caricamento File Excel (.xlsx) & Export</h3>
-            <p>
-              I coordinatori possono aggiornare i dati direttamente caricando un file Excel:
-            </p>
+          <!-- Section 2: Tema -->
+          <div class="wiki-section-card" id="wiki-theme">
+            <h3><i class="fa-solid fa-circle-half-stroke" style="color:var(--mp95-blue);"></i> 2. Tema Chiaro / Scuro</h3>
+            <p>L'app supporta due temi visuali per adattarsi alle tue preferenze:</p>
             <div class="wiki-feature-box">
-              <ol style="margin-left:1.2rem;">
-                <li>Cliccare sul pulsante verde <b>"Carica File Excel (.xlsx)"</b> in alto a destra o nella sezione Report.</li>
-                <li>Selezionare un file <code>.xlsx</code> o <code>.xls</code> formattato con le colonne: <code>Progetto</code>, <code>Stato</code>, <code>PM</code>, <code>Effort %</code>.</li>
-                <li>L'app leggerà automaticamente il file, aggiornerà tutti i progetti ed il carico dei coordinatori e salverà le informazioni a sistema.</li>
+              <ol style="margin-left:1.2rem; line-height:1.8;">
+                <li>Clicca sul pulsante <b>☀️ Tema Chiaro</b> (o <b>🌙 Tema Scuro</b>) nella barra superiore.</li>
+                <li>L'interfaccia cambierà istantaneamente colori e contrasto.</li>
+                <li>La tua preferenza viene <b>salvata automaticamente</b> nel browser: alla prossima visita l'app ricorderà il tema scelto.</li>
               </ol>
             </div>
           </div>
 
-          <!-- Section 6 -->
-          <div class="wiki-section-card" id="wiki-reset">
-            <h3><i class="fa-solid fa-shield-halved" style="color:#10B981;"></i> 6. Sicurezza e Persistenza dei Dati</h3>
-            <p>
-              Tutte le modifiche, gli inserimenti ed i caricamenti Excel eseguiti dai coordinatori e dalle risorse sono **sincronizzati e protetti in tempo reale sul database cloud Neon PostgreSQL**.
-            </p>
+          <!-- Section 3: Dashboard -->
+          <div class="wiki-section-card" id="wiki-dashboard">
+            <h3><i class="fa-solid fa-chart-line" style="color:var(--mp95-blue);"></i> 3. Executive Dashboard & KPI</h3>
+            <p>La Dashboard è la prima schermata visibile all'apertura dell'app. Fornisce una <b>visione d'insieme immediata</b> per direzione aziendale e coordinatori.</p>
+            
+            <p style="margin-top:1rem; font-weight:700;">Schede KPI (riga superiore):</p>
+            <ul style="margin-left:1.5rem; color:var(--text-muted); font-size:0.9rem; line-height:1.8;">
+              <li><b>Totale Progetti:</b> Numero complessivo di tutti i progetti censiti nel sistema MP95.</li>
+              <li><b>Progetti In Corso:</b> Conteggio dei soli progetti con stato "In corso" (attivamente in sviluppo).</li>
+              <li><b>Coordinatori / PM:</b> Numero di Project Manager unici a cui sono assegnati progetti.</li>
+              <li><b>Effort Medio Progetto:</b> Percentuale di effort media calcolata su tutti i progetti (somma effort ÷ numero progetti).</li>
+              <li><b style="color:var(--danger);">A Rischio / In Ritardo:</b> Numero di progetti le cui tempistiche sono segnalate come "A rischio" o "In ritardo". Se il numero è <b>0</b>, tutti i progetti sono in linea con le scadenze.</li>
+            </ul>
+
+            <p style="margin-top:1rem; font-weight:700;">Grafici Dashboard (riga inferiore):</p>
+            <ul style="margin-left:1.5rem; color:var(--text-muted); font-size:0.9rem; line-height:1.8;">
+              <li><b>📊 Distribuzione Stato Progetti:</b> Mostra quanti progetti rientrano in ciascun stato (In corso, Manutenzione, Terminato, Stand by, Da iniziare, Attività periodica) con barre di percentuale colorate.</li>
+              <li><b>👤 Carico di Lavoro Coordinatori:</b> Elenca ogni risorsa/coordinatore con il suo effort totale su 120% (capacità massima). Le risorse in <span style="color:var(--danger);">overload (&gt;120%)</span> o in <span style="color:var(--warning);">straordinario (101-120%)</span> sono evidenziate con colori di allarme.</li>
+            </ul>
             <div class="wiki-feature-box">
-              <b>Protezione Inserimenti:</b> I caricamenti Excel operano in modalità <b>Append & Merge non distruttiva</b> per garantire che le attività inserite da ciascun membro del team rimangano sempre memorizzate in sicurezza e protette da sovrascritture accidentali.
+              <b>💡 Suggerimento:</b> La Dashboard si aggiorna <b>automaticamente</b> ogni volta che aggiungi, modifichi o elimini un progetto, o importi un file Excel. Non serve nessuna azione manuale per aggiornare le statistiche.
             </div>
           </div>
 
-          <!-- Section 7 -->
-          <div class="wiki-section-card" id="wiki-timeline">
-            <h3><i class="fa-solid fa-calendar-days" style="color:var(--mp95-blue);"></i> 7. Governance Temporale & Timeline Interattiva</h3>
-            <p>
-              La sezione <b>Timeline & Calendario</b> introduce il monitoraggio della durata e delle scadenze delle attività nel tempo:
-            </p>
+          <!-- Section 4: Progetti -->
+          <div class="wiki-section-card" id="wiki-projects">
+            <h3><i class="fa-solid fa-diagram-project" style="color:var(--mp95-orange);"></i> 4. Gestione Progetti & Effort</h3>
+            <p>La sezione <b>Progetti & Effort</b> mostra la tabella completa di tutti i progetti con le seguenti colonne:</p>
             <div class="wiki-feature-box orange">
-              <ul style="margin-left:1.2rem;">
-                <li><b>Vista Gantt Interattiva:</b> Mostra l'estensione temporale di ciascun progetto su base 12 mesi per ciascun Coordinatore, evidenziando le sovrapposizioni.</li>
-                <li><b>Vista Calendario Mensile:</b> Consente di navigare mese per mese per verificare l'avvio e la scadenza esatta delle attività.</li>
-                <li><b>Scelta Rapida Durata:</b> Nel form di creazione/modifica è possibile selezionare pulsanti rapidi (<i>+1 Mese, +3 Mesi, +6 Mesi, Fine Anno</i>) per impostare la durata con 1 solo clic senza complicazioni!</li>
+              <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+                <thead>
+                  <tr style="border-bottom:1px solid var(--border-color); text-align:left;">
+                    <th style="padding:0.4rem 0.6rem; color:var(--mp95-orange);">Colonna</th>
+                    <th style="padding:0.4rem 0.6rem; color:var(--text-main);">Descrizione</th>
+                  </tr>
+                </thead>
+                <tbody style="color:var(--text-muted);">
+                  <tr><td style="padding:0.3rem 0.6rem;"><b>ID</b></td><td style="padding:0.3rem 0.6rem;">Codice univoco del progetto (es. PRJ-001)</td></tr>
+                  <tr><td style="padding:0.3rem 0.6rem;"><b>Nome Progetto</b></td><td style="padding:0.3rem 0.6rem;">Nome completo del progetto, con eventuale descrizione</td></tr>
+                  <tr><td style="padding:0.3rem 0.6rem;"><b>Reparto</b></td><td style="padding:0.3rem 0.6rem;">Area aziendale (Data management, Digital, Corporate, Innovation, ecc.)</td></tr>
+                  <tr><td style="padding:0.3rem 0.6rem;"><b>Risorsa</b></td><td style="padding:0.3rem 0.6rem;">Persona operativa assegnata al progetto (se presente)</td></tr>
+                  <tr><td style="padding:0.3rem 0.6rem;"><b>Stato</b></td><td style="padding:0.3rem 0.6rem;">Stato corrente: In corso, Manutenzione, Terminato, Stand by, Da iniziare, Attività periodica</td></tr>
+                  <tr><td style="padding:0.3rem 0.6rem;"><b>PM / Coordinatore</b></td><td style="padding:0.3rem 0.6rem;">Il coordinatore responsabile del progetto</td></tr>
+                  <tr><td style="padding:0.3rem 0.6rem;"><b>Effort %</b></td><td style="padding:0.3rem 0.6rem;">Percentuale di effort allocata (con barra di progresso visiva)</td></tr>
+                  <tr><td style="padding:0.3rem 0.6rem;"><b>Avanzamento</b></td><td style="padding:0.3rem 0.6rem;">Percentuale di completamento del progetto (0-100%)</td></tr>
+                  <tr><td style="padding:0.3rem 0.6rem;"><b>Data Inizio</b></td><td style="padding:0.3rem 0.6rem;">Data di avvio dell'attività</td></tr>
+                  <tr><td style="padding:0.3rem 0.6rem;"><b>Scadenza</b></td><td style="padding:0.3rem 0.6rem;">Data di fine prevista (evidenziata in rosso se passata)</td></tr>
+                  <tr><td style="padding:0.3rem 0.6rem;"><b>Tempistiche</b></td><td style="padding:0.3rem 0.6rem;">🟢 In linea, 🟡 A rischio, 🔴 In ritardo</td></tr>
+                  <tr><td style="padding:0.3rem 0.6rem;"><b>Criticità / Note</b></td><td style="padding:0.3rem 0.6rem;">Eventuali note su blocchi, dipendenze o necessità di supporto</td></tr>
+                  <tr><td style="padding:0.3rem 0.6rem;"><b>Azioni</b></td><td style="padding:0.3rem 0.6rem;">Pulsanti per modificare (✏️) o eliminare (🗑️) il progetto</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Section 5: Filtri -->
+          <div class="wiki-section-card" id="wiki-projects-filters">
+            <h3><i class="fa-solid fa-filter" style="color:var(--accent-cyan);"></i> 5. Filtri e Ricerca Progetti</h3>
+            <p>La barra dei filtri in cima alla tabella progetti permette di restringere i risultati visualizzati:</p>
+            <div class="wiki-feature-box">
+              <ul style="margin-left:1.2rem; line-height:1.8;">
+                <li><b>🔍 Ricerca Testuale:</b> Digita nel campo di ricerca per filtrare in tempo reale per <b>nome progetto</b>, <b>nome coordinatore</b> o <b>nome risorsa</b>. La ricerca è istantanea ad ogni carattere digitato.</li>
+                <li><b>📋 Filtro Stato:</b> Seleziona uno stato specifico dal menu a tendina (In corso, Manutenzione, Terminato, Stand by, Da iniziare, Attività periodica) per visualizzare solo i progetti con quello stato.</li>
+                <li><b>👤 Filtro PM / Coordinatore:</b> Seleziona un coordinatore per visualizzare solo i suoi progetti.</li>
+                <li><b>⏱️ Filtro Tempistiche:</b> Filtra per stato delle tempistiche (🟢 In linea, 🟡 A rischio, 🔴 In ritardo).</li>
+                <li><b>🏢 Filtro Reparto:</b> Filtra per area aziendale (Data management, Innovation, Digital, Corporate, Governance, Infrastructure).</li>
               </ul>
+            </div>
+            <div class="wiki-feature-box warning">
+              <b>💡 Suggerimento:</b> Tutti i filtri sono <b>combinabili</b> tra loro. Ad esempio puoi cercare "CMS", selezionare stato "In corso" e filtrare per un PM specifico contemporaneamente. Per rimuovere un filtro, riporta il menu a tendina su "Tutti" o cancella il testo di ricerca.
+            </div>
+          </div>
+
+          <!-- Section 6: CRUD Progetto -->
+          <div class="wiki-section-card" id="wiki-projects-crud">
+            <h3><i class="fa-solid fa-pen-to-square" style="color:var(--mp95-orange);"></i> 6. Creare, Modificare ed Eliminare un Progetto</h3>
+            
+            <p style="font-weight:700; margin-top:0.5rem; color:var(--success);"><i class="fa-solid fa-folder-plus"></i> Creare un Nuovo Progetto:</p>
+            <div class="wiki-feature-box">
+              <ol style="margin-left:1.2rem; line-height:1.8;">
+                <li>Clicca il pulsante arancione <b>"+ Nuovo Progetto"</b> nella topbar (disponibile da qualunque sezione) oppure nella pagina Timeline.</li>
+                <li>Si aprirà il form di creazione. Compila i campi:</li>
+              </ol>
+              <ul style="margin-left:2.4rem; line-height:1.8; margin-top:0.3rem;">
+                <li><b>Nome Progetto *</b> (obbligatorio) — Il nome identificativo del progetto.</li>
+                <li><b>Stato *</b> (obbligatorio) — Seleziona: In corso, Da iniziare, In fase di chiusura, Completato, In attesa, Manutenzione, Terminato, Stand by, Attività periodica.</li>
+                <li><b>Avanzamento %</b> — Percentuale di completamento (0-100).</li>
+                <li><b>PM / Coordinatore *</b> (obbligatorio) — Seleziona il coordinatore responsabile dall'elenco. Quando scegli un coordinatore, il campo Reparto si auto-compila con il reparto corrispondente.</li>
+                <li><b>Reparto</b> — L'area aziendale di appartenenza (auto-compilato, ma modificabile).</li>
+              </ul>
+            </div>
+
+            <p style="font-weight:700; margin-top:1rem; color:var(--mp95-blue);"><i class="fa-solid fa-users"></i> Sezione Allocazione Risorse & Effort:</p>
+            <div class="wiki-feature-box orange">
+              <p>Ogni progetto può avere <b>una o più risorse</b> assegnate, ognuna con il proprio effort individuale:</p>
+              <ul style="margin-left:1.2rem; line-height:1.8; margin-top:0.3rem;">
+                <li>Nella riga risorsa, seleziona un membro del team dal menu a tendina (le risorse sono quelle del team del coordinatore scelto).</li>
+                <li>Se la risorsa non è nell'elenco, seleziona <b>"+ Inserisci Altra Risorsa..."</b> e digita il nome manualmente.</li>
+                <li>Inserisci l'<b>Effort % individuale</b> per quella risorsa (es. 20%).</li>
+                <li>Per aggiungere altre risorse, clicca <b>"+ Aggiungi Altra Risorsa al Progetto"</b>.</li>
+                <li>Per rimuovere una risorsa, clicca l'icona 🗑️ rossa a destra della riga.</li>
+                <li>In basso viene mostrato l'<b>Effort Complessivo Progetto</b> (somma automatica di tutti gli effort individuali).</li>
+              </ul>
+            </div>
+
+            <p style="font-weight:700; margin-top:1rem; color:var(--mp95-blue);"><i class="fa-solid fa-calendar-days"></i> Sezione Governance Temporale:</p>
+            <div class="wiki-feature-box">
+              <ul style="margin-left:1.2rem; line-height:1.8;">
+                <li><b>Data Inizio Attività</b> — Data di partenza del progetto (precompilata con la data odierna per nuovi progetti).</li>
+                <li><b>Data Fine / Scadenza</b> — Data prevista di completamento.</li>
+                <li><b>Scelta Rapida Durata</b> — Usa i pulsanti rapidi per impostare la scadenza con un solo clic:
+                  <ul style="margin-left:1.2rem; margin-top:0.2rem;">
+                    <li><b>+1 Mese</b> — Scadenza a 1 mese dalla data inizio.</li>
+                    <li><b>+3 Mesi</b> — Scadenza a 3 mesi dalla data inizio.</li>
+                    <li><b>+6 Mesi</b> — Scadenza a 6 mesi dalla data inizio.</li>
+                    <li><b>Fine Anno</b> — Scadenza al 31 dicembre dell'anno della data inizio.</li>
+                  </ul>
+                </li>
+              </ul>
+            </div>
+
+            <p style="font-weight:700; margin-top:1rem; color:var(--text-muted);"><i class="fa-solid fa-bars-staggered"></i> Campi aggiuntivi:</p>
+            <div class="wiki-feature-box">
+              <ul style="margin-left:1.2rem; line-height:1.8;">
+                <li><b>Effort Previsto (gg/u)</b> — Giornate-uomo previste per il completamento del progetto.</li>
+                <li><b>Effort Residuo (gg/u)</b> — Giornate-uomo restanti da completare.</li>
+                <li><b>Stato Tempistiche</b> — Seleziona: 🟢 In linea, 🟡 A rischio, 🔴 In ritardo.</li>
+                <li><b>Descrizione</b> — Testo libero per descrivere l'attività svolta.</li>
+                <li><b>Criticità / Dipendenze</b> — Testo libero per segnalare blocchi, dipendenze esterne, o necessità di supporto.</li>
+              </ul>
+              <p style="margin-top:0.5rem;">Clicca <b>"Salva Progetto"</b> per confermare. Il dato viene salvato sia localmente che sul database cloud.</p>
+            </div>
+
+            <p style="font-weight:700; margin-top:1rem; color:var(--warning);"><i class="fa-solid fa-pen"></i> Modificare un Progetto Esistente:</p>
+            <div class="wiki-feature-box warning">
+              <ol style="margin-left:1.2rem; line-height:1.8;">
+                <li>Nella tabella Progetti, clicca l'icona <b>✏️ (matita)</b> nella colonna Azioni della riga del progetto che vuoi modificare.</li>
+                <li>In alternativa, dalla Timeline Gantt clicca direttamente sulla <b>barra colorata</b> di un progetto per aprirne il form di modifica.</li>
+                <li>Dalla colonna Criticità, clicca il pulsante <b>"+ Aggiungi nota"</b> per aprire direttamente il form di modifica e aggiungere una criticità.</li>
+                <li>Il form si aprirà con tutti i dati precompilati. Modifica i campi desiderati e clicca <b>"Salva Progetto"</b>.</li>
+              </ol>
+            </div>
+
+            <p style="font-weight:700; margin-top:1rem; color:var(--danger);"><i class="fa-solid fa-trash"></i> Eliminare un Progetto:</p>
+            <div class="wiki-feature-box" style="border-color:rgba(239,68,68,0.3);">
+              <ol style="margin-left:1.2rem; line-height:1.8;">
+                <li>Nella tabella Progetti, clicca l'icona <b>🗑️ (cestino rosso)</b> nella colonna Azioni.</li>
+                <li>Apparirà una finestra di conferma: <i>"Sei sicuro di voler eliminare questo progetto?"</i></li>
+                <li>Conferma per eliminare definitivamente il progetto dal database. <b>Attenzione: l'operazione è irreversibile.</b></li>
+              </ol>
+            </div>
+          </div>
+
+          <!-- Section 7: Coordinatori -->
+          <div class="wiki-section-card" id="wiki-coordinators">
+            <h3><i class="fa-solid fa-user-gear" style="color:var(--accent-cyan);"></i> 7. Coordinatori (PM) & Gestione Team</h3>
+            <p>La sezione <b>Coordinatori (PM)</b> mostra una card individuale per ciascun coordinatore ufficiale.</p>
+
+            <p style="font-weight:700; margin-top:0.8rem;">Ogni card del coordinatore contiene:</p>
+            <ul style="margin-left:1.5rem; color:var(--text-muted); font-size:0.9rem; line-height:1.8;">
+              <li><b>Avatar e Nome</b> con badge del reparto di appartenenza.</li>
+              <li><b>Allocazione Risorse Team</b> — Barre individuali per ogni risorsa del team, mostrando l'effort con codice colore (verde = standard, arancione = straordinario, rosso = overload).</li>
+              <li><b>Numero Progetti Gestiti</b> — Conteggio dei progetti sotto la responsabilità del coordinatore.</li>
+            </ul>
+
+            <p style="font-weight:700; margin-top:1rem;">I 3 menu a tendina interattivi (Dropdown):</p>
+            <div class="wiki-feature-box orange">
+              <ul style="margin-left:1.2rem; line-height:1.8;">
+                <li><b>📁 Dropdown 1 — Progetti del Coordinatore:</b> Elenco di tutti i progetti assegnati al coordinatore con relativo stato (badge colorato) e percentuale di effort. Questo dropdown è <b>aperto di default</b>.</li>
+                <li><b>👥 Dropdown 2 — Risorse del Team:</b> Mostra tutti i membri del team (nome, ruolo, progetti target) con pulsante per eliminare una risorsa (🗑️) e pulsante <b>"+ Aggiungi Risorsa al Team"</b> in fondo.</li>
+                <li><b>🔀 Dropdown 3 — Progetti delle Risorse:</b> Menu a tendina per selezionare una risorsa del team e visualizzare su quali progetti è impegnata, con la percentuale di effort per ciascuno.</li>
+              </ul>
+              <p style="margin-top:0.5rem; font-size:0.85rem; color:var(--text-dim);">Clicca sull'intestazione di ogni dropdown per <b>aprirlo/chiuderlo</b>.</p>
+            </div>
+
+            <div class="wiki-feature-box warning">
+              <b>Logica CAP Effort Massimo 120%:</b>
+              <ul style="margin-top:0.35rem; margin-left:1.2rem; line-height:1.8;">
+                <li><b style="color:var(--success);">🟢 0% - 100%:</b> Allocazione ordinaria — capacità standard. Barra verde/blu.</li>
+                <li><b style="color:var(--warning);">⚡ 101% - 120%:</b> Straordinario medio — il +20% è il massimo tollerato. Barra arancione.</li>
+                <li><b style="color:var(--danger);">🔴 > 120%:</b> Overload Critico — superamento del CAP massimo consentito. Barra rossa con alert.</li>
+              </ul>
+            </div>
+
+            <p style="font-weight:700; margin-top:1rem; color:var(--mp95-blue);"><i class="fa-solid fa-user-plus"></i> Aggiungere un Nuovo Coordinatore:</p>
+            <div class="wiki-feature-box">
+              <ol style="margin-left:1.2rem; line-height:1.8;">
+                <li>Nella pagina Coordinatori, clicca il pulsante <b>"+ Nuovo Coordinatore"</b> in alto a destra.</li>
+                <li>Inserisci <b>Nome e Cognome</b> e seleziona l'<b>Area / Reparto</b> di appartenenza.</li>
+                <li>Clicca <b>"Salva Coordinatore"</b>. La nuova card apparirà immediatamente nella griglia.</li>
+              </ol>
+            </div>
+          </div>
+
+          <!-- Section 8: Risorse -->
+          <div class="wiki-section-card" id="wiki-resources">
+            <h3><i class="fa-solid fa-users" style="color:var(--mp95-blue);"></i> 8. Gestione Risorse del Team</h3>
+            <p>Ogni coordinatore può gestire il proprio team di risorse operative direttamente dalla propria card.</p>
+            
+            <p style="font-weight:700; margin-top:0.8rem; color:var(--success);"><i class="fa-solid fa-user-plus"></i> Aggiungere una Risorsa al Team:</p>
+            <div class="wiki-feature-box">
+              <ol style="margin-left:1.2rem; line-height:1.8;">
+                <li>Nella card del coordinatore, apri il <b>Dropdown 2 (Risorse del Team)</b>.</li>
+                <li>Clicca il pulsante <b>"+ Aggiungi Risorsa al Team"</b>.</li>
+                <li>Compila il form modale:
+                  <ul style="margin-left:1.2rem; margin-top:0.2rem;">
+                    <li><b>Nome e Cognome *</b> — Nome completo della risorsa (obbligatorio).</li>
+                    <li><b>Ruolo / Specializzazione</b> — Es. "Senior Fullstack Dev", "QA Engineer", "Data Analyst".</li>
+                    <li><b>Progetti Assegnati</b> — Elenco di progetti separati da virgola (es. "WIDE-IT-Digital, Franchise-IT-Digital").</li>
+                  </ul>
+                </li>
+                <li>Clicca <b>"Salva Risorsa"</b>. La risorsa apparirà immediatamente nel team e sarà disponibile nella selezione risorse dei form di progetto.</li>
+              </ol>
+            </div>
+
+            <p style="font-weight:700; margin-top:1rem; color:var(--danger);"><i class="fa-solid fa-trash-can"></i> Rimuovere una Risorsa dal Team:</p>
+            <div class="wiki-feature-box" style="border-color:rgba(239,68,68,0.3);">
+              <ol style="margin-left:1.2rem; line-height:1.8;">
+                <li>Nel Dropdown 2 (Risorse del Team), trova la risorsa da rimuovere.</li>
+                <li>Clicca l'icona <b>🗑️ (cestino rosso)</b> a destra del nome della risorsa.</li>
+                <li>Conferma la rimozione nella finestra di dialogo. La risorsa verrà rimossa dal team del coordinatore.</li>
+              </ol>
+            </div>
+          </div>
+
+          <!-- Section 9: Timeline -->
+          <div class="wiki-section-card" id="wiki-timeline">
+            <h3><i class="fa-solid fa-calendar-days" style="color:var(--mp95-blue);"></i> 9. Timeline Gantt & Calendario</h3>
+            <p>La sezione <b>Timeline & Calendario</b> offre due viste complementari per la governance temporale delle attività.</p>
+
+            <p style="font-weight:700; margin-top:1rem; color:var(--mp95-blue);"><i class="fa-solid fa-chart-gantt"></i> Vista Gantt (default):</p>
+            <div class="wiki-feature-box">
+              <ul style="margin-left:1.2rem; line-height:1.8;">
+                <li>I progetti sono visualizzati come <b>barre orizzontali colorate</b> disposte lungo una griglia di 12 mesi (Gen — Dic dell'anno corrente).</li>
+                <li>Le barre sono raggruppate per <b>Coordinatore</b>: ogni gruppo mostra il nome del PM, il reparto e il numero di attività temporali.</li>
+                <li>Ogni barra mostra il <b>nome del progetto</b> e la <b>percentuale di effort</b>.</li>
+                <li><b>Passando il mouse</b> su una barra, appare un tooltip con dettagli completi (effort, avanzamento, date inizio e fine).</li>
+                <li><b>Cliccando</b> su una barra, si apre direttamente il form di modifica del progetto.</li>
+                <li>I progetti senza data inizio o scadenza vengono visualizzati come barre che coprono l'intero anno.</li>
+              </ul>
+            </div>
+
+            <p style="font-weight:700; margin-top:1rem; color:var(--mp95-orange);"><i class="fa-solid fa-calendar-week"></i> Vista Calendario Mensile:</p>
+            <div class="wiki-feature-box orange">
+              <ul style="margin-left:1.2rem; line-height:1.8;">
+                <li>Clicca il pulsante <b>"Calendario Mensile"</b> nella barra superiore della sezione Timeline per passare alla vista calendario.</li>
+                <li>Il calendario mostra un mese alla volta con evidenziato il <b>giorno corrente</b> (con etichetta "OGGI").</li>
+                <li>I progetti con data di inizio o scadenza che coincidono con un giorno specifico vengono visualizzati come <b>pillole colorate</b> dentro la cella del giorno.</li>
+                <li>Usa i pulsanti <b>"◄ Mese Prec."</b>, <b>"Mese Corrente"</b> e <b>"Mese Succ. ►"</b> per navigare tra i mesi.</li>
+                <li>Cliccando su una pillola-progetto nel calendario, si apre il form di modifica.</li>
+              </ul>
+            </div>
+
+            <p style="font-weight:700; margin-top:1rem;"><i class="fa-solid fa-filter"></i> Filtri della Timeline:</p>
+            <div class="wiki-feature-box">
+              <ul style="margin-left:1.2rem; line-height:1.8;">
+                <li><b>Filtro Coordinatore:</b> Seleziona un coordinatore specifico per vedere solo i suoi progetti nella timeline/calendario.</li>
+                <li><b>Filtro Stato:</b> Filtra per stato del progetto (In corso, Manutenzione, ecc.).</li>
+                <li>Il pulsante <b>"+ Nuova Attività Temporale"</b> apre il form di creazione progetto direttamente dalla Timeline.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Section 10: Import Excel -->
+          <div class="wiki-section-card" id="wiki-excel">
+            <h3><i class="fa-solid fa-file-excel" style="color:#10B981;"></i> 10. Importazione File Excel (.xlsx / .xls)</h3>
+            <p>L'app supporta il caricamento diretto di file Excel per popolare o aggiornare i progetti in blocco.</p>
+            
+            <p style="font-weight:700; margin-top:0.8rem;">Come importare un file Excel:</p>
+            <div class="wiki-feature-box">
+              <ol style="margin-left:1.2rem; line-height:1.8;">
+                <li>Clicca il pulsante <b>"📄 Carica File Excel (.xlsx)"</b> nella topbar (disponibile da qualunque sezione) oppure nella sezione Report & Export.</li>
+                <li>Seleziona un file <code>.xlsx</code> o <code>.xls</code> dal tuo computer.</li>
+                <li>L'app leggerà automaticamente il primo foglio del file cercando le colonne:
+                  <ul style="margin-left:1.2rem; margin-top:0.2rem;">
+                    <li><code>Progetto</code> (o <code>progetto</code>, <code>Nome Progetto</code>, <code>Project</code>)</li>
+                    <li><code>Stato</code> (o <code>stato</code>, <code>Status</code>)</li>
+                    <li><code>Effort %</code> (o <code>Effort</code>, <code>effort</code>)</li>
+                    <li><code>Risorsa</code> (opzionale)</li>
+                    <li><code>Descrizione</code> (opzionale)</li>
+                    <li><code>Reparto</code> (opzionale)</li>
+                    <li><code>Criticità</code> o <code>Note</code> (opzionale)</li>
+                  </ul>
+                </li>
+                <li>Si aprirà il <b>modale di selezione Coordinatore</b>:
+                  <ul style="margin-left:1.2rem; margin-top:0.2rem;">
+                    <li>Seleziona un <b>coordinatore esistente</b> dall'elenco.</li>
+                    <li>Oppure scegli <b>"+ Inserisci Nuovo Coordinatore..."</b> e digita il nome.</li>
+                  </ul>
+                </li>
+                <li>Clicca <b>"Conferma e Importa"</b>. Tutti i progetti verranno assegnati al coordinatore scelto.</li>
+              </ol>
+            </div>
+            <div class="wiki-feature-box warning">
+              <b>⚠️ Modalità Merge (non distruttiva):</b> L'importazione opera in modalità <b>Append & Merge</b>:
+              <ul style="margin-left:1.2rem; margin-top:0.3rem; line-height:1.8;">
+                <li>Se un progetto con lo stesso nome e PM esiste già, viene <b>aggiornato</b> con i nuovi dati.</li>
+                <li>Se il progetto è nuovo, viene <b>aggiunto</b> con un nuovo ID (es. PRJ-037, PRJ-038...).</li>
+                <li>I progetti esistenti che <b>non</b> sono nel file Excel <b>non vengono toccati</b>.</li>
+              </ul>
+            </div>
+            <div class="wiki-feature-box">
+              <b>Formati supportati:</b> Oltre a Excel (<code>.xlsx</code>, <code>.xls</code>), l'app supporta anche l'importazione di file <code>.csv</code> e <code>.json</code>. I file CSV/JSON possono essere importati dalla sezione Report & Export.
+            </div>
+          </div>
+
+          <!-- Section 11: Export -->
+          <div class="wiki-section-card" id="wiki-export">
+            <h3><i class="fa-solid fa-download" style="color:var(--mp95-orange);"></i> 11. Esportazione Dati (CSV / JSON)</h3>
+            <p>La sezione <b>Report & Export</b> permette di scaricare l'intero dataset dei progetti in due formati.</p>
+            <div class="wiki-feature-box">
+              <ul style="margin-left:1.2rem; line-height:1.8;">
+                <li><b>📊 Esporta Excel / CSV:</b> Scarica un file <code>.csv</code> con tutte le colonne (ID, Progetto, Reparto, Stato, PM, Risorsa, Effort, Avanzamento, Effort Previsto/Residuo, Scadenza, Tempistiche, Descrizione, Criticità). Il file è apribile direttamente con Microsoft Excel o Google Sheets.</li>
+                <li><b>📦 Esporta JSON:</b> Scarica un file <code>.json</code> con la struttura completa dei dati, ideale per backup, integrazioni con altri sistemi o re-importazione futura.</li>
+              </ul>
+              <p style="margin-top:0.5rem; font-size:0.85rem; color:var(--text-dim);">I file esportati contengono <b>tutti</b> i progetti attualmente presenti nel sistema, senza filtri applicati. Il nome file include automaticamente la data corrente (es. <code>MP95_DIGITAL_PROGETTI_EFFORT_2026-07-31.csv</code>).</p>
+            </div>
+          </div>
+
+          <!-- Section 12: Persistenza -->
+          <div class="wiki-section-card" id="wiki-data">
+            <h3><i class="fa-solid fa-shield-halved" style="color:#10B981;"></i> 12. Persistenza, Sicurezza e Sincronizzazione Dati</h3>
+            <p>L'app utilizza un sistema a <b>doppio livello</b> per garantire la massima affidabilità dei dati.</p>
+            <div class="wiki-feature-box">
+              <ul style="margin-left:1.2rem; line-height:1.8;">
+                <li><b>☁️ Database Cloud (Neon PostgreSQL):</b> Tutte le modifiche vengono salvate in tempo reale sul database cloud. I dati sono accessibili da qualunque dispositivo e persistono tra le sessioni.</li>
+                <li><b>💾 Cache Locale (LocalStorage):</b> Una copia dei dati viene mantenuta nel browser per garantire il funzionamento anche in caso di disconnessione temporanea dalla rete. All'avvio, l'app tenta di sincronizzarsi con il database cloud; se non disponibile, utilizza la cache locale.</li>
+              </ul>
+            </div>
+            <div class="wiki-feature-box warning">
+              <b>🔒 Protezione dei dati:</b>
+              <ul style="margin-left:1.2rem; margin-top:0.3rem; line-height:1.8;">
+                <li>I caricamenti Excel usano la modalità <b>Merge non distruttiva</b>: i dati esistenti non vengono mai cancellati o sovrascritti accidentalmente.</li>
+                <li>L'eliminazione di un progetto richiede sempre una <b>conferma esplicita</b> dell'utente.</li>
+                <li>La preferenza del tema (Chiaro/Scuro) viene salvata nel browser e ricordata automaticamente.</li>
+                <li>La connessione al database utilizza <b>SSL crittografato</b> per proteggere i dati in transito.</li>
+              </ul>
+            </div>
+            <div class="wiki-feature-box">
+              <b>📋 Riepilogo rapido — Dove viene salvato cosa:</b>
+              <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-top:0.5rem;">
+                <thead>
+                  <tr style="border-bottom:1px solid var(--border-color); text-align:left;">
+                    <th style="padding:0.4rem 0.6rem; color:var(--mp95-orange);">Tipo di Dato</th>
+                    <th style="padding:0.4rem 0.6rem; color:var(--text-main);">Dove viene salvato</th>
+                  </tr>
+                </thead>
+                <tbody style="color:var(--text-muted);">
+                  <tr><td style="padding:0.3rem 0.6rem;">Progetti e dettagli</td><td style="padding:0.3rem 0.6rem;">☁️ Database Cloud + 💾 Cache Locale</td></tr>
+                  <tr><td style="padding:0.3rem 0.6rem;">Risorse dei team</td><td style="padding:0.3rem 0.6rem;">☁️ Database Cloud + 💾 Cache Locale</td></tr>
+                  <tr><td style="padding:0.3rem 0.6rem;">Coordinatori personalizzati</td><td style="padding:0.3rem 0.6rem;">💾 Cache Locale (browser)</td></tr>
+                  <tr><td style="padding:0.3rem 0.6rem;">Preferenza tema</td><td style="padding:0.3rem 0.6rem;">💾 Cache Locale (browser)</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
 
