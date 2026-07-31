@@ -118,6 +118,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initNavigation();
   initProjectsView();
   initCoordinatorsView();
+  initTimelineView();
   initReportsView();
   initModals();
   initExcelFileHandlers();
@@ -205,6 +206,8 @@ function refreshAllViews() {
   renderProjectsTable();
   renderCoordinatorsGrid();
   populatePmFilterOptions();
+  populateTimelinePmFilter();
+  refreshTimelineView();
 }
 
 /* ----------------------------------------------------
@@ -221,6 +224,7 @@ function initNavigation() {
     dashboard: { title: "Executive Dashboard", subtitle: "Panoramica generale dell'effort e delle attività dei coordinatori MP95" },
     projects: { title: "Gestione Progetti & Effort", subtitle: "Elenco completo dei progetti censiti con allocazioni percentuale" },
     coordinators: { title: "Carico di Lavoro & Risorse Coordinatori", subtitle: "Analisi della capacità, progetti e risorse gestite per ciascun PM" },
+    timeline: { title: "Governance Temporale & Timeline", subtitle: "Monitoraggio della durata, pianificazione e calendario delle attività MP95" },
     reports: { title: "Reportistica & Import/Export", subtitle: "Esportazione report CSV/JSON e caricamento file Excel (.xlsx)" },
     wiki: { title: "Wiki & Guida Utente TrackMaster MP95", subtitle: "Manuale d'uso completo dell'applicazione e guida a tutte le funzionalità" }
   };
@@ -879,6 +883,268 @@ function closeAddCoordinatorModal() {
 }
 
 /* ----------------------------------------------------
+   TIMELINE & CALENDAR VIEW (GOVERNANCE TEMPORALE)
+---------------------------------------------------- */
+let currentCalendarDate = new Date();
+let currentTimelineViewMode = 'gantt'; // 'gantt' or 'calendar'
+
+function initTimelineView() {
+  const pmFilter = document.getElementById('timelinePmFilter');
+  const statusFilter = document.getElementById('timelineStatusFilter');
+
+  if (pmFilter) pmFilter.addEventListener('change', refreshTimelineView);
+  if (statusFilter) statusFilter.addEventListener('change', refreshTimelineView);
+
+  const toggleGanttBtn = document.getElementById('toggleGanttViewBtn');
+  const toggleCalendarBtn = document.getElementById('toggleCalendarViewBtn');
+
+  if (toggleGanttBtn && toggleCalendarBtn) {
+    toggleGanttBtn.addEventListener('click', () => {
+      currentTimelineViewMode = 'gantt';
+      toggleGanttBtn.className = 'btn btn-primary btn-sm active';
+      toggleCalendarBtn.className = 'btn btn-secondary btn-sm';
+      document.getElementById('ganttViewSection').style.display = 'block';
+      document.getElementById('calendarViewSection').style.display = 'none';
+      renderGanttChart();
+    });
+
+    toggleCalendarBtn.addEventListener('click', () => {
+      currentTimelineViewMode = 'calendar';
+      toggleCalendarBtn.className = 'btn btn-primary btn-sm active';
+      toggleGanttBtn.className = 'btn btn-secondary btn-sm';
+      document.getElementById('calendarViewSection').style.display = 'block';
+      document.getElementById('ganttViewSection').style.display = 'none';
+      renderCalendarGrid();
+    });
+  }
+
+  const prevBtn = document.getElementById('prevMonthBtn');
+  const todayBtn = document.getElementById('todayMonthBtn');
+  const nextBtn = document.getElementById('nextMonthBtn');
+
+  if (prevBtn) prevBtn.addEventListener('click', () => {
+    currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+    renderCalendarGrid();
+  });
+  if (todayBtn) todayBtn.addEventListener('click', () => {
+    currentCalendarDate = new Date();
+    renderCalendarGrid();
+  });
+  if (nextBtn) nextBtn.addEventListener('click', () => {
+    currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+    renderCalendarGrid();
+  });
+
+  populateTimelinePmFilter();
+  refreshTimelineView();
+}
+
+function populateTimelinePmFilter() {
+  const select = document.getElementById('timelinePmFilter');
+  if (!select) return;
+
+  const curVal = select.value;
+  select.innerHTML = `<option value="">Tutti i Coordinatori</option>`;
+  OFFICIAL_COORDINATORS.forEach(c => {
+    select.innerHTML += `<option value="${c.name}">${c.name} (${c.reparto})</option>`;
+  });
+  select.value = curVal;
+}
+
+function refreshTimelineView() {
+  if (currentTimelineViewMode === 'gantt') {
+    renderGanttChart();
+  } else {
+    renderCalendarGrid();
+  }
+}
+
+function renderGanttChart() {
+  const container = document.getElementById('ganttChartContainer');
+  if (!container) return;
+
+  const pmFilterVal = (document.getElementById('timelinePmFilter').value || '').toLowerCase();
+  const statusFilterVal = (document.getElementById('timelineStatusFilter').value || '').toLowerCase();
+
+  const currentYear = new Date().getFullYear();
+  const months = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giug', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+
+  let html = `
+    <div class="gantt-grid">
+      <div class="gantt-header-row">
+        <div>Coordinatore / Attività</div>
+        ${months.map(m => `<div>${m} ${currentYear}</div>`).join('')}
+      </div>
+  `;
+
+  const coordsToDisplay = OFFICIAL_COORDINATORS.filter(c => !pmFilterVal || c.name.toLowerCase().includes(pmFilterVal));
+
+  coordsToDisplay.forEach(coord => {
+    const pmName = coord.name;
+    let pmProjects = getProjectsForCoordinator(pmName);
+
+    if (statusFilterVal) {
+      pmProjects = pmProjects.filter(p => p.stato.toLowerCase().includes(statusFilterVal));
+    }
+
+    if (pmProjects.length === 0) return;
+
+    html += `
+      <div class="gantt-coord-group">
+        <div class="gantt-coord-title">
+          <span><i class="fa-solid fa-user-tie"></i> ${pmName} (${coord.reparto})</span>
+          <span style="font-size:0.78rem; font-weight:700; color:var(--text-muted);">${pmProjects.length} attività temporali</span>
+        </div>
+    `;
+
+    pmProjects.forEach(p => {
+      const startDate = p.data_inizio ? new Date(p.data_inizio) : new Date(currentYear, 0, 1);
+      const endDate = p.scadenza ? new Date(p.scadenza) : new Date(currentYear, 11, 31);
+
+      const yearStart = new Date(currentYear, 0, 1);
+      const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59);
+      const totalYearMs = yearEnd - yearStart;
+
+      let startOffsetMs = startDate - yearStart;
+      if (startOffsetMs < 0) startOffsetMs = 0;
+      let leftPct = (startOffsetMs / totalYearMs) * 100;
+      if (leftPct > 95) leftPct = 95;
+
+      let durationMs = endDate - startDate;
+      if (durationMs <= 0) durationMs = 30 * 24 * 60 * 60 * 1000;
+      let widthPct = (durationMs / totalYearMs) * 100;
+      if (leftPct + widthPct > 100) widthPct = 100 - leftPct;
+      if (widthPct < 5) widthPct = 5;
+
+      const effortVal = p.effort || 0;
+      const avPct = p.avanzamento || 0;
+
+      html += `
+        <div class="gantt-task-row">
+          <div class="gantt-task-info">
+            <div class="gantt-task-name" title="${p.progetto}">${p.progetto}</div>
+            <div style="font-size:0.72rem; color:var(--text-dim);">
+              <span class="badge ${getBadgeClass(p.stato)}" style="font-size:0.68rem; padding:0.1rem 0.4rem;">${p.stato}</span>
+              ${p.risorsa ? ` • ${p.risorsa}` : ''}
+            </div>
+          </div>
+          <div class="gantt-timeline-track">
+            <div class="gantt-bar" style="left:${leftPct}%; width:${widthPct}%;" onclick="openEditProjectModal('${p.id}')" title="Attività: ${p.progetto} (${effortVal}% effort, Avanzamento ${avPct}%)\nDal ${startDate.toLocaleDateString('it-IT')} al ${endDate.toLocaleDateString('it-IT')}">
+              <span>${p.progetto.length > 18 ? p.progetto.slice(0, 16) + '...' : p.progetto}</span>
+              <span>${effortVal}%</span>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+
+    html += `</div>`;
+  });
+
+  html += `</div>`;
+  container.innerHTML = html;
+}
+
+function renderCalendarGrid() {
+  const container = document.getElementById('calendarGridContainer');
+  const titleEl = document.getElementById('calendarMonthTitle');
+  if (!container) return;
+
+  const year = currentCalendarDate.getFullYear();
+  const month = currentCalendarDate.getMonth();
+  const monthNames = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+  
+  if (titleEl) {
+    titleEl.innerHTML = `<i class="fa-solid fa-calendar-days" style="color:var(--mp95-orange);"></i> Calendario Attività MP95 — ${monthNames[month]} ${year}`;
+  }
+
+  const pmFilterVal = (document.getElementById('timelinePmFilter').value || '').toLowerCase();
+  const statusFilterVal = (document.getElementById('timelineStatusFilter').value || '').toLowerCase();
+
+  let filteredProjects = projects;
+  if (pmFilterVal) {
+    filteredProjects = filteredProjects.filter(p => sanitizeProjectPM(p.pm).toLowerCase().includes(pmFilterVal));
+  }
+  if (statusFilterVal) {
+    filteredProjects = filteredProjects.filter(p => p.stato.toLowerCase().includes(statusFilterVal));
+  }
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7;
+
+  const dayHeaders = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+
+  let html = `
+    <div class="calendar-month-grid">
+      ${dayHeaders.map(d => `<div class="calendar-day-header">${d}</div>`).join('')}
+  `;
+
+  const prevMonthDays = new Date(year, month, 0).getDate();
+  for (let i = firstDayIndex - 1; i >= 0; i--) {
+    const dayNum = prevMonthDays - i;
+    html += `
+      <div class="calendar-day-cell other-month">
+        <span class="calendar-day-num">${dayNum}</span>
+      </div>
+    `;
+  }
+
+  const today = new Date();
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday = today.getDate() === d && today.getMonth() === month && today.getFullYear() === year;
+    const dayDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+    const dayProjects = filteredProjects.filter(p => {
+      if (!p.scadenza && !p.data_inizio) return false;
+      const startStr = p.data_inizio ? String(p.data_inizio).slice(0, 10) : '';
+      const endStr = p.scadenza ? String(p.scadenza).slice(0, 10) : '';
+      return startStr === dayDateStr || endStr === dayDateStr;
+    });
+
+    html += `
+      <div class="calendar-day-cell ${isToday ? 'today' : ''}">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="calendar-day-num">${d}</span>
+          ${isToday ? `<span style="font-size:0.65rem; font-weight:800; color:var(--mp95-orange);">OGGI</span>` : ''}
+        </div>
+        ${dayProjects.map(p => `
+          <div class="calendar-project-pill" onclick="openEditProjectModal('${p.id}')" title="${p.progetto} (${p.pm}) - ${p.effort}% effort">
+            ${p.progetto.length > 14 ? p.progetto.slice(0, 12) + '..' : p.progetto} (${p.effort}%)
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  html += `</div>`;
+  container.innerHTML = html;
+}
+
+window.setPresetDuration = function(mode) {
+  const startEl = document.getElementById('modalDataInizio');
+  const endEl = document.getElementById('modalScadenza');
+  if (!startEl || !endEl) return;
+
+  const today = new Date();
+  let startDate = startEl.value ? new Date(startEl.value) : today;
+  if (isNaN(startDate.getTime())) startDate = today;
+
+  const startISO = startDate.toISOString().slice(0, 10);
+  startEl.value = startISO;
+
+  let endDate = new Date(startDate);
+  if (mode === 'yearEnd') {
+    endDate = new Date(startDate.getFullYear(), 11, 31);
+  } else if (typeof mode === 'number') {
+    endDate.setMonth(endDate.getMonth() + mode);
+  }
+
+  const endISO = endDate.toISOString().slice(0, 10);
+  endEl.value = endISO;
+  showToast(`Durata impostata: dal ${startISO} al ${endISO}`);
+};
+
+/* ----------------------------------------------------
    EXCEL FILE UPLOAD & IMPORT HANDLERS (.xlsx, .xls)
 ---------------------------------------------------- */
 let pendingImportProjects = [];
@@ -1273,6 +1539,10 @@ function initModals() {
   document.getElementById('projectForm').addEventListener('submit', handleSaveProject);
 }
 
+window.openCreateProjectModal = function() {
+  openAddProjectModal();
+};
+
 function openAddProjectModal() {
   document.getElementById('modalProjectTitle').textContent = "Aggiungi Progetto MP95";
   document.getElementById('modalProjectId').value = "";
@@ -1285,6 +1555,9 @@ function openAddProjectModal() {
   document.getElementById('modalReparto').value = "";
   document.getElementById('modalEffortPrevisto').value = "";
   document.getElementById('modalEffortResiduo').value = "";
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const dataInizioEl = document.getElementById('modalDataInizio');
+  if (dataInizioEl) dataInizioEl.value = todayISO;
   document.getElementById('modalScadenza').value = "";
   document.getElementById('modalStatoTempistiche').value = "In linea";
   document.getElementById('modalDescrizione').value = "";
@@ -1307,7 +1580,11 @@ window.openEditProjectModal = function(id) {
   document.getElementById('modalReparto').value = prj.reparto || '';
   document.getElementById('modalEffortPrevisto').value = prj.effort_previsto || '';
   document.getElementById('modalEffortResiduo').value = prj.effort_residuo || '';
-  // scadenza comes as 'YYYY-MM-DD' from DB (possibly with timestamp)
+  
+  const startRaw = prj.data_inizio ? String(prj.data_inizio).slice(0, 10) : '';
+  const dataInizioEl = document.getElementById('modalDataInizio');
+  if (dataInizioEl) dataInizioEl.value = startRaw;
+
   const scadRaw = prj.scadenza ? String(prj.scadenza).slice(0, 10) : '';
   document.getElementById('modalScadenza').value = scadRaw;
   document.getElementById('modalStatoTempistiche').value = prj.stato_tempistiche || 'In linea';
@@ -1334,12 +1611,14 @@ async function handleSaveProject(e) {
   const effort_previsto = parseFloat(document.getElementById('modalEffortPrevisto').value) || 0;
   const effort_residuo = parseFloat(document.getElementById('modalEffortResiduo').value) || 0;
   const avanzamento = parseInt(document.getElementById('modalAvanzamento').value) || 0;
+  const dataInizioEl = document.getElementById('modalDataInizio');
+  const data_inizio = dataInizioEl ? dataInizioEl.value || null : null;
   const scadenza = document.getElementById('modalScadenza').value || null;
   const stato_tempistiche = document.getElementById('modalStatoTempistiche').value || 'In linea';
   const criticita = document.getElementById('modalCriticita').value.trim() || null;
 
   const payload = { progetto, stato, pm, effort, risorsa, reparto, descrizione,
-    effort_previsto, effort_residuo, avanzamento, scadenza, stato_tempistiche, criticita };
+    effort_previsto, effort_residuo, avanzamento, data_inizio, scadenza, stato_tempistiche, criticita };
 
   if (id) {
     const idx = projects.findIndex(p => p.id === id);

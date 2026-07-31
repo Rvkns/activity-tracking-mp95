@@ -108,6 +108,7 @@ async function initDatabase() {
         ADD COLUMN IF NOT EXISTS effort_previsto NUMERIC(6,1) DEFAULT 0,
         ADD COLUMN IF NOT EXISTS effort_residuo NUMERIC(6,1) DEFAULT 0,
         ADD COLUMN IF NOT EXISTS avanzamento INTEGER DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS data_inizio DATE,
         ADD COLUMN IF NOT EXISTS scadenza DATE,
         ADD COLUMN IF NOT EXISTS stato_tempistiche VARCHAR(50) DEFAULT 'In linea',
         ADD COLUMN IF NOT EXISTS criticita TEXT,

@@ -38,6 +38,10 @@
           <i class="fa-solid fa-user-gear"></i>
           <span>Coordinatori (PM)</span>
         </li>
+        <li class="nav-item" data-view="timeline">
+          <i class="fa-solid fa-calendar-days"></i>
+          <span>Timeline & Calendario</span>
+        </li>
         <li class="nav-item" data-view="reports">
           <i class="fa-solid fa-file-export"></i>
           <span>Report & Export</span>
@@ -274,6 +278,81 @@
         </div>
       </section>
 
+      <!-- View: TIMELINE & CALENDAR (GOVERNANCE TEMPORALE) -->
+      <section id="view-timeline" class="view-section">
+        <!-- Info Banner -->
+        <div class="timeline-banner">
+          <div style="display:flex; align-items:center; gap:1rem;">
+            <div class="timeline-banner-icon">
+              <i class="fa-solid fa-calendar-days"></i>
+            </div>
+            <div>
+              <h3 style="margin:0; font-size:1.1rem; color:var(--text-main);">Governance Temporale & Monitoraggio Attività</h3>
+              <p style="margin:0.25rem 0 0 0; font-size:0.85rem; color:var(--text-muted);">
+                Monitora la durata temporale di ciascun progetto, le date di inizio/scadenza, l'avanzamento ed i picchi di effort nel tempo per ogni Coordinatore.
+              </p>
+            </div>
+          </div>
+          <div style="display:flex; gap:0.5rem; align-items:center;">
+            <button id="toggleGanttViewBtn" class="btn btn-primary btn-sm active">
+              <i class="fa-solid fa-chart-gantt"></i> Timeline Gantt
+            </button>
+            <button id="toggleCalendarViewBtn" class="btn btn-secondary btn-sm">
+              <i class="fa-solid fa-calendar-week"></i> Calendario Mensile
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="card" style="margin-bottom:1.5rem; padding:1rem 1.25rem;">
+          <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:1rem;">
+            <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+              <select id="timelinePmFilter" class="form-select" style="min-width:220px;">
+                <option value="">Tutti i Coordinatori</option>
+              </select>
+              <select id="timelineStatusFilter" class="form-select" style="min-width:160px;">
+                <option value="">Tutti gli Stati</option>
+                <option value="In corso">In corso</option>
+                <option value="Manutenzione">Manutenzione</option>
+                <option value="Terminato">Terminato</option>
+                <option value="Stand by">Stand by</option>
+                <option value="Da iniziare">Da iniziare</option>
+                <option value="Attività periodica">Attività periodica</option>
+              </select>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openCreateProjectModal()">
+              <i class="fa-solid fa-plus"></i> Nuova Attività Temporale
+            </button>
+          </div>
+        </div>
+
+        <!-- Gantt View Container -->
+        <div id="ganttViewSection" class="card">
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <h3><i class="fa-solid fa-chart-gantt" style="color:var(--mp95-blue);"></i> Vista Timeline Gantt Attività</h3>
+            <span style="font-size:0.8rem; color:var(--text-dim);">Fai clic su un'attività per modificarne le date o l'effort</span>
+          </div>
+          <div id="ganttChartContainer" style="overflow-x:auto; margin-top:1rem;">
+            <!-- Rendered dynamically by app.js -->
+          </div>
+        </div>
+
+        <!-- Calendar View Container (Hidden by default) -->
+        <div id="calendarViewSection" class="card" style="display:none;">
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 id="calendarMonthTitle"><i class="fa-solid fa-calendar-days" style="color:var(--mp95-orange);"></i> Calendario Attività MP95</h3>
+            <div style="display:flex; gap:0.5rem;">
+              <button id="prevMonthBtn" class="btn btn-secondary btn-sm"><i class="fa-solid fa-chevron-left"></i> Mese Prec.</button>
+              <button id="todayMonthBtn" class="btn btn-secondary btn-sm">Mese Corrente</button>
+              <button id="nextMonthBtn" class="btn btn-secondary btn-sm">Mese Succ. <i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+          </div>
+          <div id="calendarGridContainer" style="margin-top:1rem;">
+            <!-- Rendered dynamically by app.js -->
+          </div>
+        </div>
+      </section>
+
       <!-- View: WIKI & USER GUIDE -->
       <section id="view-wiki" class="view-section">
         <div class="wiki-container">
@@ -381,6 +460,21 @@
             </div>
           </div>
 
+          <!-- Section 7 -->
+          <div class="wiki-section-card" id="wiki-timeline">
+            <h3><i class="fa-solid fa-calendar-days" style="color:var(--mp95-blue);"></i> 7. Governance Temporale & Timeline Interattiva</h3>
+            <p>
+              La sezione <b>Timeline & Calendario</b> introduce il monitoraggio della durata e delle scadenze delle attività nel tempo:
+            </p>
+            <div class="wiki-feature-box orange">
+              <ul style="margin-left:1.2rem;">
+                <li><b>Vista Gantt Interattiva:</b> Mostra l'estensione temporale di ciascun progetto su base 12 mesi per ciascun Coordinatore, evidenziando le sovrapposizioni.</li>
+                <li><b>Vista Calendario Mensile:</b> Consente di navigare mese per mese per verificare l'avvio e la scadenza esatta delle attività.</li>
+                <li><b>Scelta Rapida Durata:</b> Nel form di creazione/modifica è possibile selezionare pulsanti rapidi (<i>+1 Mese, +3 Mesi, +6 Mesi, Fine Anno</i>) per impostare la durata con 1 solo clic senza complicazioni!</li>
+              </ul>
+            </div>
+          </div>
+
         </div>
       </section>
     </main>
@@ -452,8 +546,32 @@
           </div>
         </div>
 
-        <!-- Row 4: Effort Previsto / Residuo / Scadenza / Stato Tempistiche -->
-        <div class="form-grid-4" style="margin-top:0.75rem;">
+        <!-- Row 4: Governance Temporale (Data Inizio e Fine) -->
+        <div style="background:rgba(40,114,250,0.06); border:1px solid rgba(40,114,250,0.2); border-radius:var(--radius-md); padding:0.85rem 1rem; margin-top:0.85rem;">
+          <div style="font-size:0.82rem; font-weight:700; color:var(--mp95-blue); margin-bottom:0.6rem; display:flex; align-items:center; gap:0.4rem;">
+            <i class="fa-solid fa-clock-rotate-left"></i> Governance Temporale & Pianificazione Attività
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="modalDataInizio">Data Inizio Attività</label>
+              <input type="date" id="modalDataInizio" class="form-control">
+            </div>
+            <div class="form-group">
+              <label for="modalScadenza">Data Fine / Scadenza</label>
+              <input type="date" id="modalScadenza" class="form-control">
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.4rem; margin-top:0.5rem; flex-wrap:wrap;">
+            <span style="font-size:0.75rem; color:var(--text-dim);">Scelta rapida durata:</span>
+            <button type="button" class="btn btn-secondary btn-sm date-preset-btn" onclick="setPresetDuration(1)">+1 Mese</button>
+            <button type="button" class="btn btn-secondary btn-sm date-preset-btn" onclick="setPresetDuration(3)">+3 Mesi</button>
+            <button type="button" class="btn btn-secondary btn-sm date-preset-btn" onclick="setPresetDuration(6)">+6 Mesi</button>
+            <button type="button" class="btn btn-secondary btn-sm date-preset-btn" onclick="setPresetDuration('yearEnd')">Fine Anno</button>
+          </div>
+        </div>
+
+        <!-- Row 5: Effort Previsto / Residuo / Stato Tempistiche -->
+        <div class="form-grid-3" style="margin-top:0.75rem;">
           <div class="form-group">
             <label for="modalEffortPrevisto">Effort Previsto (gg/u)</label>
             <input type="number" id="modalEffortPrevisto" class="form-control" min="0" step="0.5" placeholder="Es. 10">
@@ -461,10 +579,6 @@
           <div class="form-group">
             <label for="modalEffortResiduo">Effort Residuo (gg/u)</label>
             <input type="number" id="modalEffortResiduo" class="form-control" min="0" step="0.5" placeholder="Es. 4">
-          </div>
-          <div class="form-group">
-            <label for="modalScadenza">Scadenza Prevista</label>
-            <input type="date" id="modalScadenza" class="form-control">
           </div>
           <div class="form-group">
             <label for="modalStatoTempistiche">Stato Tempistiche</label>
