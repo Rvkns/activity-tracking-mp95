@@ -116,6 +116,7 @@ let coordinatorResources = JSON.parse(localStorage.getItem('mp95_resources')) ||
 document.addEventListener('DOMContentLoaded', async () => {
   initTheme();
   initNavigation();
+  initDashboard();
   initProjectsView();
   initCoordinatorsView();
   initTimelineView();
@@ -279,25 +280,50 @@ function initNavigation() {
 }
 
 /* ----------------------------------------------------
+   NAVIGATION HELPER
+---------------------------------------------------- */
+function navigateToView(viewName) {
+  const navItem = document.querySelector(`.nav-item[data-view="${viewName}"]`);
+  if (navItem) navItem.click();
+}
+
+/* ----------------------------------------------------
    DASHBOARD VIEW
 ---------------------------------------------------- */
 let dashboardWorkloadMode = 'coordinators'; // 'coordinators' | 'resources'
 
 function initDashboard() {
+  // Purge any stale custom coordinators entry that contains non-official people
+  // (e.g. Alfredo added via old UI). OFFICIAL_COORDINATORS is the single source of truth.
+  const officialNames = new Set(OFFICIAL_COORDINATORS.map(c => c.name));
+  const storedCustom = JSON.parse(localStorage.getItem('mp95_custom_coordinators')) || [];
+  const cleanedCustom = storedCustom.filter(c => !officialNames.has(c.name));
+  // If list changed, persist the cleaned version
+  if (cleanedCustom.length !== storedCustom.length) {
+    localStorage.setItem('mp95_custom_coordinators', JSON.stringify(cleanedCustom));
+    customCoordinators = cleanedCustom;
+  }
+
   const btnCoord = document.getElementById('btnWorkloadCoordinators');
   const btnRes = document.getElementById('btnWorkloadResources');
 
   if (btnCoord && btnRes) {
-    btnCoord.addEventListener('click', () => {
+    // Clone buttons to strip any previously attached listeners
+    const newBtnCoord = btnCoord.cloneNode(true);
+    const newBtnRes = btnRes.cloneNode(true);
+    btnCoord.parentNode.replaceChild(newBtnCoord, btnCoord);
+    btnRes.parentNode.replaceChild(newBtnRes, btnRes);
+
+    newBtnCoord.addEventListener('click', () => {
       dashboardWorkloadMode = 'coordinators';
-      btnCoord.className = 'btn btn-primary btn-sm';
-      btnRes.className = 'btn btn-secondary btn-sm';
+      newBtnCoord.className = 'btn btn-primary btn-sm';
+      newBtnRes.className = 'btn btn-secondary btn-sm';
       renderPmWorkloadOverview();
     });
-    btnRes.addEventListener('click', () => {
+    newBtnRes.addEventListener('click', () => {
       dashboardWorkloadMode = 'resources';
-      btnRes.className = 'btn btn-primary btn-sm';
-      btnCoord.className = 'btn btn-secondary btn-sm';
+      newBtnRes.className = 'btn btn-primary btn-sm';
+      newBtnCoord.className = 'btn btn-secondary btn-sm';
       renderPmWorkloadOverview();
     });
   }
@@ -389,23 +415,25 @@ function renderPmWorkloadOverview() {
   container.innerHTML = '';
 
   if (dashboardWorkloadMode === 'coordinators') {
-    const pmEfforts = {};
-    const allCoords = getAllCoordinators();
+    // Use ONLY official coordinators — custom ones (localStorage) are excluded here
+    const officialCoords = OFFICIAL_COORDINATORS;
 
-    allCoords.forEach(c => {
+    // Build effort map keyed strictly to official coordinator names
+    const pmEfforts = {};
+    officialCoords.forEach(c => {
       pmEfforts[c.name] = { count: 0, totalEffort: 0, reparto: c.reparto || 'Generale' };
     });
 
+    const coordNameSet = new Set(officialCoords.map(c => c.name));
     projects.forEach(p => {
       const pmName = sanitizeProjectPM(p.pm);
-      if (!pmEfforts[pmName]) {
-        pmEfforts[pmName] = { count: 0, totalEffort: 0, reparto: p.reparto || 'Generale' };
-      }
+      if (!coordNameSet.has(pmName)) return; // Skip anyone not in the official list
       pmEfforts[pmName].count += 1;
       pmEfforts[pmName].totalEffort += (p.effort || 0);
     });
 
-    Object.keys(pmEfforts).forEach(pmName => {
+    officialCoords.forEach(coord => {
+      const pmName = coord.name;
       const data = pmEfforts[pmName];
       const totalEffort = data.totalEffort;
       
@@ -425,23 +453,45 @@ function renderPmWorkloadOverview() {
         bgStyle = 'linear-gradient(90deg, var(--mp95-orange), var(--warning))';
       }
 
-      const rowHtml = `
-        <div style="display:flex; flex-direction:column; gap:0.4rem; padding:0.65rem 0.85rem; background:rgba(255,255,255,0.02); border-radius:var(--radius-md);">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div>
-              <span style="font-weight:700; font-size:0.9rem;">${pmName}</span>
-              <span style="font-size:0.75rem; color:var(--text-dim); margin-left:0.4rem;">(${data.reparto})</span>
-            </div>
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex; flex-direction:column; gap:0.4rem; padding:0.65rem 0.85rem; background:rgba(255,255,255,0.02); border-radius:var(--radius-md); cursor:pointer; transition:background 0.18s;';
+      row.title = `Clicca per vedere il dettaglio di ${pmName}`;
+      row.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <span style="font-weight:700; font-size:0.9rem;">${pmName}</span>
+            <span style="font-size:0.75rem; color:var(--text-dim); margin-left:0.4rem;">(${data.reparto})</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.5rem;">
             <span style="font-weight:800; font-size:0.82rem; color:${colorStyle};">
               ${statusText} (${data.count} attività)
             </span>
-          </div>
-          <div class="effort-progress-bg" title="Effort Totale Progetti Gestiti dal Coordinatore ${pmName}">
-            <div class="effort-progress-fill" style="width: ${barPct}%; background: ${bgStyle};"></div>
+            <i class="fa-solid fa-arrow-right" style="font-size:0.75rem; color:var(--text-dim);"></i>
           </div>
         </div>
+        <div class="effort-progress-bg" title="Effort Totale Progetti Gestiti dal Coordinatore ${pmName}">
+          <div class="effort-progress-fill" style="width: ${barPct}%; background: ${bgStyle};"></div>
+        </div>
       `;
-      container.innerHTML += rowHtml;
+      row.addEventListener('mouseenter', () => { row.style.background = 'rgba(255,255,255,0.055)'; });
+      row.addEventListener('mouseleave', () => { row.style.background = 'rgba(255,255,255,0.02)'; });
+      row.addEventListener('click', () => {
+        navigateToView('coordinators');
+        // Highlight the coordinator's card after a short delay for the view to render
+        setTimeout(() => {
+          const cards = document.querySelectorAll('#coordinatorsGrid .pm-card');
+          cards.forEach(card => {
+            const h4 = card.querySelector('h4');
+            if (h4 && h4.textContent.trim() === pmName) {
+              card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              card.style.outline = '2px solid var(--mp95-blue)';
+              card.style.transition = 'outline 0.3s';
+              setTimeout(() => { card.style.outline = ''; }, 2000);
+            }
+          });
+        }, 150);
+      });
+      container.appendChild(row);
     });
   } else {
     // Operational Resources
