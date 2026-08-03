@@ -281,7 +281,27 @@ function initNavigation() {
 /* ----------------------------------------------------
    DASHBOARD VIEW
 ---------------------------------------------------- */
+let dashboardWorkloadMode = 'coordinators'; // 'coordinators' | 'resources'
+
 function initDashboard() {
+  const btnCoord = document.getElementById('btnWorkloadCoordinators');
+  const btnRes = document.getElementById('btnWorkloadResources');
+
+  if (btnCoord && btnRes) {
+    btnCoord.addEventListener('click', () => {
+      dashboardWorkloadMode = 'coordinators';
+      btnCoord.className = 'btn btn-primary btn-sm';
+      btnRes.className = 'btn btn-secondary btn-sm';
+      renderPmWorkloadOverview();
+    });
+    btnRes.addEventListener('click', () => {
+      dashboardWorkloadMode = 'resources';
+      btnRes.className = 'btn btn-primary btn-sm';
+      btnCoord.className = 'btn btn-secondary btn-sm';
+      renderPmWorkloadOverview();
+    });
+  }
+
   renderDashboard();
 }
 
@@ -366,56 +386,123 @@ function renderPmWorkloadOverview() {
   const container = document.getElementById('pmWorkloadOverview');
   if (!container) return;
 
-  const resourceEfforts = {};
-  projects.forEach(p => {
-    const rName = p.risorsa && p.risorsa.trim() ? p.risorsa.trim() : sanitizeProjectPM(p.pm);
-    if (!resourceEfforts[rName]) {
-      resourceEfforts[rName] = { count: 0, totalEffort: 0, pm: sanitizeProjectPM(p.pm) };
-    }
-    resourceEfforts[rName].count += 1;
-    resourceEfforts[rName].totalEffort += (p.effort || 0);
-  });
-
   container.innerHTML = '';
-  Object.keys(resourceEfforts).forEach(rName => {
-    const data = resourceEfforts[rName];
-    const totalEffort = data.totalEffort;
-    
-    // Scale against CAP 120% per resource
-    const barPct = Math.min(Math.round((totalEffort / 120) * 100), 100);
 
-    let statusText = `${totalEffort}% / 120%`;
-    let colorStyle = 'var(--mp95-blue)';
-    let bgStyle = 'linear-gradient(90deg, var(--mp95-blue), var(--success))';
+  if (dashboardWorkloadMode === 'coordinators') {
+    const pmEfforts = {};
+    const allCoords = getAllCoordinators();
 
-    if (totalEffort > 120) {
-      statusText = `${totalEffort}% / 120% ⚠️ Overload (+${totalEffort - 120}%)`;
-      colorStyle = 'var(--danger)';
-      bgStyle = 'var(--danger)';
-    } else if (totalEffort > 100) {
-      statusText = `${totalEffort}% / 120% ⚡ Straordinario (+${totalEffort - 100}%)`;
-      colorStyle = 'var(--warning)';
-      bgStyle = 'linear-gradient(90deg, var(--mp95-orange), var(--warning))';
+    allCoords.forEach(c => {
+      pmEfforts[c.name] = { count: 0, totalEffort: 0, reparto: c.reparto || 'Generale' };
+    });
+
+    projects.forEach(p => {
+      const pmName = sanitizeProjectPM(p.pm);
+      if (!pmEfforts[pmName]) {
+        pmEfforts[pmName] = { count: 0, totalEffort: 0, reparto: p.reparto || 'Generale' };
+      }
+      pmEfforts[pmName].count += 1;
+      pmEfforts[pmName].totalEffort += (p.effort || 0);
+    });
+
+    Object.keys(pmEfforts).forEach(pmName => {
+      const data = pmEfforts[pmName];
+      const totalEffort = data.totalEffort;
+      
+      const barPct = Math.min(Math.round((totalEffort / 120) * 100), 100);
+
+      let statusText = `${totalEffort}% / 120%`;
+      let colorStyle = 'var(--mp95-blue)';
+      let bgStyle = 'linear-gradient(90deg, var(--mp95-blue), var(--success))';
+
+      if (totalEffort > 120) {
+        statusText = `${totalEffort}% / 120% ⚠️ Overload (+${totalEffort - 120}%)`;
+        colorStyle = 'var(--danger)';
+        bgStyle = 'var(--danger)';
+      } else if (totalEffort > 100) {
+        statusText = `${totalEffort}% / 120% ⚡ Straordinario (+${totalEffort - 100}%)`;
+        colorStyle = 'var(--warning)';
+        bgStyle = 'linear-gradient(90deg, var(--mp95-orange), var(--warning))';
+      }
+
+      const rowHtml = `
+        <div style="display:flex; flex-direction:column; gap:0.4rem; padding:0.65rem 0.85rem; background:rgba(255,255,255,0.02); border-radius:var(--radius-md);">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <span style="font-weight:700; font-size:0.9rem;">${pmName}</span>
+              <span style="font-size:0.75rem; color:var(--text-dim); margin-left:0.4rem;">(${data.reparto})</span>
+            </div>
+            <span style="font-weight:800; font-size:0.82rem; color:${colorStyle};">
+              ${statusText} (${data.count} attività)
+            </span>
+          </div>
+          <div class="effort-progress-bg" title="Effort Totale Progetti Gestiti dal Coordinatore ${pmName}">
+            <div class="effort-progress-fill" style="width: ${barPct}%; background: ${bgStyle};"></div>
+          </div>
+        </div>
+      `;
+      container.innerHTML += rowHtml;
+    });
+  } else {
+    // Operational Resources
+    const resourceEfforts = {};
+
+    projects.forEach(p => {
+      const rName = p.risorsa && p.risorsa.trim() ? p.risorsa.trim() : null;
+      if (rName) {
+        if (!resourceEfforts[rName]) {
+          resourceEfforts[rName] = { count: 0, totalEffort: 0, pm: sanitizeProjectPM(p.pm) };
+        }
+        resourceEfforts[rName].count += 1;
+        resourceEfforts[rName].totalEffort += (p.effort || 0);
+      }
+    });
+
+    const rNames = Object.keys(resourceEfforts);
+    if (rNames.length === 0) {
+      container.innerHTML = `<div style="font-size:0.85rem; color:var(--text-muted); padding:1rem; text-align:center;">Nessuna risorsa operativa specifica inserita nei progetti.</div>`;
+      return;
     }
 
-    const rowHtml = `
-      <div style="display:flex; flex-direction:column; gap:0.4rem; padding:0.65rem 0.85rem; background:rgba(255,255,255,0.02); border-radius:var(--radius-md);">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div>
-            <span style="font-weight:700; font-size:0.9rem;">${rName}</span>
-            <span style="font-size:0.75rem; color:var(--text-dim); margin-left:0.4rem;">(${data.pm})</span>
+    rNames.forEach(rName => {
+      const data = resourceEfforts[rName];
+      const totalEffort = data.totalEffort;
+      
+      const barPct = Math.min(Math.round((totalEffort / 120) * 100), 100);
+
+      let statusText = `${totalEffort}% / 120%`;
+      let colorStyle = 'var(--mp95-blue)';
+      let bgStyle = 'linear-gradient(90deg, var(--mp95-blue), var(--success))';
+
+      if (totalEffort > 120) {
+        statusText = `${totalEffort}% / 120% ⚠️ Overload (+${totalEffort - 120}%)`;
+        colorStyle = 'var(--danger)';
+        bgStyle = 'var(--danger)';
+      } else if (totalEffort > 100) {
+        statusText = `${totalEffort}% / 120% ⚡ Straordinario (+${totalEffort - 100}%)`;
+        colorStyle = 'var(--warning)';
+        bgStyle = 'linear-gradient(90deg, var(--mp95-orange), var(--warning))';
+      }
+
+      const rowHtml = `
+        <div style="display:flex; flex-direction:column; gap:0.4rem; padding:0.65rem 0.85rem; background:rgba(255,255,255,0.02); border-radius:var(--radius-md);">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <span style="font-weight:700; font-size:0.9rem;">${rName}</span>
+              <span style="font-size:0.75rem; color:var(--text-dim); margin-left:0.4rem;">(Team ${data.pm})</span>
+            </div>
+            <span style="font-weight:800; font-size:0.82rem; color:${colorStyle};">
+              ${statusText} (${data.count} attività)
+            </span>
           </div>
-          <span style="font-weight:800; font-size:0.82rem; color:${colorStyle};">
-            ${statusText} (${data.count} attività)
-          </span>
+          <div class="effort-progress-bg" title="Capacità Risorsa: 100% Std + 20% Straordinario = CAP Max 120%">
+            <div class="effort-progress-fill" style="width: ${barPct}%; background: ${bgStyle};"></div>
+          </div>
         </div>
-        <div class="effort-progress-bg" title="Capacità Risorsa: 100% Std + 20% Straordinario = CAP Max 120%">
-          <div class="effort-progress-fill" style="width: ${barPct}%; background: ${bgStyle};"></div>
-        </div>
-      </div>
-    `;
-    container.innerHTML += rowHtml;
-  });
+      `;
+      container.innerHTML += rowHtml;
+    });
+  }
 }
 
 /* ----------------------------------------------------
