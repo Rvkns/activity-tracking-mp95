@@ -1385,7 +1385,7 @@ function initCoordinatorModalEvents() {
   }
 }
 
-function openCoordinatorModal(importedList, fileName) {
+function openCoordinatorModal(importedList, fileName, colMapReport) {
   pendingImportProjects = importedList;
   pendingImportFileName = fileName;
 
@@ -1400,6 +1400,44 @@ function openCoordinatorModal(importedList, fileName) {
   if (fileNameEl) fileNameEl.textContent = fileName;
   if (customInput) customInput.value = '';
   if (customGroup) customGroup.style.display = 'none';
+
+  // --- Render column mapping preview ---
+  const previewEl = document.getElementById('colMappingPreview');
+  const mappedEl = document.getElementById('colMappingMapped');
+  const missingEl = document.getElementById('colMappingMissing');
+  if (previewEl && colMapReport) {
+    const mapped = colMapReport.mapped;   // [{field, header, score}]
+    const missing = colMapReport.missing; // [fieldName]
+
+    const FIELD_LABELS = {
+      progetto: 'Progetto', stato: 'Stato', effort: 'Effort %',
+      risorsa: 'Risorsa', reparto: 'Reparto', descrizione: 'Descrizione',
+      criticita: 'Criticità', scadenza: 'Scadenza',
+      data_inizio: 'Data Inizio', avanzamento: 'Avanzamento %'
+    };
+
+    let mappedHtml = '';
+    if (mapped.length > 0) {
+      mappedHtml = mapped.map(m => {
+        const isExact = m.score === 'exact';
+        const icon = isExact ? '✅' : (m.score === 'keyword' ? '🔍' : '🔤');
+        const extra = m.header !== FIELD_LABELS[m.field] ? `&nbsp;<span style="opacity:0.6;">← "${m.header}"</span>` : '';
+        return `<div style="line-height:1.8;">${icon} <strong>${FIELD_LABELS[m.field] || m.field}</strong>${extra}</div>`;
+      }).join('');
+    }
+
+    let missingHtml = '';
+    if (missing.length > 0) {
+      const missingStr = missing.map(f => FIELD_LABELS[f] || f).join(', ');
+      missingHtml = `<div style="color:var(--mp95-orange,#f59e0b); margin-top:0.3rem;">⚠️ Non rilevato: <em>${missingStr}</em> (saranno lasciati vuoti)</div>`;
+    }
+
+    if (mappedEl) mappedEl.innerHTML = mappedHtml;
+    if (missingEl) missingEl.innerHTML = missingHtml;
+    previewEl.style.display = 'block';
+  } else if (previewEl) {
+    previewEl.style.display = 'none';
+  }
 
   // Extract list of known PMs from OFFICIAL_COORDINATORS, projects & coordinatorResources
   const pmsSet = new Set();
@@ -1535,6 +1573,189 @@ async function processCoordinatorImportConfirm() {
   }
 }
 
+/* ----------------------------------------------------
+   SMART FUZZY COLUMN DETECTION — Auto-mapper for Excel import
+---------------------------------------------------- */
+
+/**
+ * Normalizes a string for fuzzy comparison:
+ * lowercases, removes accents, strips special chars.
+ */
+function normalizeKey(str) {
+  if (!str) return '';
+  return String(str)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // remove accents
+    .replace(/[^a-z0-9\s]/g, ' ')   // special chars -> space
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Levenshtein edit distance between two strings.
+ * Returns the number of single-character edits needed.
+ */
+function levenshteinDistance(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, (_, i) =>
+    Array.from({ length: n + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+  );
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (a[i - 1] === b[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1];
+      } else {
+        dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+      }
+    }
+  }
+  return dp[m][n];
+}
+
+/**
+ * Semantic alias dictionary.
+ * Each field maps to an array of known aliases (normalized).
+ */
+const COLUMN_ALIAS_MAP = {
+  progetto:    ['progetto', 'nome progetto', 'project', 'nome attivita', 'attivita', 'titolo', 'project name', 'name', 'oggetto', 'nome', 'descrizione progetto', 'activity', 'task'],
+  stato:       ['stato', 'status', 'fase', 'stato avanzamento', 'state', 'situazione', 'condizione'],
+  effort:      ['effort', 'effort %', '% effort', 'impegno', '% impegno', 'allocazione', '% allocazione', 'carico', 'workload', 'fte %', 'percentuale', 'perc', 'occupazione', 'quota', 'effort percentuale'],
+  risorsa:     ['risorsa', 'risorsa coinvolta', 'resource', 'persona', 'membro', 'utente', 'assegnatario', 'nome risorsa', 'collaboratore', 'nominativo'],
+  reparto:     ['reparto', 'area', 'team', 'dipartimento', 'department', 'unit', 'business unit', 'bu', 'divisione', 'settore', 'struttura'],
+  descrizione: ['descrizione', 'description', 'dettaglio', 'note', 'notes', 'commento', 'abstract', 'sommario', 'sintesi', 'info'],
+  criticita:   ['criticita', 'criticita', 'blocco', 'problema', 'dipendenza', 'issue', 'risk', 'rischio', 'impedimento', 'ostacolo', 'priorita', 'priority'],
+  scadenza:    ['scadenza', 'fine', 'data fine', 'deadline', 'end date', 'data scadenza', 'entro', 'data termine', 'data chiusura'],
+  data_inizio: ['inizio', 'data inizio', 'start', 'start date', 'data avvio', 'dal', 'apertura', 'data apertura'],
+  avanzamento: ['avanzamento', 'completamento', '% completamento', 'progress', 'done %', 'percent done', 'avanzamento %', '% avanzamento', 'completato']
+};
+
+/**
+ * Given an array of raw header strings (from the file),
+ * returns a colMap object: { fieldName: rawHeader, ... }
+ * and a colMapReport: { mapped: [{field, header, score}], missing: [field] }
+ */
+function detectColumnMapping(headers) {
+  const colMap = {};
+  const usedHeaders = new Set();
+
+  const normHeaders = headers.map(h => ({ raw: h, norm: normalizeKey(h) }));
+
+  // Priority order: exact > keyword > levenshtein
+  for (const [field, aliases] of Object.entries(COLUMN_ALIAS_MAP)) {
+    let bestMatch = null;
+    let bestScore = null;
+
+    for (const { raw, norm } of normHeaders) {
+      if (usedHeaders.has(raw)) continue;
+
+      // 1. Exact match against any alias
+      if (aliases.includes(norm)) {
+        bestMatch = { raw, score: 'exact' };
+        break;
+      }
+
+      // 2. Keyword containment: any alias word appears in the header
+      const headerWords = norm.split(' ');
+      const aliasHit = aliases.some(alias => {
+        const aliasWords = alias.split(' ');
+        return aliasWords.every(w => headerWords.includes(w));
+      });
+      if (aliasHit && (!bestScore || bestScore === 'levenshtein')) {
+        bestMatch = { raw, score: 'keyword' };
+        bestScore = 'keyword';
+      }
+
+      // 3. Levenshtein — only for short strings to avoid false positives
+      if (!bestMatch && norm.length <= 20) {
+        const minDist = Math.min(...aliases.map(a => levenshteinDistance(norm, a)));
+        if (minDist <= 2) {
+          if (!bestScore) {
+            bestMatch = { raw, score: 'levenshtein' };
+            bestScore = 'levenshtein';
+          }
+        }
+      }
+    }
+
+    if (bestMatch) {
+      colMap[field] = bestMatch.raw;
+      usedHeaders.add(bestMatch.raw);
+    }
+  }
+
+  // Build report
+  const mapped = Object.entries(colMap).map(([field, header]) => ({
+    field,
+    header,
+    score: (() => {
+      const norm = normalizeKey(header);
+      const aliases = COLUMN_ALIAS_MAP[field] || [];
+      if (aliases.includes(norm)) return 'exact';
+      const headerWords = norm.split(' ');
+      const aliasHit = aliases.some(alias => alias.split(' ').every(w => headerWords.includes(w)));
+      return aliasHit ? 'keyword' : 'levenshtein';
+    })()
+  }));
+  const missing = Object.keys(COLUMN_ALIAS_MAP).filter(f => !colMap[f]);
+
+  return { colMap, colMapReport: { mapped, missing } };
+}
+
+/**
+ * Maps a single spreadsheet row to a project object using the detected column map.
+ */
+function mapRowToProject(row, colMap) {
+  const get = (field, defaultVal = '') => {
+    const header = colMap[field];
+    if (!header) return defaultVal;
+    const val = row[header];
+    return (val !== undefined && val !== null) ? val : defaultVal;
+  };
+
+  const progettoVal  = String(get('progetto', '')).trim();
+  const statoVal     = String(get('stato', 'In corso')).trim() || 'In corso';
+  const risorsaVal   = String(get('risorsa', '')).trim();
+  const repartoVal   = String(get('reparto', '')).trim();
+  const descrizioneVal = String(get('descrizione', '')).trim();
+  const criticitaVal = String(get('criticita', '')).trim();
+  const scadenzaVal  = String(get('scadenza', '')).trim();
+  const inizioVal    = String(get('data_inizio', '')).trim();
+  const avanzVal     = get('avanzamento', 0);
+
+  // Effort: strip %, parse float
+  let effortRaw = get('effort', 0);
+  let effortNum = 0;
+  if (typeof effortRaw === 'number') {
+    effortNum = Math.round(effortRaw);
+  } else {
+    const cleaned = String(effortRaw).replace('%', '').replace(',', '.').trim();
+    effortNum = Math.round(parseFloat(cleaned)) || 0;
+  }
+
+  // Avanzamento: strip %
+  let avanzNum = 0;
+  if (typeof avanzVal === 'number') {
+    avanzNum = Math.round(avanzVal);
+  } else {
+    const cleaned = String(avanzVal).replace('%', '').replace(',', '.').trim();
+    avanzNum = Math.round(parseFloat(cleaned)) || 0;
+  }
+
+  return {
+    progetto:     progettoVal,
+    stato:        statoVal,
+    effort:       effortNum,
+    risorsa:      risorsaVal || null,
+    reparto:      repartoVal || null,
+    descrizione:  descrizioneVal || null,
+    criticita:    criticitaVal || null,
+    scadenza:     scadenzaVal || null,
+    data_inizio:  inizioVal || null,
+    avanzamento:  avanzNum
+  };
+}
+
 function handleExcelFileInput(file) {
   if (!file) return;
 
@@ -1546,48 +1767,42 @@ function handleExcelFileInput(file) {
         try {
           const data = new Uint8Array(e.target.result);
           const workbook = XLSX.read(data, { type: 'array' });
-          
+
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
 
-          const rawRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+          // Read rows keeping original headers
+          const rawRows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
 
           if (!Array.isArray(rawRows) || rawRows.length === 0) {
-            alert("Il file Excel caricato risulta vuoto o non leggibile.");
+            alert('Il file Excel caricato risulta vuoto o non leggibile.');
             return;
           }
 
-          const importedProjects = [];
-          rawRows.forEach((row, idx) => {
-            const progettoVal = row['Progetto'] || row['progetto'] || row['Nome Progetto'] || row['Project'] || '';
-            const statoVal = row['Stato'] || row['stato'] || row['Status'] || 'In corso';
-            const effortVal = row['Effort %'] || row['Effort'] || row['effort'] || 0;
-            const risorsaVal = row['Risorsa'] || row['risorsa'] || row['Risorsa Coinvolta'] || '';
-            const descrizioneVal = row['Descrizione'] || row['descrizione'] || '';
-            const repartoVal = row['Reparto'] || row['reparto'] || '';
-            const criticitaVal = row['Criticità'] || row['criticita'] || row['Note'] || '';
+          // Extract headers from first row
+          const headers = Object.keys(rawRows[0]);
 
-            if (progettoVal && String(progettoVal).trim().length > 0) {
-              importedProjects.push({
-                progetto: String(progettoVal).trim(),
-                stato: String(statoVal).trim(),
-                effort: parseInt(effortVal) || 0,
-                risorsa: String(risorsaVal).trim() || null,
-                descrizione: String(descrizioneVal).trim() || null,
-                reparto: String(repartoVal).trim() || null,
-                criticita: String(criticitaVal).trim() || null
-              });
+          // Smart column detection
+          const { colMap, colMapReport } = detectColumnMapping(headers);
+
+          // Parse rows using the detected mapping
+          const importedProjects = [];
+          rawRows.forEach(row => {
+            const project = mapRowToProject(row, colMap);
+            if (project.progetto && project.progetto.length > 0) {
+              importedProjects.push(project);
             }
           });
 
           if (importedProjects.length > 0) {
-            openCoordinatorModal(importedProjects, file.name);
+            openCoordinatorModal(importedProjects, file.name, colMapReport);
           } else {
-            alert("Nessun progetto valido trovato nel file Excel. Assicurati che ci sia almeno la colonna 'Progetto'.");
+            const foundCols = headers.join(', ');
+            alert(`Nessun progetto valido trovato nel file Excel.\n\nColonne trovate nel file: ${foundCols}\n\nAssicurati che ci sia almeno una colonna con il nome del progetto (es. "Progetto", "Nome Attività", "Project").`);
           }
         } catch (err) {
-          console.error("Excel import error:", err);
-          alert("Errore nella lettura del file Excel: " + err.message);
+          console.error('Excel import error:', err);
+          alert('Errore nella lettura del file Excel: ' + err.message);
         }
       };
       reader.readAsArrayBuffer(file);
