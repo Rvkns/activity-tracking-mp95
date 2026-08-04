@@ -171,10 +171,14 @@ app.post(['/api/projects/batch', '/projects/batch'], async (req, res) => {
 
       if (!progetto) continue;
 
-      // Check if project exists by ID or by (progetto + pm)
+      const risorsa = (p.risorsa || '').trim();
+
+      // Check if project exists by ID or by (progetto + pm + risorsa)
       const existing = await client.query(
-        'SELECT id FROM mp95_projects WHERE id = $1 OR (LOWER(progetto) = LOWER($2) AND LOWER(pm) = LOWER($3))',
-        [p.id || '', progetto, pm]
+        `SELECT id FROM mp95_projects 
+         WHERE id = $1 
+            OR (LOWER(progetto) = LOWER($2) AND LOWER(pm) = LOWER($3) AND LOWER(COALESCE(risorsa, '')) = LOWER(COALESCE($4, '')))`,
+        [p.id || '', progetto, pm, risorsa]
       );
 
       if (existing.rows.length > 0) {

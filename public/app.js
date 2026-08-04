@@ -608,7 +608,8 @@ function getTempisticheClass(temp) {
 }
 
 function getAvanzamentoClass(av) {
-  if (av >= 80) return 'av-high';
+  if (av >= 100) return 'av-full';
+  if (av >= 75) return 'av-high';
   if (av >= 40) return 'av-mid';
   return 'av-low';
 }
@@ -1942,12 +1943,25 @@ function handleImportFileText(file) {
         }
       } else {
         const lines = content.split('\n').filter(l => l.trim().length > 0);
+        let maxIdNum = 0;
+        projects.forEach(p => {
+          const match = (p.id || '').match(/^PRJ-(\d+)$/);
+          if (match) {
+            const num = parseInt(match[1], 10);
+            if (num > maxIdNum) maxIdNum = num;
+          }
+        });
         const imported = [];
         for (let i = 1; i < lines.length; i++) {
           const parts = lines[i].split(',').map(p => p.replace(/^"|"$/g, '').trim());
           if (parts.length >= 4) {
+            let rowId = parts[0];
+            if (!rowId || !rowId.startsWith('PRJ-')) {
+              maxIdNum++;
+              rowId = `PRJ-${String(maxIdNum).padStart(3, '0')}`;
+            }
             imported.push({
-              id: parts[0] || `PRJ-${String(i).padStart(3, '0')}`,
+              id: rowId,
               progetto: parts[1],
               stato: parts[2],
               pm: parts[3],
@@ -2288,18 +2302,30 @@ async function handleSaveProject(e) {
       const origPm = sanitizeProjectPM(origPrj.pm).toLowerCase();
       const siblingIds = projects.filter(p => p.progetto.toLowerCase() === origName && sanitizeProjectPM(p.pm).toLowerCase() === origPm).map(p => p.id);
       projects = projects.filter(p => !siblingIds.includes(p.id));
-      for (const sId of siblingIds) {
-        try { await fetch(`/api/projects/${sId}`, { method: 'DELETE' }); } catch(e){}
-      }
+      
+      // Delete previous allocations in DB before inserting updated ones
+      await Promise.all(siblingIds.map(sId => 
+        fetch(`/api/projects/${sId}`, { method: 'DELETE' }).catch(e => console.log('Delete error', e))
+      ));
     }
   }
+
+  // Calculate maximum existing numeric ID to prevent ID collisions after deletions
+  let maxIdNum = 0;
+  projects.forEach(p => {
+    const match = (p.id || '').match(/^PRJ-(\d+)$/);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (num > maxIdNum) maxIdNum = num;
+    }
+  });
 
   // Create project entries for each resource allocation
   const newProjectsCreated = [];
   for (let i = 0; i < allocations.length; i++) {
     const alloc = allocations[i];
-    const nextNum = projects.length + 1;
-    const newId = `PRJ-${String(nextNum).padStart(3, '0')}`;
+    maxIdNum++;
+    const newId = `PRJ-${String(maxIdNum).padStart(3, '0')}`;
     const newObj = {
       id: newId,
       progetto,

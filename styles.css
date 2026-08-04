@@ -1018,6 +1018,7 @@ textarea.form-control {
 }
 .avanzamento-bar-fill.av-low    { background: var(--danger); }
 .avanzamento-bar-fill.av-mid    { background: var(--warning); }
+.avanzamento-bar-fill.av-high,
 .avanzamento-bar-fill.av-good   { background: var(--success); }
 .avanzamento-bar-fill.av-full   { background: linear-gradient(90deg, var(--mp95-orange), var(--success)); }
 .avanzamento-label {
