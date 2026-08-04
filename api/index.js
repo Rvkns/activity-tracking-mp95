@@ -13,10 +13,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const FALLBACK_DB_URL = "postgresql://neondb_owner:npg_cNRTYLP60BUz@ep-misty-base-al00ws0j-pooler.c-3.eu-central-1.aws.neon.tech/neondb?sslmode=require";
-
 function getPool() {
-  const connectionString = process.env.DATABASE_URL || FALLBACK_DB_URL;
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error("DATABASE_URL environment variable is missing.");
+  }
   return new Pool({
     connectionString,
     ssl: { rejectUnauthorized: false }
