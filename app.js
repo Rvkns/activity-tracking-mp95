@@ -2229,10 +2229,8 @@ window.openEditProjectModal = function(id) {
 
   populateModalPmOptions(prj.pm);
 
-  // Find all sibling assignments for this project under the same PM
-  const siblings = projects.filter(p => p.progetto.toLowerCase() === prj.progetto.toLowerCase() && sanitizeProjectPM(p.pm).toLowerCase() === sanitizeProjectPM(prj.pm).toLowerCase());
-  const allocs = siblings.map(s => ({ risorsa: s.risorsa, effort: s.effort }));
-  renderAllResourceRowsForPm(prj.pm, allocs.length > 0 ? allocs : [{ risorsa: prj.risorsa, effort: prj.effort }]);
+  // Render resource row for the target project entry
+  renderAllResourceRowsForPm(prj.pm, [{ risorsa: prj.risorsa, effort: prj.effort }]);
 
   document.getElementById('modalReparto').value = prj.reparto || '';
   document.getElementById('modalEffortPrevisto').value = prj.effort_previsto || '';
@@ -2294,23 +2292,7 @@ async function handleSaveProject(e) {
     allocations.push({ risorsa: null, effort: 0 });
   }
 
-  // If editing an existing project, remove previous sibling allocations
-  if (id) {
-    const origPrj = projects.find(p => p.id === id);
-    if (origPrj) {
-      const origName = origPrj.progetto.toLowerCase();
-      const origPm = sanitizeProjectPM(origPrj.pm).toLowerCase();
-      const siblingIds = projects.filter(p => p.progetto.toLowerCase() === origName && sanitizeProjectPM(p.pm).toLowerCase() === origPm).map(p => p.id);
-      projects = projects.filter(p => !siblingIds.includes(p.id));
-      
-      // Delete previous allocations in DB before inserting updated ones
-      await Promise.all(siblingIds.map(sId => 
-        fetch(`/api/projects/${sId}`, { method: 'DELETE' }).catch(e => console.log('Delete error', e))
-      ));
-    }
-  }
-
-  // Calculate maximum existing numeric ID to prevent ID collisions after deletions
+  // Calculate maximum existing numeric ID to prevent ID collisions
   let maxIdNum = 0;
   projects.forEach(p => {
     const match = (p.id || '').match(/^PRJ-(\d+)$/);
@@ -2320,44 +2302,98 @@ async function handleSaveProject(e) {
     }
   });
 
-  // Create project entries for each resource allocation
-  const newProjectsCreated = [];
-  for (let i = 0; i < allocations.length; i++) {
-    const alloc = allocations[i];
-    maxIdNum++;
-    const newId = `PRJ-${String(maxIdNum).padStart(3, '0')}`;
-    const newObj = {
-      id: newId,
-      progetto,
-      stato,
-      pm,
-      effort: alloc.effort,
-      risorsa: alloc.risorsa,
-      reparto,
-      descrizione,
-      effort_previsto,
-      effort_residuo,
-      avanzamento,
-      data_inizio,
-      scadenza,
-      stato_tempistiche,
-      criticita
-    };
-    projects.push(newObj);
-    newProjectsCreated.push(newObj);
+  const savedProjects = [];
+
+  if (id) {
+    // Editing an existing project row: update target project entry in place
+    const existingIndex = projects.findIndex(p => p.id === id);
+    if (existingIndex >= 0) {
+      const firstAlloc = allocations[0];
+      const updatedPrj = {
+        ...projects[existingIndex],
+        progetto,
+        stato,
+        pm,
+        effort: firstAlloc.effort,
+        risorsa: firstAlloc.risorsa,
+        reparto,
+        descrizione,
+        effort_previsto,
+        effort_residuo,
+        avanzamento,
+        data_inizio,
+        scadenza,
+        stato_tempistiche,
+        criticita
+      };
+      projects[existingIndex] = updatedPrj;
+      savedProjects.push(updatedPrj);
+
+      // If extra resource rows were added, create new project entries for them
+      for (let i = 1; i < allocations.length; i++) {
+        const alloc = allocations[i];
+        maxIdNum++;
+        const newId = `PRJ-${String(maxIdNum).padStart(3, '0')}`;
+        const newObj = {
+          id: newId,
+          progetto,
+          stato,
+          pm,
+          effort: alloc.effort,
+          risorsa: alloc.risorsa,
+          reparto,
+          descrizione,
+          effort_previsto,
+          effort_residuo,
+          avanzamento,
+          data_inizio,
+          scadenza,
+          stato_tempistiche,
+          criticita
+        };
+        projects.push(newObj);
+        savedProjects.push(newObj);
+      }
+    }
+  } else {
+    // Creating a brand new project
+    for (let i = 0; i < allocations.length; i++) {
+      const alloc = allocations[i];
+      maxIdNum++;
+      const newId = `PRJ-${String(maxIdNum).padStart(3, '0')}`;
+      const newObj = {
+        id: newId,
+        progetto,
+        stato,
+        pm,
+        effort: alloc.effort,
+        risorsa: alloc.risorsa,
+        reparto,
+        descrizione,
+        effort_previsto,
+        effort_residuo,
+        avanzamento,
+        data_inizio,
+        scadenza,
+        stato_tempistiche,
+        criticita
+      };
+      projects.push(newObj);
+      savedProjects.push(newObj);
+    }
   }
 
   try {
     await fetch('/api/projects/batch', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newProjectsCreated)
+      body: JSON.stringify(savedProjects)
     });
   } catch (err) { console.log("Saved local."); }
 
   saveState();
   closeProjectModal();
-  showToast(`Progetto "${progetto}" salvato con ${allocations.length} risorsa/e assegnata/e!`);
+  showToast(`Progetto "${progetto}" salvato con successo!`);
 }
 
 window.deleteProject = async function(id) {
