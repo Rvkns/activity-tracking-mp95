@@ -445,7 +445,7 @@
             <p style="margin-top:1rem; font-weight:700;">Grafici Dashboard (riga inferiore):</p>
             <ul style="margin-left:1.5rem; color:var(--text-muted); font-size:0.9rem; line-height:1.8;">
               <li><b>📊 Distribuzione Stato Progetti:</b> Mostra quanti progetti rientrano in ciascun stato (In corso, Manutenzione, Terminato, Stand by, Da iniziare, Attività periodica) con barre di percentuale colorate.</li>
-              <li><b>👤 Carico di Lavoro Coordinatori:</b> Elenca ogni risorsa/coordinatore con il suo effort totale su 120% (capacità massima). Le risorse in <span style="color:var(--danger);">overload (&gt;120%)</span> o in <span style="color:var(--warning);">straordinario (101-120%)</span> sono evidenziate con colori di allarme.</li>
+              <li><b>👤 Carico di Lavoro Coordinatori:</b> Elenca ogni risorsa/coordinatore con il suo effort totale (capacità standard 100%). Le risorse in <span style="color:var(--danger);">overload (&gt;100%)</span> sono evidenziate in rosso.</li>
             </ul>
             <div class="wiki-feature-box">
               <b>💡 Suggerimento:</b> La Dashboard si aggiorna <b>automaticamente</b> ogni volta che aggiungi, modifichi o elimini un progetto, o importi un file Excel. Non serve nessuna azione manuale per aggiornare le statistiche.
@@ -589,7 +589,7 @@
             <p style="font-weight:700; margin-top:0.8rem;">Ogni card del coordinatore contiene:</p>
             <ul style="margin-left:1.5rem; color:var(--text-muted); font-size:0.9rem; line-height:1.8;">
               <li><b>Avatar e Nome</b> con badge del reparto di appartenenza.</li>
-              <li><b>Allocazione Risorse Team</b> — Barre individuali per ogni risorsa del team, mostrando l'effort con codice colore (verde = standard, arancione = straordinario, rosso = overload).</li>
+              <li><b>Allocazione Risorse Team</b> — Barre individuali per ogni risorsa del team, mostrando l'effort con codice colore (verde/blu = standard &le;100%, rosso = overload &gt;100%).</li>
               <li><b>Numero Progetti Gestiti</b> — Conteggio dei progetti sotto la responsabilità del coordinatore.</li>
             </ul>
 
@@ -604,11 +604,10 @@
             </div>
 
             <div class="wiki-feature-box warning">
-              <b>Logica CAP Effort Massimo 120%:</b>
+              <b>Logica Effort e Sovraccarico:</b>
               <ul style="margin-top:0.35rem; margin-left:1.2rem; line-height:1.8;">
                 <li><b style="color:var(--success);">🟢 0% - 100%:</b> Allocazione ordinaria — capacità standard. Barra verde/blu.</li>
-                <li><b style="color:var(--warning);">⚡ 101% - 120%:</b> Straordinario medio — il +20% è il massimo tollerato. Barra arancione.</li>
-                <li><b style="color:var(--danger);">🔴 > 120%:</b> Overload Critico — superamento del CAP massimo consentito. Barra rossa con alert.</li>
+                <li><b style="color:var(--danger);">🔴 > 100%:</b> Overload / Sovraccarico — superamento della capacità standard (100%). Barra rossa con alert.</li>
               </ul>
             </div>
 

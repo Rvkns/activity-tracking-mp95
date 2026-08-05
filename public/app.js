@@ -437,20 +437,16 @@ function renderPmWorkloadOverview() {
       const data = pmEfforts[pmName];
       const totalEffort = data.totalEffort;
       
-      const barPct = Math.min(Math.round((totalEffort / 120) * 100), 100);
+      const barPct = Math.min(totalEffort, 100);
 
-      let statusText = `${totalEffort}% / 120%`;
+      let statusText = `${totalEffort}%`;
       let colorStyle = 'var(--mp95-blue)';
       let bgStyle = 'linear-gradient(90deg, var(--mp95-blue), var(--success))';
 
-      if (totalEffort > 120) {
-        statusText = `${totalEffort}% / 120% ⚠️ Overload (+${totalEffort - 120}%)`;
+      if (totalEffort > 100) {
+        statusText = `${totalEffort}% ⚠️ Overload (+${totalEffort - 100}%)`;
         colorStyle = 'var(--danger)';
         bgStyle = 'var(--danger)';
-      } else if (totalEffort > 100) {
-        statusText = `${totalEffort}% / 120% ⚡ Straordinario (+${totalEffort - 100}%)`;
-        colorStyle = 'var(--warning)';
-        bgStyle = 'linear-gradient(90deg, var(--mp95-orange), var(--warning))';
       }
 
       const row = document.createElement('div');
@@ -518,20 +514,16 @@ function renderPmWorkloadOverview() {
       const data = resourceEfforts[rName];
       const totalEffort = data.totalEffort;
       
-      const barPct = Math.min(Math.round((totalEffort / 120) * 100), 100);
+      const barPct = Math.min(totalEffort, 100);
 
-      let statusText = `${totalEffort}% / 120%`;
+      let statusText = `${totalEffort}%`;
       let colorStyle = 'var(--mp95-blue)';
       let bgStyle = 'linear-gradient(90deg, var(--mp95-blue), var(--success))';
 
-      if (totalEffort > 120) {
-        statusText = `${totalEffort}% / 120% ⚠️ Overload (+${totalEffort - 120}%)`;
+      if (totalEffort > 100) {
+        statusText = `${totalEffort}% ⚠️ Overload (+${totalEffort - 100}%)`;
         colorStyle = 'var(--danger)';
         bgStyle = 'var(--danger)';
-      } else if (totalEffort > 100) {
-        statusText = `${totalEffort}% / 120% ⚡ Straordinario (+${totalEffort - 100}%)`;
-        colorStyle = 'var(--warning)';
-        bgStyle = 'linear-gradient(90deg, var(--mp95-orange), var(--warning))';
       }
 
       const rowHtml = `
@@ -545,7 +537,7 @@ function renderPmWorkloadOverview() {
               ${statusText} (${data.count} attività)
             </span>
           </div>
-          <div class="effort-progress-bg" title="Capacità Risorsa: 100% Std + 20% Straordinario = CAP Max 120%">
+          <div class="effort-progress-bg" title="Effort Risorsa (Capacità Standard 100%)">
             <div class="effort-progress-fill" style="width: ${barPct}%; background: ${bgStyle};"></div>
           </div>
         </div>
@@ -780,21 +772,17 @@ function renderCoordinatorsGrid() {
 
       teamEffortsSum += rEffort;
       resourceCount++;
-      if (rEffort > 120) overloadedCount++;
+      if (rEffort > 100) overloadedCount++;
 
-      const rBarWidthPct = Math.min(Math.round((rEffort / 120) * 100), 100);
+      const rBarWidthPct = Math.min(rEffort, 100);
       let rBadge = '<span style="color:var(--success); font-weight:700;">🟢 Std</span>';
       let rFill = 'linear-gradient(90deg, var(--mp95-blue), var(--success))';
       let rColor = 'var(--text-main)';
 
-      if (rEffort > 120) {
+      if (rEffort > 100) {
         rBadge = '<span style="color:var(--danger); font-weight:800;">🔴 OVERLOAD</span>';
         rFill = 'var(--danger)';
         rColor = 'var(--danger)';
-      } else if (rEffort > 100) {
-        rBadge = '<span style="color:var(--warning); font-weight:700;">⚡ Straordinario</span>';
-        rFill = 'linear-gradient(90deg, var(--mp95-orange), var(--warning))';
-        rColor = 'var(--warning)';
       }
 
       return `
@@ -804,7 +792,7 @@ function renderCoordinatorsGrid() {
               <span style="font-weight:700; color:var(--text-main);">${rName}</span>
               ${rRole ? `<span style="font-size:0.72rem; color:var(--text-dim); margin-left:0.3rem;">(${rRole})</span>` : ''}
             </div>
-            <span style="font-weight:800; color:${rColor};">${rEffort}% / 120%</span>
+            <span style="font-weight:800; color:${rColor};">${rEffort}%</span>
           </div>
           <div class="pm-capacity-bar" style="height:6px;" title="Effort individuale di ${rName}">
             <div class="pm-capacity-fill" style="width:${rBarWidthPct}%; background:${rFill};"></div>
@@ -817,9 +805,9 @@ function renderCoordinatorsGrid() {
 
     let overallBadge = `<span style="color:var(--success); font-weight:700;">🟢 Team in Capacità (Media ${avgTeamEffort}%)</span>`;
     if (overloadedCount > 0) {
-      overallBadge = `<span style="color:var(--danger); font-weight:800;">🔴 ${overloadedCount} Risorse in Overload (>120%)</span>`;
+      overallBadge = `<span style="color:var(--danger); font-weight:800;">🔴 ${overloadedCount} Risorse in Overload (>100%)</span>`;
     } else if (avgTeamEffort > 100) {
-      overallBadge = `<span style="color:var(--warning); font-weight:700;">⚡ Team in Straordinario (Media ${avgTeamEffort}%)</span>`;
+      overallBadge = `<span style="color:var(--danger); font-weight:700;">🔴 Media Team in Overload (${avgTeamEffort}%)</span>`;
     }
 
     const initials = pmName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
@@ -841,7 +829,7 @@ function renderCoordinatorsGrid() {
       <div class="pm-capacity-gauge">
         <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; font-weight:700; margin-bottom:0.4rem;">
           <span>Allocazione Risorse Team (${resourcesList.length} persone)</span>
-          <span style="font-size:0.78rem; color:var(--text-dim);">Media: ${avgTeamEffort}% / 120%</span>
+          <span style="font-size:0.78rem; color:var(--text-dim);">Media: ${avgTeamEffort}%</span>
         </div>
         ${overallBadge}
         <div style="margin-top:0.65rem;">
@@ -1615,10 +1603,8 @@ async function processCoordinatorImportConfirm() {
   const pmProjects = getProjectsForCoordinator(chosenPm);
   const totalEffort = pmProjects.reduce((acc, p) => acc + (p.effort || 0), 0);
 
-  if (totalEffort > 120) {
-    showToast(`⚠️ Importato per ${chosenPm}! Effort totale: ${totalEffort}% (Superato CAP Max del 120% con +${totalEffort - 100}% straordinario!)`);
-  } else if (totalEffort > 100) {
-    showToast(`⚡ Importato per ${chosenPm}! Effort totale: ${totalEffort}% / 120% (+${totalEffort - 100}% Straordinario).`);
+  if (totalEffort > 100) {
+    showToast(`⚠️ Importato per ${chosenPm}! Effort totale: ${totalEffort}% (In overload del +${totalEffort - 100}%)`);
   } else {
     showToast(`File '${fileName}' importato per ${chosenPm}! (${addedCount} nuovi, ${updatedCount} aggiornati)`);
   }
