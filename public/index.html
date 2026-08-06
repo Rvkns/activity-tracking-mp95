@@ -44,6 +44,10 @@
           <i class="fa-solid fa-diagram-project"></i>
           <span>Progetti & Effort</span>
         </li>
+        <li class="nav-item" data-view="completed">
+          <i class="fa-solid fa-box-archive"></i>
+          <span>Progetti Conclusi</span>
+        </li>
         <li class="nav-item" data-view="coordinators">
           <i class="fa-solid fa-user-gear"></i>
           <span>Coordinatori (PM)</span>
@@ -335,6 +339,126 @@
         </div>
       </section>
 
+      <!-- View: PROGETTI CONCLUSI & KPI DELIVERY -->
+      <section id="view-completed" class="view-section">
+        <!-- Top Info Header Banner -->
+        <div class="card" style="margin-bottom:1.5rem; background: linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(37,99,235,0.05) 100%); border-left: 4px solid var(--success);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+            <div>
+              <h3 style="margin:0; font-size:1.2rem; color:var(--text-main);"><i class="fa-solid fa-box-archive" style="color:var(--success); margin-right:0.5rem;"></i> Archivio Storico & Governance Progetti Conclusi</h3>
+              <p style="margin:0.3rem 0 0 0; font-size:0.88rem; color:var(--text-muted);">
+                Monitoraggio della puntualità delle consegne (On-Time Delivery), scostamento effort e storicità di tutti i progetti completati in MP95.
+              </p>
+            </div>
+            <div style="display:flex; gap:0.5rem;">
+              <button class="btn btn-secondary btn-sm" onclick="exportCompletedProjectsReport()">
+                <i class="fa-solid fa-file-excel" style="color:#10B981;"></i> Esporta Archivio Conclusi
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Executive KPI Cards Row -->
+        <div class="kpi-grid" style="margin-bottom:1.5rem;">
+          <div class="kpi-card" style="border-left: 3px solid var(--success);">
+            <div class="kpi-info">
+              <span>Totale Progetti Conclusi</span>
+              <h3 id="kpiCompletedTotal">0</h3>
+              <p>Progetti portati a termine</p>
+            </div>
+            <div class="kpi-icon" style="color:var(--success);"><i class="fa-solid fa-circle-check"></i></div>
+          </div>
+          <div class="kpi-card kpi-active">
+            <div class="kpi-info">
+              <span>On-Time Delivery Rate</span>
+              <h3 id="kpiCompletedOnTimePct">0%</h3>
+              <p>Consegnati entro i tempi previsti</p>
+            </div>
+            <div class="kpi-icon"><i class="fa-solid fa-clock-check"></i></div>
+          </div>
+          <div class="kpi-card kpi-blue">
+            <div class="kpi-info">
+              <span>Durata Media Progetto</span>
+              <h3 id="kpiCompletedAvgDays">0 gg</h3>
+              <p>Tempo medio avvio → chiusura</p>
+            </div>
+            <div class="kpi-icon"><i class="fa-solid fa-hourglass-end"></i></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <span>Effort Previsto Cumulativo</span>
+              <h3 id="kpiCompletedTotalPlanned">0 gg/u</h3>
+              <p>Totale giornate uomo erogate</p>
+            </div>
+            <div class="kpi-icon"><i class="fa-solid fa-business-time"></i></div>
+          </div>
+        </div>
+
+        <!-- Performance Breakdown Grid Row (Delivery rate per PM & per Reparto) -->
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap:1.5rem; margin-bottom:1.5rem;">
+          <!-- Card: On-Time Delivery per Coordinatore -->
+          <div class="card">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+              <h3><i class="fa-solid fa-user-check" style="color:var(--mp95-blue);"></i> On-Time Delivery per PM</h3>
+              <span style="font-size:0.78rem; color:var(--text-dim);">Puntualità per Coordinatore</span>
+            </div>
+            <div id="completedPmDeliveryContainer" style="display:flex; flex-direction:column; gap:0.65rem; margin-top:1rem;">
+              <!-- Rendered dynamically by app.js -->
+            </div>
+          </div>
+
+          <!-- Card: Distribution per Reparto Aziendale -->
+          <div class="card">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+              <h3><i class="fa-solid fa-building" style="color:var(--mp95-orange);"></i> Progetti Conclusi per Reparto</h3>
+              <span style="font-size:0.78rem; color:var(--text-dim);">Volume per Area</span>
+            </div>
+            <div id="completedDeptContainer" style="display:flex; flex-direction:column; gap:0.65rem; margin-top:1rem;">
+              <!-- Rendered dynamically by app.js -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Archive Table Section -->
+        <div class="card">
+          <div class="card-header" style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:1rem;">
+            <h3><i class="fa-solid fa-list-check" style="color:var(--success);"></i> Elenco Progetti Conclusi & Archiviati</h3>
+            <!-- Filter Bar -->
+            <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+              <input type="text" id="completedSearchInput" class="form-control" placeholder="Cerca progetto o risorsa..." style="min-width:200px; font-size:0.85rem;">
+              <select id="completedPmFilter" class="form-select" style="min-width:180px; font-size:0.85rem;">
+                <option value="">Tutti i Coordinatori</option>
+              </select>
+              <select id="completedDeptFilter" class="form-select" style="min-width:160px; font-size:0.85rem;">
+                <option value="">Tutti i Reparti</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="overflow-x:auto; margin-top:1rem;">
+            <table class="table" id="completedProjectsTable">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Progetto</th>
+                  <th>Reparto</th>
+                  <th>PM / Coordinatore</th>
+                  <th>Risorsa</th>
+                  <th>Data Inizio</th>
+                  <th>Scadenza / Fine</th>
+                  <th>Tempistiche</th>
+                  <th>Avanzamento</th>
+                  <th style="text-align:right;">Azioni</th>
+                </tr>
+              </thead>
+              <tbody id="completedProjectsTbody">
+                <!-- Rendered dynamically by app.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <!-- View: COORDINATORS (WORKLOAD & TEAMS) -->
       <section id="view-coordinators" class="view-section">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; background:rgba(255,255,255,0.03); padding:1rem 1.25rem; border-radius:var(--radius-lg); border:1px solid var(--border-color);">
@@ -486,6 +610,7 @@
               <li><a href="#wiki-excel"><i class="fa-solid fa-angle-right"></i> 10. Importazione File Excel (.xlsx / .xls)</a></li>
               <li><a href="#wiki-export"><i class="fa-solid fa-angle-right"></i> 11. Esportazione Dati (CSV / JSON)</a></li>
               <li><a href="#wiki-data"><i class="fa-solid fa-angle-right"></i> 12. Persistenza, Sicurezza e Sincronizzazione Dati</a></li>
+              <li><a href="#wiki-completed"><i class="fa-solid fa-angle-right"></i> 13. Archivio & Delivery KPI Progetti Conclusi</a></li>
             </ul>
           </div>
 
@@ -888,6 +1013,18 @@
                   <tr><td style="padding:0.3rem 0.6rem;">Preferenza tema</td><td style="padding:0.3rem 0.6rem;">💾 Cache Locale (browser)</td></tr>
                 </tbody>
               </table>
+            </div>
+          <!-- Section 13: Progetti Conclusi -->
+          <div class="wiki-section-card" id="wiki-completed">
+            <h3><i class="fa-solid fa-box-archive" style="color:var(--success);"></i> 13. Archivio & Delivery KPI Progetti Conclusi</h3>
+            <p>La sezione <b>Progetti Conclusi</b> offre una governance storica completa di tutte le attività portate a termine.</p>
+            <div class="wiki-feature-box">
+              <ul style="margin-left:1.2rem; line-height:1.8;">
+                <li><b>🎯 Classificazione Automatica:</b> Un progetto viene classificato come concluso quando lo stato è impostato su <i>Terminato</i>, <i>Completato</i> o <i>In fase di chiusura</i>, oppure quando l'avanzamento raggiunge il 100%.</li>
+                <li><b>⏱️ On-Time Delivery Rate (%):</b> Misura la percentuale di progetti consegnati rispettando i tempi previsti (stato tempistiche <i>In linea</i>).</li>
+                <li><b>⌛ Durata Media Progetto (Lead Time):</b> Calcola i giorni totali trascuri dalla data inizio alla scadenza/chiusura.</li>
+                <li><b>🔄 Riapertura Rapida:</b> Cliccando sul pulsante <i>Riapri</i> nell'archivio, il progetto viene riportato allo stato <i>In corso</i> e riattivato istantaneamente in tutte le viste dell'app.</li>
+              </ul>
             </div>
           </div>
 

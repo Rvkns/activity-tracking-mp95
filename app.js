@@ -215,6 +215,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initDashboard();
   initAnalyticsView();
   initProjectsView();
+  initCompletedView();
   initCoordinatorsView();
   initTimelineView();
   initReportsView();
@@ -359,6 +360,7 @@ function refreshAllViews() {
   renderDashboard();
   renderAnalyticsView();
   renderProjectsTable();
+  renderCompletedView();
   renderCoordinatorsGrid();
   populatePmFilterOptions();
   populateTimelinePmFilter();
@@ -383,6 +385,7 @@ function initNavigation() {
     dashboard: { title: "Executive Dashboard", subtitle: "Panoramica generale dell'effort e delle attività dei coordinatori MP95" },
     analytics: { title: "Analytics & Executive KPI", subtitle: "Analisi avanzata delle metriche di effort, reparto e saturazione delle risorse MP95" },
     projects: { title: "Gestione Progetti & Effort", subtitle: "Elenco completo dei progetti censiti con allocazioni percentuale" },
+    completed: { title: "Archivio Progetti Conclusi & Delivery KPI", subtitle: "Monitoraggio della puntualità (On-Time Delivery), scostamento effort e storicità progetti" },
     coordinators: { title: "Carico di Lavoro & Risorse Coordinatori", subtitle: "Analisi della capacità, progetti e risorse gestite per ciascun PM" },
     timeline: { title: "Governance Temporale & Timeline", subtitle: "Monitoraggio della durata, pianificazione e calendario delle attività MP95" },
     reports: { title: "Reportistica & Import/Export", subtitle: "Esportazione report CSV/JSON e caricamento file Excel (.xlsx)" },
@@ -555,9 +558,23 @@ function getResourceEffort(resourceName) {
   if (!resourceName) return 0;
   const cleanName = resourceName.trim().toLowerCase();
   return projects.reduce((acc, p) => {
-    const rName = (p.risorsa || p.pm || '').trim().toLowerCase();
+    const rName = (p.risorsa && p.risorsa.trim()) ? p.risorsa.trim().toLowerCase() : sanitizeProjectPM(p.pm).toLowerCase();
     if (rName === cleanName) {
       return acc + (p.effort || 0);
+    }
+    return acc;
+  }, 0);
+}
+
+function getCoordinatorPersonalEffort(coordName) {
+  if (!coordName) return 0;
+  const normCoord = coordName.trim().toLowerCase();
+  return projects.reduce((acc, p) => {
+    if (sanitizeProjectPM(p.pm).toLowerCase() === normCoord) {
+      const rName = (p.risorsa || '').trim().toLowerCase();
+      if (!rName || rName === normCoord) {
+        return acc + (p.effort || 0);
+      }
     }
     return acc;
   }, 0);
@@ -584,7 +601,12 @@ function renderPmWorkloadOverview() {
       const pmName = sanitizeProjectPM(p.pm);
       if (!coordNameSet.has(pmName)) return; // Skip anyone not in the official list
       pmEfforts[pmName].count += 1;
-      pmEfforts[pmName].totalEffort += (p.effort || 0);
+
+      // Personal effort only if no external resource is assigned or if resource is coordinator
+      const rName = (p.risorsa || '').trim().toLowerCase();
+      if (!rName || rName === pmName.toLowerCase()) {
+        pmEfforts[pmName].totalEffort += (p.effort || 0);
+      }
     });
 
     officialCoords.forEach(coord => {
@@ -819,7 +841,7 @@ function renderAnalyticsView() {
     allCoords.forEach(coord => {
       const pmName = coord.name;
       const pmPrjs = projects.filter(p => sanitizeProjectPM(p.pm).toLowerCase() === pmName.toLowerCase());
-      const pmEffort = pmPrjs.reduce((acc, p) => acc + (p.effort || 0), 0);
+      const pmEffort = getCoordinatorPersonalEffort(pmName);
       const pmAvgAv = pmPrjs.length > 0 ? Math.round(pmPrjs.reduce((acc, p) => acc + (p.avanzamento || 0), 0) / pmPrjs.length) : 0;
       const teamRes = coordinatorResources[pmName] || [];
 
@@ -1112,6 +1134,255 @@ function renderProjectsTable() {
 }
 
 /* ----------------------------------------------------
+   COMPLETED PROJECTS ARCHIVE & DELIVERY KPI VIEW
+---------------------------------------------------- */
+function isProjectCompleted(p) {
+  if (!p) return false;
+  const st = (p.stato || '').trim().toLowerCase();
+  const av = parseInt(p.avanzamento || 0, 10);
+  return st === 'terminato' || st === 'completato' || st === 'in fase di chiusura' || av >= 100;
+}
+
+function initCompletedView() {
+  const searchInput = document.getElementById('completedSearchInput');
+  const pmFilter = document.getElementById('completedPmFilter');
+  const deptFilter = document.getElementById('completedDeptFilter');
+
+  if (searchInput) searchInput.addEventListener('input', renderCompletedView);
+  if (pmFilter) pmFilter.addEventListener('change', renderCompletedView);
+  if (deptFilter) deptFilter.addEventListener('change', renderCompletedView);
+
+  renderCompletedView();
+}
+
+function renderCompletedView() {
+  const completedProjects = projects.filter(isProjectCompleted);
+
+  // 1. Executive KPI Cards
+  const totalCompleted = completedProjects.length;
+  const kpiTotalEl = document.getElementById('kpiCompletedTotal');
+  if (kpiTotalEl) kpiTotalEl.textContent = totalCompleted;
+
+  const onTimeCount = completedProjects.filter(p => (p.stato_tempistiche || '').toLowerCase() === 'in linea').length;
+  const onTimePct = totalCompleted > 0 ? Math.round((onTimeCount / totalCompleted) * 100) : 0;
+  const kpiOnTimeEl = document.getElementById('kpiCompletedOnTimePct');
+  if (kpiOnTimeEl) kpiOnTimeEl.textContent = `${onTimePct}%`;
+
+  let totalDays = 0;
+  let validDatesCount = 0;
+  completedProjects.forEach(p => {
+    if (p.data_inizio && p.scadenza) {
+      const start = new Date(p.data_inizio);
+      const end = new Date(p.scadenza);
+      const diffMs = end - start;
+      if (!isNaN(diffMs) && diffMs >= 0) {
+        const days = Math.round(diffMs / (1000 * 60 * 60 * 24));
+        totalDays += days;
+        validDatesCount++;
+      }
+    }
+  });
+  const avgDays = validDatesCount > 0 ? Math.round(totalDays / validDatesCount) : 0;
+  const kpiAvgDaysEl = document.getElementById('kpiCompletedAvgDays');
+  if (kpiAvgDaysEl) kpiAvgDaysEl.textContent = `${avgDays} gg`;
+
+  const totalPlannedEffort = completedProjects.reduce((acc, p) => acc + (p.effort_previsto || 0), 0);
+  const kpiPlannedEl = document.getElementById('kpiCompletedTotalPlanned');
+  if (kpiPlannedEl) kpiPlannedEl.textContent = `${totalPlannedEffort} gg/u`;
+
+  populateCompletedFilters();
+
+  // 2. Performance Breakdown per PM
+  const pmDeliveryContainer = document.getElementById('completedPmDeliveryContainer');
+  if (pmDeliveryContainer) {
+    pmDeliveryContainer.innerHTML = '';
+    const allCoords = getAllCoordinators();
+    allCoords.forEach(coord => {
+      const pmName = coord.name;
+      const pmDonePrjs = completedProjects.filter(p => sanitizeProjectPM(p.pm).toLowerCase() === pmName.toLowerCase());
+      if (pmDonePrjs.length === 0) return;
+
+      const pmOnTime = pmDonePrjs.filter(p => (p.stato_tempistiche || '').toLowerCase() === 'in linea').length;
+      const pct = Math.round((pmOnTime / pmDonePrjs.length) * 100);
+
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex; flex-direction:column; gap:0.35rem; padding:0.5rem 0.75rem; background:rgba(255,255,255,0.02); border-radius:var(--radius-sm); border:1px solid var(--border-color);';
+      row.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem;">
+          <span style="font-weight:700;">${pmName}</span>
+          <span style="font-weight:800; color:${pct >= 80 ? 'var(--success)' : (pct >= 50 ? 'var(--warning)' : 'var(--danger)')};">
+            ${pct}% On-Time (${pmDonePrjs.length} conclusi)
+          </span>
+        </div>
+        <div class="effort-progress-bg" style="height:6px;">
+          <div class="effort-progress-fill" style="width: ${pct}%; background: ${pct >= 80 ? 'var(--success)' : (pct >= 50 ? 'var(--warning)' : 'var(--danger)')};"></div>
+        </div>
+      `;
+      pmDeliveryContainer.appendChild(row);
+    });
+
+    if (pmDeliveryContainer.children.length === 0) {
+      pmDeliveryContainer.innerHTML = `<div style="font-size:0.82rem; color:var(--text-dim); text-align:center; padding:1rem;">Nessun progetto concluso attualmente registrato.</div>`;
+    }
+  }
+
+  // 3. Performance Breakdown per Reparto
+  const deptContainer = document.getElementById('completedDeptContainer');
+  if (deptContainer) {
+    deptContainer.innerHTML = '';
+    const deptCounts = {};
+    completedProjects.forEach(p => {
+      const d = p.reparto || 'Generale';
+      deptCounts[d] = (deptCounts[d] || 0) + 1;
+    });
+
+    const deptKeys = Object.keys(deptCounts);
+    deptKeys.forEach(d => {
+      const count = deptCounts[d];
+      const pctOfTotal = totalCompleted > 0 ? Math.round((count / totalCompleted) * 100) : 0;
+
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex; flex-direction:column; gap:0.35rem; padding:0.5rem 0.75rem; background:rgba(255,255,255,0.02); border-radius:var(--radius-sm); border:1px solid var(--border-color);';
+      row.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem;">
+          <span style="font-weight:700;">${d}</span>
+          <span style="font-weight:800; color:var(--mp95-orange);">${count} progetti (${pctOfTotal}%)</span>
+        </div>
+        <div class="effort-progress-bg" style="height:6px;">
+          <div class="effort-progress-fill" style="width: ${pctOfTotal}%; background: var(--mp95-orange);"></div>
+        </div>
+      `;
+      deptContainer.appendChild(row);
+    });
+
+    if (deptKeys.length === 0) {
+      deptContainer.innerHTML = `<div style="font-size:0.82rem; color:var(--text-dim); text-align:center; padding:1rem;">Nessun dato per reparto disponibile.</div>`;
+    }
+  }
+
+  // 4. Archive Table Rendering
+  renderCompletedProjectsTable(completedProjects);
+}
+
+function populateCompletedFilters() {
+  const pmSelect = document.getElementById('completedPmFilter');
+  const deptSelect = document.getElementById('completedDeptFilter');
+  if (!pmSelect || !deptSelect) return;
+
+  const currentPm = pmSelect.value;
+  const currentDept = deptSelect.value;
+
+  const completedProjects = projects.filter(isProjectCompleted);
+  const pms = [...new Set(completedProjects.map(p => sanitizeProjectPM(p.pm)))].filter(Boolean);
+  const depts = [...new Set(completedProjects.map(p => p.reparto || 'Generale'))].filter(Boolean);
+
+  pmSelect.innerHTML = `<option value="">Tutti i Coordinatori (${pms.length})</option>`;
+  pms.forEach(pm => {
+    const opt = document.createElement('option');
+    opt.value = pm;
+    opt.textContent = pm;
+    if (pm === currentPm) opt.selected = true;
+    pmSelect.appendChild(opt);
+  });
+
+  deptSelect.innerHTML = `<option value="">Tutti i Reparti (${depts.length})</option>`;
+  depts.forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = d;
+    if (d === currentDept) opt.selected = true;
+    deptSelect.appendChild(opt);
+  });
+}
+
+function renderCompletedProjectsTable(completedProjects) {
+  const tbody = document.getElementById('completedProjectsTbody');
+  if (!tbody) return;
+
+  const searchText = (document.getElementById('completedSearchInput') || {}).value || '';
+  const pmFilter = (document.getElementById('completedPmFilter') || {}).value || '';
+  const deptFilter = (document.getElementById('completedDeptFilter') || {}).value || '';
+
+  const filtered = completedProjects.filter(p => {
+    const normSearch = searchText.trim().toLowerCase();
+    const matchesSearch = !normSearch ||
+      p.progetto.toLowerCase().includes(normSearch) ||
+      (p.risorsa && p.risorsa.toLowerCase().includes(normSearch)) ||
+      (p.id && p.id.toLowerCase().includes(normSearch));
+
+    const matchesPm = !pmFilter || sanitizeProjectPM(p.pm).toLowerCase() === pmFilter.toLowerCase();
+    const matchesDept = !deptFilter || (p.reparto || 'Generale').toLowerCase() === deptFilter.toLowerCase();
+
+    return matchesSearch && matchesPm && matchesDept;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:2rem; color:var(--text-muted);">Nessun progetto concluso trovato.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(p => {
+    const startStr = p.data_inizio ? String(p.data_inizio).slice(0, 10) : '—';
+    const endStr = p.scadenza ? String(p.scadenza).slice(0, 10) : '—';
+    const tempClass = p.stato_tempistiche === 'In ritardo' ? 'badge-danger' : (p.stato_tempistiche === 'A rischio' ? 'badge-warning' : 'badge-success');
+
+    return `
+      <tr>
+        <td style="font-weight:700; color:var(--mp95-blue);">${p.id}</td>
+        <td style="font-weight:600;">${p.progetto}</td>
+        <td><span class="badge badge-secondary" style="font-size:0.7rem;">${p.reparto || 'Generale'}</span></td>
+        <td>${p.pm}</td>
+        <td>${p.risorsa || '—'}</td>
+        <td style="font-size:0.8rem; color:var(--text-muted);">${startStr}</td>
+        <td style="font-size:0.8rem; color:var(--text-muted);">${endStr}</td>
+        <td><span class="badge ${tempClass}" style="font-size:0.7rem;">${p.stato_tempistiche || 'In linea'}</span></td>
+        <td style="font-weight:700; color:var(--success);">100%</td>
+        <td style="text-align:right;">
+          <button onclick="reopenProject('${p.id}')" class="btn btn-secondary btn-sm" style="padding:0.25rem 0.5rem; font-size:0.75rem;" title="Riapri e riporta In corso">
+            <i class="fa-solid fa-rotate-left" style="color:var(--mp95-orange);"></i> Riapri
+          </button>
+          <button onclick="openEditProjectModal('${p.id}')" class="btn btn-secondary btn-sm" style="padding:0.25rem 0.5rem; font-size:0.75rem;" title="Modifica progetto">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+window.reopenProject = function(id) {
+  const prj = projects.find(p => p.id === id);
+  if (!prj) return;
+  if (!confirm(`Vuoi riaprire il progetto "${prj.progetto}" e riportarlo allo stato "In corso"?`)) return;
+
+  prj.stato = 'In corso';
+  if (prj.avanzamento >= 100) prj.avanzamento = 90;
+  saveState();
+  showToast(`Progetto "${prj.progetto}" riaperto ed impostato In corso.`);
+};
+
+window.exportCompletedProjectsReport = function() {
+  const completedProjects = projects.filter(isProjectCompleted);
+  if (completedProjects.length === 0) {
+    showToast('Nessun progetto concluso da esportare.');
+    return;
+  }
+
+  let csv = 'ID,Progetto,Reparto,PM,Risorsa,Data Inizio,Scadenza,Tempistiche,Effort Previsto (gg/u)\n';
+  completedProjects.forEach(p => {
+    csv += `"${p.id}","${p.progetto}","${p.reparto || ''}","${p.pm}","${p.risorsa || ''}","${p.data_inizio || ''}","${p.scadenza || ''}","${p.stato_tempistiche || ''}","${p.effort_previsto || 0}"\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute('download', `MP95_ARCHIVIO_PROGETTI_CONCLUSI_${new Date().toISOString().slice(0,10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+/* ----------------------------------------------------
    COORDINATORS VIEW & TEAM MANAGEMENT
 ---------------------------------------------------- */
 function initCoordinatorsView() {
@@ -1223,6 +1494,10 @@ function renderCoordinatorsGrid() {
       <div class="pm-stat-row" style="margin-top:0.75rem;">
         <span style="color:var(--text-muted);">Progetti Gestiti dal Coordinatore</span>
         <span style="font-weight:700;">${prjList.length}</span>
+      </div>
+      <div class="pm-stat-row" style="margin-top:0.3rem;">
+        <span style="color:var(--text-muted);">Effort Diretto Coordinatore</span>
+        <span style="font-weight:700; color:var(--mp95-blue);">${getCoordinatorPersonalEffort(pmName)}%</span>
       </div>
 
       <div class="pm-dropdown-section">
@@ -2570,19 +2845,27 @@ function updateAllResourceRowSelects(pmName) {
     if (!selectEl) return;
     const currentVal = selectEl.value;
 
-    selectEl.innerHTML = `<option value="">-- Nessuna / Da Assegnare --</option>`;
+    let html = `<option value="">-- Nessuna / Da Assegnare --</option>`;
     let isMatched = false;
+
+    if (cleanPm) {
+      const pmSelected = currentVal && cleanPm.toLowerCase() === currentVal.toLowerCase() ? 'selected' : '';
+      if (pmSelected) isMatched = true;
+      html += `<option value="${cleanPm}" ${pmSelected}>${cleanPm} (Coordinatore - Lavoro Diretto)</option>`;
+    }
 
     teamResources.forEach(r => {
       const rName = typeof r === 'string' ? r : r.name;
+      if (cleanPm && rName.toLowerCase() === cleanPm.toLowerCase()) return;
       const rRole = typeof r === 'object' && r.role ? ` (${r.role})` : '';
       const selected = currentVal && rName.toLowerCase() === currentVal.toLowerCase() ? 'selected' : '';
       if (selected) isMatched = true;
-      selectEl.innerHTML += `<option value="${rName}" ${selected}>${rName}${rRole}</option>`;
+      html += `<option value="${rName}" ${selected}>${rName}${rRole}</option>`;
     });
 
     const customSelected = currentVal && !isMatched && currentVal !== '' ? 'selected' : '';
-    selectEl.innerHTML += `<option value="__CUSTOM__" ${customSelected}>+ Inserisci Altra Risorsa...</option>`;
+    html += `<option value="__CUSTOM__" ${customSelected}>+ Inserisci Altra Risorsa...</option>`;
+    selectEl.innerHTML = html;
   });
 }
 
@@ -2601,8 +2884,15 @@ function addResourceRow(selectedRisorsa = '', effortVal = 10) {
   let optionsHtml = `<option value="">-- Nessuna / Da Assegnare --</option>`;
   let isMatched = false;
 
+  if (cleanPm) {
+    const pmSelected = selectedRisorsa && cleanPm.toLowerCase() === selectedRisorsa.toLowerCase() ? 'selected' : '';
+    if (pmSelected) isMatched = true;
+    optionsHtml += `<option value="${cleanPm}" ${pmSelected}>${cleanPm} (Coordinatore - Lavoro Diretto)</option>`;
+  }
+
   teamResources.forEach(r => {
     const rName = typeof r === 'string' ? r : r.name;
+    if (cleanPm && rName.toLowerCase() === cleanPm.toLowerCase()) return;
     const rRole = typeof r === 'object' && r.role ? ` (${r.role})` : '';
     const selected = selectedRisorsa && rName.toLowerCase() === selectedRisorsa.toLowerCase() ? 'selected' : '';
     if (selected) isMatched = true;
