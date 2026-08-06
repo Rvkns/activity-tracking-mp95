@@ -256,10 +256,17 @@ async function fetchFromNeonDB() {
       const data = await resPrj.json();
       if (Array.isArray(data) && data.length > 0) {
         // DB is authoritative: replace entire local state
-        projects = data.map(p => ({
-          ...p,
-          pm: sanitizeProjectPM(p.pm)
-        }));
+        const allCoords = getAllCoordinators();
+        projects = data.map(p => {
+          const cleanPm = sanitizeProjectPM(p.pm);
+          const coordObj = allCoords.find(c => c.name.toLowerCase() === cleanPm.toLowerCase());
+          const defaultReparto = coordObj ? coordObj.reparto : 'Digital';
+          return {
+            ...p,
+            pm: cleanPm,
+            reparto: (p.reparto && p.reparto.trim()) ? p.reparto.trim() : defaultReparto
+          };
+        });
         localStorage.setItem('mp95_projects', JSON.stringify(projects));
         dbReached = true;
       }
