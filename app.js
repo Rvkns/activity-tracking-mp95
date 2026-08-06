@@ -60,35 +60,10 @@ function getAllCoordinators() {
   return [...OFFICIAL_COORDINATORS, ...validCustom];
 }
 
-const DEFAULT_COORDINATOR_RESOURCES = {
-  "Valerio Andreuccioli": [
-    { name: "Daniele De Dominicis", role: "Backend Lead", projects: ["CMS-IT-Digital", "CMS - gestione ticket secondo livello-IT-Digital"] },
-    { name: "Giuseppe Neri", role: "Specialista IT", projects: ["CMS-IT-Digital"] },
-    { name: "Elena Moretti", role: "DBA Specialist", projects: ["Flag usato akita-IT-Digital"] }
-  ],
-  "Serena Lacorte": [
-    { name: "Aurora Parisi", role: "External PM / Specialist", projects: ["WIDE-IT-Digital", "Franchise-IT-Digital"] },
-    { name: "Marco Rossi", role: "Senior Fullstack Dev", projects: ["WIDE-IT-Digital"] },
-    { name: "Laura Conti", role: "UI/UX Designer", projects: ["Paperless-IT-Digital"] },
-    { name: "Roberto Gatti", role: "System Engineer", projects: ["Warehouse channel -IT-Digital"] },
-    { name: "Simona D'Amico", role: "Data Analyst", projects: ["MIA - KPI Dealer-IT-Digital"] }
-  ],
-  "Stefano Giovannella": [
-    { name: "Federico Arte", role: "Senior Infrastructure Lead", projects: ["Sailpoint-IT-Digital", "Service Now 2.0-IT-Digital"] },
-    { name: "Matteo Galli", role: "DevOps Engineer", projects: ["WayTo Apps-IT-Digital"] }
-  ],
-  "Emanuela Raschellà": [
-    { name: "Francesca Rozzi", role: "Corporate Consultant", projects: ["Digital Finance - Controlling-IT-Digital", "Digital Sales-IT-Digital"] },
-    { name: "Davide Palmieri", role: "Financial Consultant", projects: ["Digital Finance - Purchasing-IT-Digital"] },
-    { name: "Chiara Ferri", role: "Solution Architect", projects: ["Procedura Service Now-IT-Digital"] }
-  ],
-  "Lara Tini Brunozzi": [
-    { name: "Stefano Rinaldi", role: "Support Lead", projects: ["Boe mensa-IT-Digital", "Intouch-IT-Digital"] }
-  ],
-  "Francesco Di Legge": [
-    { name: "Alessia Fontana", role: "AI Specialist", projects: ["AI LAB", "Repository per Product Quality"] }
-  ]
-};
+// Historically pre-populated with invented placeholder names for demo purposes.
+// Real coordinator resources now live exclusively in the Neon DB
+// (mp95_coordinator_resources) — nothing is hardcoded here anymore.
+const DEFAULT_COORDINATOR_RESOURCES = {};
 
 /**
  * Maps a PM name to its official coordinator name.
