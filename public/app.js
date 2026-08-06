@@ -1261,6 +1261,9 @@ function renderCoordinatorsGrid() {
                   <span><i class="fa-solid fa-user-check" style="color:var(--success); font-size:0.8rem;"></i> ${r.name}</span>
                   <div style="display:flex; align-items:center; gap:0.5rem;">
                     <span style="font-size:0.75rem; color:var(--text-dim);">${r.role || 'Specialista'}</span>
+                    <button onclick="openResourceModal('${encodeURIComponent(pmName)}', ${rIdx})" style="background:none; border:none; color:var(--mp95-blue); cursor:pointer; font-size:0.85rem;" title="Modifica risorsa">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
                     <button onclick="deleteTeamResource('${encodeURIComponent(pmName)}', ${rIdx})" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:0.85rem;" title="Rimuovi risorsa dal team">
                       <i class="fa-solid fa-trash-can"></i>
                     </button>
@@ -1350,13 +1353,36 @@ function initResourceModalEvents() {
   if (form) form.addEventListener('submit', handleSaveResourceForm);
 }
 
-window.openResourceModal = function(encodedPmName) {
+window.openResourceModal = function(encodedPmName, resourceIdx = null) {
   const pmName = decodeURIComponent(encodedPmName);
   document.getElementById('resourceCoordinatorInput').value = pmName;
   document.getElementById('resourceCoordinatorNameDisplay').textContent = pmName;
-  document.getElementById('resourceNameInput').value = '';
-  document.getElementById('resourceRoleInput').value = '';
-  document.getElementById('resourceProjectsInput').value = '';
+
+  const titleEl = document.getElementById('resourceModalTitle');
+  const editIndexInput = document.getElementById('resourceEditIndexInput');
+  const nameInput = document.getElementById('resourceNameInput');
+  const roleInput = document.getElementById('resourceRoleInput');
+  const projectsInput = document.getElementById('resourceProjectsInput');
+
+  if (resourceIdx !== null && resourceIdx !== undefined && resourceIdx >= 0 && coordinatorResources[pmName] && coordinatorResources[pmName][resourceIdx]) {
+    const res = coordinatorResources[pmName][resourceIdx];
+    const resName = typeof res === 'string' ? res : res.name;
+    const resRole = typeof res === 'object' ? (res.role || '') : '';
+    const resPrjs = typeof res === 'object' && Array.isArray(res.projects) ? res.projects : [];
+
+    if (editIndexInput) editIndexInput.value = resourceIdx;
+    if (nameInput) nameInput.value = resName;
+    if (roleInput) roleInput.value = resRole;
+    if (projectsInput) projectsInput.value = resPrjs.join(', ');
+    if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-user-pen" style="color:var(--mp95-blue); margin-right:0.5rem;"></i> Modifica Risorsa del Team`;
+  } else {
+    if (editIndexInput) editIndexInput.value = '-1';
+    if (nameInput) nameInput.value = '';
+    if (roleInput) roleInput.value = '';
+    if (projectsInput) projectsInput.value = '';
+    if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-user-plus" style="color:var(--mp95-blue); margin-right:0.5rem;"></i> Aggiungi Risorsa al Team`;
+  }
+
   document.getElementById('resourceModal').classList.add('active');
 };
 
@@ -1368,6 +1394,7 @@ function closeResourceModal() {
 async function handleSaveResourceForm(e) {
   e.preventDefault();
   const pmName = document.getElementById('resourceCoordinatorInput').value;
+  const editIndexVal = document.getElementById('resourceEditIndexInput') ? parseInt(document.getElementById('resourceEditIndexInput').value, 10) : -1;
   const name = document.getElementById('resourceNameInput').value.trim();
   const role = document.getElementById('resourceRoleInput').value.trim() || 'Specialista IT';
   const projectsStr = document.getElementById('resourceProjectsInput').value.trim();
@@ -1380,25 +1407,67 @@ async function handleSaveResourceForm(e) {
     coordinatorResources[pmName] = [];
   }
 
-  const existingIdx = coordinatorResources[pmName].findIndex(r => (typeof r === 'string' ? r : r.name).toLowerCase() === name.toLowerCase());
-  if (existingIdx >= 0) {
-    const existing = coordinatorResources[pmName][existingIdx];
-    const existingProjects = typeof existing === 'object' && existing.projects ? existing.projects : [];
-    const combinedPrjs = [...new Set([...existingProjects, ...projectsArr])];
-    coordinatorResources[pmName][existingIdx] = {
+  const isEdit = editIndexVal >= 0 && coordinatorResources[pmName][editIndexVal];
+  let oldName = '';
+  let oldProjects = [];
+
+  if (isEdit) {
+    const existingObj = coordinatorResources[pmName][editIndexVal];
+    oldName = typeof existingObj === 'string' ? existingObj : existingObj.name;
+    oldProjects = typeof existingObj === 'object' && Array.isArray(existingObj.projects) ? existingObj.projects : [];
+
+    coordinatorResources[pmName][editIndexVal] = {
       name: name,
-      role: role || (typeof existing === 'object' ? existing.role : 'Specialista IT'),
-      projects: combinedPrjs
+      role: role,
+      projects: projectsArr
     };
   } else {
-    const newRes = { name, role, projects: projectsArr };
-    coordinatorResources[pmName].push(newRes);
+    const existingIdx = coordinatorResources[pmName].findIndex(r => (typeof r === 'string' ? r : r.name).toLowerCase() === name.toLowerCase());
+    if (existingIdx >= 0) {
+      const existing = coordinatorResources[pmName][existingIdx];
+      const existingProjects = typeof existing === 'object' && existing.projects ? existing.projects : [];
+      const combinedPrjs = [...new Set([...existingProjects, ...projectsArr])];
+      coordinatorResources[pmName][existingIdx] = {
+        name: name,
+        role: role || (typeof existing === 'object' ? existing.role : 'Specialista IT'),
+        projects: combinedPrjs
+      };
+    } else {
+      coordinatorResources[pmName].push({ name, role, projects: projectsArr });
+    }
   }
 
   // Find coordinator reparto
   const allCoords = getAllCoordinators();
   const coordObj = allCoords.find(c => c.name.toLowerCase() === pmName.toLowerCase());
   const reparto = coordObj ? coordObj.reparto : null;
+
+  const normPm = pmName.trim().toLowerCase();
+
+  // If editing and name changed, update risorsa name in projects table
+  if (isEdit && oldName && oldName.toLowerCase() !== name.toLowerCase()) {
+    projects.forEach(p => {
+      if (sanitizeProjectPM(p.pm).toLowerCase() === normPm && p.risorsa && p.risorsa.trim().toLowerCase() === oldName.toLowerCase()) {
+        p.risorsa = name;
+      }
+    });
+  }
+
+  // If editing, unassign projects that were in oldProjects but are no longer in projectsArr
+  if (isEdit && oldProjects.length > 0) {
+    const newNormProjects = new Set(projectsArr.map(p => p.toLowerCase()));
+    oldProjects.forEach(oldPName => {
+      if (!newNormProjects.has(oldPName.toLowerCase())) {
+        projects.forEach(p => {
+          if (sanitizeProjectPM(p.pm).toLowerCase() === normPm &&
+              p.progetto.trim().toLowerCase() === oldPName.trim().toLowerCase() &&
+              p.risorsa && (p.risorsa.trim().toLowerCase() === name.toLowerCase() || p.risorsa.trim().toLowerCase() === oldName.toLowerCase())) {
+            p.risorsa = null;
+          }
+        });
+      }
+    });
+  }
 
   let maxIdNum = 0;
   projects.forEach(p => {
@@ -1409,23 +1478,19 @@ async function handleSaveResourceForm(e) {
     }
   });
 
-  const affectedProjects = [];
-
-  // Update or create project rows for this resource
+  // Update or create project rows for projectsArr
   projectsArr.forEach(pName => {
     const normPName = pName.trim().toLowerCase();
-    const normPm = pmName.trim().toLowerCase();
 
     const existingPrj = projects.find(p =>
       p.progetto.trim().toLowerCase() === normPName &&
       sanitizeProjectPM(p.pm).toLowerCase() === normPm &&
-      (!p.risorsa || p.risorsa.trim() === '' || p.risorsa.trim().toLowerCase() === name.toLowerCase())
+      (!p.risorsa || p.risorsa.trim() === '' || p.risorsa.trim().toLowerCase() === name.toLowerCase() || (oldName && p.risorsa.trim().toLowerCase() === oldName.toLowerCase()))
     );
 
     if (existingPrj) {
       existingPrj.risorsa = name;
       if (!existingPrj.reparto && reparto) existingPrj.reparto = reparto;
-      affectedProjects.push(existingPrj);
     } else {
       maxIdNum++;
       const newId = `PRJ-${String(maxIdNum).padStart(3, '0')}`;
@@ -1447,14 +1512,13 @@ async function handleSaveResourceForm(e) {
         criticita: null
       };
       projects.push(newPrj);
-      affectedProjects.push(newPrj);
     }
   });
 
   // saveState() handles both LocalStorage and Neon DB persistence
   saveState();
   closeResourceModal();
-  showToast(`Nuova risorsa ${name} ed i relativi progetti aggiunti con successo!`);
+  showToast(isEdit ? `Risorsa ${name} aggiornata con successo!` : `Nuova risorsa ${name} ed i relativi progetti aggiunti con successo!`);
 }
 
 window.deleteTeamResource = async function(encodedPmName, resourceIdx) {

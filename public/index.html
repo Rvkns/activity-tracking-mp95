@@ -739,6 +739,16 @@
               </ol>
             </div>
 
+            <p style="font-weight:700; margin-top:1rem; color:var(--mp95-blue);"><i class="fa-solid fa-pen-to-square"></i> Modificare una Risorsa del Team:</p>
+            <div class="wiki-feature-box">
+              <ol style="margin-left:1.2rem; line-height:1.8;">
+                <li>Nel Dropdown 2 (Risorse del Team), trova la risorsa da modificare.</li>
+                <li>Clicca l'icona <b>✏️ (matita blu)</b> accanto al nome della risorsa.</li>
+                <li>Nel modale, aggiorna il <b>Nome</b>, il <b>Ruolo</b> o i <b>Progetti Assegnati</b>.</li>
+                <li>Clicca <b>"Salva Risorsa"</b> per applicare le modifiche e aggiornare automaticamente l'assegnazione nei progetti associati.</li>
+              </ol>
+            </div>
+
             <p style="font-weight:700; margin-top:1rem; color:var(--danger);"><i class="fa-solid fa-trash-can"></i> Rimuovere una Risorsa dal Team:</p>
             <div class="wiki-feature-box" style="border-color:rgba(239,68,68,0.3);">
               <ol style="margin-left:1.2rem; line-height:1.8;">
@@ -1076,6 +1086,7 @@
       </div>
       <form id="resourceForm">
         <input type="hidden" id="resourceCoordinatorInput">
+        <input type="hidden" id="resourceEditIndexInput" value="-1">
         <div class="modal-body" style="padding:1rem 0;">
           <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:1rem;">
             Inserisci i dettagli della risorsa da assegnare al team del Coordinatore <strong id="resourceCoordinatorNameDisplay" style="color:var(--mp95-orange);">—</strong>.
