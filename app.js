@@ -87,21 +87,41 @@ const DEFAULT_COORDINATOR_RESOURCES = {
   ]
 };
 
+/**
+ * Maps a PM name to its official coordinator name.
+ * Uses EXACT full-name matching first, then falls back to a curated alias map.
+ * IMPORTANT: Never match on first-name substrings alone — resource names
+ * like "Stefano Rinaldi" must NOT be remapped to "Stefano Giovannella".
+ */
+const PM_ALIAS_MAP = {
+  'aurora parisi':          'Serena Lacorte',
+  'serena lacorte':         'Serena Lacorte',
+  'daniele de dominicis':   'Valerio Andreuccioli',
+  'valerio andreuccioli':   'Valerio Andreuccioli',
+  'federico arte':          'Stefano Giovannella',
+  'stefano giovannella':    'Stefano Giovannella',
+  'francesca rozzi':        'Emanuela Raschellà',
+  'emanuela raschellà':     'Emanuela Raschellà',
+  'emanuela raschella':     'Emanuela Raschellà',
+  'lara tini brunozzi':     'Lara Tini Brunozzi',
+  'alessia fontana':        'Francesco Di Legge',
+  'francesco di legge':     'Francesco Di Legge'
+};
+
 function sanitizeProjectPM(pm) {
   if (!pm) return 'Serena Lacorte';
   const str = pm.trim();
+  if (!str) return 'Serena Lacorte';
   const lower = str.toLowerCase();
 
-  if (lower.includes('aurora') || lower.includes('serena')) return 'Serena Lacorte';
-  if (lower.includes('daniele') || lower.includes('valerio')) return 'Valerio Andreuccioli';
-  if (lower.includes('federico') || lower.includes('stefano')) return 'Stefano Giovannella';
-  if (lower.includes('francesca') || lower.includes('emanuela')) return 'Emanuela Raschellà';
-  if (lower.includes('lara')) return 'Lara Tini Brunozzi';
-  if (lower.includes('alessia') || lower.includes('francesco')) return 'Francesco Di Legge';
-
+  // 1. Exact full-name match against official coordinators
   const matched = OFFICIAL_COORDINATORS.find(c => c.name.toLowerCase() === lower);
   if (matched) return matched.name;
 
+  // 2. Curated alias map (full-name match only, no substring)
+  if (PM_ALIAS_MAP[lower]) return PM_ALIAS_MAP[lower];
+
+  // 3. Return the original string — do NOT guess
   return str;
 }
 
@@ -192,7 +212,6 @@ function syncResourceProjectsToProjectsTable() {
 document.addEventListener('DOMContentLoaded', async () => {
   initTheme();
   initNavigation();
-  syncResourceProjectsToProjectsTable();
   initDashboard();
   initAnalyticsView();
   initProjectsView();
@@ -202,7 +221,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   initModals();
   initExcelFileHandlers();
 
-  // Load from Neon DB API if available
+  // Load from Neon DB API — single source of truth
+  // syncResourceProjectsToProjectsTable runs AFTER DB data arrives
   await fetchFromNeonDB();
 });
 
@@ -243,18 +263,21 @@ function applyTheme(theme) {
 }
 
 
-// Sync data from Neon DB
+// Sync data from Neon DB — single source of truth for all users
 async function fetchFromNeonDB() {
+  let dbReached = false;
   try {
     const resPrj = await fetch('/api/projects');
     if (resPrj.ok) {
       const data = await resPrj.json();
       if (Array.isArray(data) && data.length > 0) {
+        // DB is authoritative: replace entire local state
         projects = data.map(p => ({
           ...p,
           pm: sanitizeProjectPM(p.pm)
         }));
         localStorage.setItem('mp95_projects', JSON.stringify(projects));
+        dbReached = true;
       }
     }
 
@@ -262,23 +285,74 @@ async function fetchFromNeonDB() {
     if (resResources.ok) {
       const resData = await resResources.json();
       if (Object.keys(resData).length > 0) {
-        coordinatorResources = resData;
+        // Merge DB resources with defaults so coordinators without
+        // DB entries still show their hardcoded team members
+        const merged = { ...DEFAULT_COORDINATOR_RESOURCES };
+        Object.keys(resData).forEach(coordName => {
+          if (!merged[coordName]) {
+            merged[coordName] = resData[coordName];
+          } else {
+            // DB entries take precedence; add any DB-only members
+            const existingNames = new Set(merged[coordName].map(r => (typeof r === 'string' ? r : r.name).toLowerCase()));
+            resData[coordName].forEach(dbRes => {
+              const dbName = (typeof dbRes === 'string' ? dbRes : dbRes.name).toLowerCase();
+              if (!existingNames.has(dbName)) {
+                merged[coordName].push(dbRes);
+              } else {
+                // Update role/projects from DB
+                const idx = merged[coordName].findIndex(r => (typeof r === 'string' ? r : r.name).toLowerCase() === dbName);
+                if (idx >= 0) merged[coordName][idx] = dbRes;
+              }
+            });
+          }
+        });
+        coordinatorResources = merged;
         localStorage.setItem('mp95_resources', JSON.stringify(coordinatorResources));
+        dbReached = true;
       }
     }
   } catch (err) {
-    console.log("Using LocalStorage offline cache.");
+    console.log("DB non raggiungibile — dati da LocalStorage offline cache.");
   } finally {
+    if (dbReached) {
+      console.log("✓ Dati sincronizzati dal DB Neon PostgreSQL.");
+    }
     syncResourceProjectsToProjectsTable();
     refreshAllViews();
   }
 }
 
-// Save State Local + Neon DB
+// Save State: LocalStorage (offline/fast) + Neon DB (cross-user consistency)
 function saveState() {
   localStorage.setItem('mp95_projects', JSON.stringify(projects));
   localStorage.setItem('mp95_resources', JSON.stringify(coordinatorResources));
   refreshAllViews();
+
+  // Persist to Neon DB asynchronously so other users get the latest data
+  persistToNeonDB();
+}
+
+// Debounced write to DB to avoid flooding on rapid saves
+let _persistTimer = null;
+function persistToNeonDB() {
+  if (_persistTimer) clearTimeout(_persistTimer);
+  _persistTimer = setTimeout(async () => {
+    try {
+      await fetch('/api/projects/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(projects)
+      });
+      await fetch('/api/resources', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(coordinatorResources)
+      });
+      console.log('✓ Stato salvato nel DB Neon.');
+    } catch (err) {
+      console.warn('⚠ Impossibile sincronizzare con il DB Neon:', err.message);
+    }
+  }, 500); // debounce 500ms
 }
 
 function refreshAllViews() {
@@ -1377,32 +1451,7 @@ async function handleSaveResourceForm(e) {
     }
   });
 
-  try {
-    await fetch('/api/resources', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        coordinator_name: pmName,
-        resource_name: name,
-        role: role,
-        assigned_projects: projectsArr
-      })
-    });
-
-    if (affectedProjects.length > 0) {
-      await fetch('/api/projects/batch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mode: 'merge',
-          projects: affectedProjects
-        })
-      });
-    }
-  } catch (err) {
-    console.log("Saved LocalStorage.");
-  }
-
+  // saveState() handles both LocalStorage and Neon DB persistence
   saveState();
   closeResourceModal();
   showToast(`Nuova risorsa ${name} ed i relativi progetti aggiunti con successo!`);
@@ -1419,24 +1468,13 @@ window.deleteTeamResource = async function(encodedPmName, resourceIdx) {
   coordinatorResources[pmName].splice(resourceIdx, 1);
 
   // Clear risorsa association in projects
-  const affected = [];
   projects.forEach(p => {
     if (sanitizeProjectPM(p.pm).toLowerCase() === pmName.toLowerCase() && p.risorsa && p.risorsa.trim().toLowerCase() === resName.toLowerCase()) {
       p.risorsa = null;
-      affected.push(p);
     }
   });
 
-  if (affected.length > 0) {
-    try {
-      await fetch('/api/projects/batch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'merge', projects: affected })
-      });
-    } catch (e) { console.log("Saved LocalStorage."); }
-  }
-
+  // saveState() handles both LocalStorage and Neon DB persistence
   saveState();
   showToast(`Risorsa ${resName} rimossa dal team.`);
 };

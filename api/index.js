@@ -262,9 +262,51 @@ app.get(['/api/resources', '/resources'], async (req, res) => {
   }
 });
 
-// 7. POST /api/resources - Add a new resource for a coordinator
+// 7. POST /api/resources - Add a single resource for a coordinator
 app.post(['/api/resources', '/resources'], async (req, res) => {
-  const { coordinator_name, resource_name, role, assigned_projects } = req.body;
+  const payload = req.body;
+
+  // Detect if this is a batch payload (object keyed by coordinator names)
+  if (payload && typeof payload === 'object' && !payload.coordinator_name) {
+    // Batch mode: replace ALL resources
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('DELETE FROM mp95_coordinator_resources');
+
+      for (const coordName of Object.keys(payload)) {
+        const resources = payload[coordName];
+        if (!Array.isArray(resources)) continue;
+
+        for (const r of resources) {
+          const rName = typeof r === 'string' ? r : r.name;
+          const rRole = typeof r === 'object' ? (r.role || 'Specialista IT') : 'Specialista IT';
+          const rProjects = typeof r === 'object' ? (r.projects || []) : [];
+
+          await client.query(
+            `INSERT INTO mp95_coordinator_resources
+               (coordinator_name, resource_name, role, assigned_projects)
+             VALUES ($1, $2, $3, $4)`,
+            [coordName, rName, rRole, JSON.stringify(rProjects)]
+          );
+        }
+      }
+      await client.query('COMMIT');
+      res.json({ message: 'Risorse sincronizzate con successo.' });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Batch resources error:', err);
+      res.status(500).json({ error: err.message || 'Errore nella sincronizzazione batch delle risorse.' });
+    } finally {
+      client.release();
+      await pool.end();
+    }
+    return;
+  }
+
+  // Single resource mode (legacy)
+  const { coordinator_name, resource_name, role, assigned_projects } = payload;
   const pool = getPool();
   try {
     const result = await pool.query(
