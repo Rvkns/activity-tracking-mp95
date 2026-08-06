@@ -54,7 +54,10 @@ const OFFICIAL_COORDINATORS = [
 let customCoordinators = JSON.parse(localStorage.getItem('mp95_custom_coordinators')) || [];
 
 function getAllCoordinators() {
-  return [...OFFICIAL_COORDINATORS, ...customCoordinators];
+  // Defensively drop malformed entries (e.g. missing/blank name) so a single
+  // corrupt localStorage record can never throw and abort a DB sync in progress.
+  const validCustom = customCoordinators.filter(c => c && typeof c.name === 'string' && c.name.trim());
+  return [...OFFICIAL_COORDINATORS, ...validCustom];
 }
 
 const DEFAULT_COORDINATOR_RESOURCES = {
@@ -255,17 +258,24 @@ async function fetchFromNeonDB() {
     if (resPrj.ok) {
       const data = await resPrj.json();
       if (Array.isArray(data) && data.length > 0) {
-        // DB is authoritative: replace entire local state
+        // DB is authoritative: replace entire local state.
+        // Each row is transformed independently — a single malformed record
+        // must never throw and silently discard the sync for every other project.
         const allCoords = getAllCoordinators();
         projects = data.map(p => {
-          const cleanPm = sanitizeProjectPM(p.pm);
-          const coordObj = allCoords.find(c => c.name.toLowerCase() === cleanPm.toLowerCase());
-          const defaultReparto = coordObj ? coordObj.reparto : 'Digital';
-          return {
-            ...p,
-            pm: cleanPm,
-            reparto: (p.reparto && p.reparto.trim()) ? p.reparto.trim() : defaultReparto
-          };
+          try {
+            const cleanPm = sanitizeProjectPM(p.pm);
+            const coordObj = allCoords.find(c => c.name.toLowerCase() === cleanPm.toLowerCase());
+            const defaultReparto = coordObj ? coordObj.reparto : 'Digital';
+            return {
+              ...p,
+              pm: cleanPm,
+              reparto: (p.reparto && p.reparto.trim()) ? p.reparto.trim() : defaultReparto
+            };
+          } catch (rowErr) {
+            console.warn('Reparto sync fallito per il progetto', p && p.id, rowErr);
+            return p;
+          }
         });
         localStorage.setItem('mp95_projects', JSON.stringify(projects));
         dbReached = true;
