@@ -1101,6 +1101,9 @@ function renderProjectsTable() {
         }
       </td>
       <td style="text-align:right;">
+        <button class="btn btn-secondary btn-sm" onclick="openProjectHistoryModal('${p.id}')" title="Storico avanzamento">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+        </button>
         <button class="btn btn-secondary btn-sm" onclick="openEditProjectModal('${p.id}')">
           <i class="fa-solid fa-pen-to-square"></i>
         </button>
@@ -2813,6 +2816,11 @@ function initModals() {
   document.getElementById('projectForm').addEventListener('submit', handleSaveProject);
   initProjectModalDropdowns();
 
+  const closeHistoryX = document.getElementById('closeProjectHistoryModal');
+  const closeHistoryBtn = document.getElementById('closeProjectHistoryBtn');
+  if (closeHistoryX) closeHistoryX.addEventListener('click', closeProjectHistoryModal);
+  if (closeHistoryBtn) closeHistoryBtn.addEventListener('click', closeProjectHistoryModal);
+
   const addRowBtn = document.getElementById('addResourceRowBtn');
   if (addRowBtn) {
     addRowBtn.addEventListener('click', () => addResourceRow('', 10));
@@ -3074,6 +3082,108 @@ window.openEditProjectModal = function(id) {
 
 function closeProjectModal() {
   document.getElementById('projectModal').classList.remove('active');
+}
+
+/* ----------------------------------------------------
+   PROJECT PROGRESS HISTORY (mp95_project_history)
+---------------------------------------------------- */
+async function openProjectHistoryModal(projectId) {
+  const modal = document.getElementById('projectHistoryModal');
+  const nameEl = document.getElementById('historyModalProjectName');
+  const bodyEl = document.getElementById('historyModalBody');
+  if (!modal || !bodyEl) return;
+
+  const project = projects.find(p => p.id === projectId);
+  nameEl.textContent = project ? project.progetto : projectId;
+  bodyEl.innerHTML = `<div style="text-align:center; padding:2rem; color:var(--text-dim);"><i class="fa-solid fa-spinner fa-spin"></i> Caricamento storico...</div>`;
+  modal.classList.add('active');
+
+  try {
+    const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/history`);
+    const rows = res.ok ? await res.json() : [];
+    renderProjectHistory(bodyEl, rows);
+  } catch (err) {
+    bodyEl.innerHTML = `<div style="text-align:center; padding:2rem; color:var(--danger);">Impossibile caricare lo storico dal DB Neon.</div>`;
+  }
+}
+
+function closeProjectHistoryModal() {
+  const modal = document.getElementById('projectHistoryModal');
+  if (modal) modal.classList.remove('active');
+}
+
+function renderProjectHistory(container, rows) {
+  if (!rows || rows.length === 0) {
+    container.innerHTML = `<div style="text-align:center; padding:2rem; color:var(--text-dim); font-style:italic;">Nessuno storico registrato ancora per questo progetto.<br>Verrà popolato automaticamente al prossimo aggiornamento di stato/avanzamento/effort.</div>`;
+    return;
+  }
+
+  const chartHtml = rows.length > 1 ? buildAvanzamentoSparkline(rows) : '';
+
+  const listHtml = rows.slice().reverse().map(r => {
+    const avPct = parseInt(r.avanzamento) || 0;
+    const avClass = getAvanzamentoClass(avPct);
+    const badgeClass = getBadgeClass(r.stato || 'In corso');
+    const dt = new Date(r.recorded_at);
+    const dateLabel = dt.toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' }) +
+      ' · ' + dt.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    return `
+      <div class="pm-project-item" style="flex-direction:column; align-items:stretch; gap:0.45rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:0.78rem; color:var(--text-dim);"><i class="fa-solid fa-calendar-day"></i> ${dateLabel}</span>
+          <span class="badge ${badgeClass}" style="font-size:0.7rem;">${r.stato || '—'}</span>
+        </div>
+        <div class="avanzamento-cell">
+          <div class="avanzamento-bar-bg">
+            <div class="avanzamento-bar-fill ${avClass}" style="width:${avPct}%;"></div>
+          </div>
+          <span class="avanzamento-label">${avPct}%</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    ${chartHtml}
+    <div style="display:flex; flex-direction:column; gap:0.5rem; margin-top:${chartHtml ? '1rem' : '0'};">
+      ${listHtml}
+    </div>
+  `;
+}
+
+function buildAvanzamentoSparkline(rows) {
+  const width = 720, height = 140, padding = 24;
+  const points = rows.map(r => Math.max(0, Math.min(100, parseInt(r.avanzamento) || 0)));
+  const stepX = points.length > 1 ? (width - padding * 2) / (points.length - 1) : 0;
+
+  const coords = points.map((v, i) => {
+    const x = padding + i * stepX;
+    const y = height - padding - (v / 100) * (height - padding * 2);
+    return [x, y];
+  });
+
+  const pathD = coords.map((c, i) => (i === 0 ? 'M' : 'L') + c[0].toFixed(1) + ',' + c[1].toFixed(1)).join(' ');
+  const lastX = coords[coords.length - 1][0].toFixed(1);
+  const firstX = coords[0][0].toFixed(1);
+  const areaD = `${pathD} L${lastX},${height - padding} L${firstX},${height - padding} Z`;
+
+  const dots = coords.map((c, i) =>
+    `<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="3.5" fill="var(--mp95-blue)" stroke="var(--bg-card)" stroke-width="1.5"><title>${points[i]}%</title></circle>`
+  ).join('');
+
+  return `
+    <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.75rem;">
+      <div style="font-size:0.8rem; font-weight:700; color:var(--text-muted); margin-bottom:0.5rem;">
+        <i class="fa-solid fa-chart-line" style="color:var(--mp95-blue);"></i> Andamento Avanzamento (%)
+      </div>
+      <svg viewBox="0 0 ${width} ${height}" style="width:100%; height:auto; display:block;">
+        <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="var(--border-color)" stroke-width="1"/>
+        <path d="${areaD}" fill="var(--mp95-blue)" fill-opacity="0.08" stroke="none"/>
+        <path d="${pathD}" fill="none" stroke="var(--mp95-blue)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        ${dots}
+      </svg>
+    </div>
+  `;
 }
 
 async function handleSaveProject(e) {
