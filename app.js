@@ -159,43 +159,26 @@ function syncResourceProjectsToProjectsTable() {
         const normPName = pName.trim().toLowerCase();
         const normPm = pmName.trim().toLowerCase();
 
-        const existingWithRes = projects.find(p =>
-          p.progetto.trim().toLowerCase() === normPName &&
-          sanitizeProjectPM(p.pm).toLowerCase() === normPm &&
-          p.risorsa && p.risorsa.trim().toLowerCase() === rName.trim().toLowerCase()
-        );
+        const existingWithRes = projects.find(p => {
+          const pNorm = p.progetto.trim().toLowerCase();
+          const pmNorm = sanitizeProjectPM(p.pm).toLowerCase();
+          const resNorm = p.risorsa ? p.risorsa.trim().toLowerCase() : '';
+          const isNameMatch = pNorm === normPName || normPName.startsWith(pNorm) || pNorm.startsWith(normPName);
+          return isNameMatch && pmNorm === normPm && resNorm === rName.trim().toLowerCase();
+        });
 
         if (!existingWithRes) {
-          const existingNoRes = projects.find(p =>
-            p.progetto.trim().toLowerCase() === normPName &&
-            sanitizeProjectPM(p.pm).toLowerCase() === normPm &&
-            (!p.risorsa || p.risorsa.trim() === '')
-          );
+          const existingNoRes = projects.find(p => {
+            const pNorm = p.progetto.trim().toLowerCase();
+            const pmNorm = sanitizeProjectPM(p.pm).toLowerCase();
+            const resNorm = p.risorsa ? p.risorsa.trim() : '';
+            const isNameMatch = pNorm === normPName || normPName.startsWith(pNorm) || pNorm.startsWith(normPName);
+            return isNameMatch && pmNorm === normPm && !resNorm;
+          });
 
           if (existingNoRes) {
             existingNoRes.risorsa = rName;
             if (!existingNoRes.reparto && reparto) existingNoRes.reparto = reparto;
-            changed = true;
-          } else {
-            maxIdNum++;
-            const newId = `PRJ-${String(maxIdNum).padStart(3, '0')}`;
-            projects.push({
-              id: newId,
-              progetto: pName.trim(),
-              stato: 'In corso',
-              pm: pmName,
-              effort: 10,
-              risorsa: rName,
-              reparto: reparto,
-              descrizione: null,
-              effort_previsto: 0,
-              effort_residuo: 0,
-              avanzamento: 0,
-              data_inizio: new Date().toISOString().slice(0, 10),
-              scadenza: null,
-              stato_tempistiche: 'In linea',
-              criticita: null
-            });
             changed = true;
           }
         }
@@ -492,18 +475,18 @@ function initDashboard() {
 function renderDashboard() {
   document.getElementById('kpiTotalProjects').textContent = projects.length;
   
-  const activeCount = projects.filter(p => p.stato.trim().toLowerCase() === 'in corso').length;
-  document.getElementById('kpiActiveProjects').textContent = activeCount;
+  const activeProjects = projects.filter(p => !isProjectCompleted(p));
+  document.getElementById('kpiActiveProjects').textContent = activeProjects.length;
 
-  const pmsSet = new Set(projects.map(p => p.pm.trim()));
+  const pmsSet = new Set(activeProjects.map(p => p.pm.trim()));
   document.getElementById('kpiTotalPMs').textContent = pmsSet.size;
 
-  const totalEffort = projects.reduce((acc, p) => acc + (p.effort || 0), 0);
-  const avgEffort = projects.length > 0 ? (totalEffort / projects.length).toFixed(1) : 0;
+  const totalEffort = activeProjects.reduce((acc, p) => acc + (p.effort || 0), 0);
+  const avgEffort = activeProjects.length > 0 ? (totalEffort / activeProjects.length).toFixed(1) : 0;
   document.getElementById('kpiAvgEffort').textContent = `${avgEffort}%`;
 
-  // KPI: A rischio / In ritardo
-  const atRisk = projects.filter(p => {
+  // KPI: A rischio / In ritardo (su progetti attivi)
+  const atRisk = activeProjects.filter(p => {
     const st = (p.stato_tempistiche || '').toLowerCase();
     return st === 'a rischio' || st === 'in ritardo';
   }).length;
@@ -558,6 +541,7 @@ function getResourceEffort(resourceName) {
   if (!resourceName) return 0;
   const cleanName = resourceName.trim().toLowerCase();
   return projects.reduce((acc, p) => {
+    if (isProjectCompleted(p)) return acc;
     const rName = (p.risorsa && p.risorsa.trim()) ? p.risorsa.trim().toLowerCase() : sanitizeProjectPM(p.pm).toLowerCase();
     if (rName === cleanName) {
       return acc + (p.effort || 0);
@@ -570,6 +554,7 @@ function getCoordinatorPersonalEffort(coordName) {
   if (!coordName) return 0;
   const normCoord = coordName.trim().toLowerCase();
   return projects.reduce((acc, p) => {
+    if (isProjectCompleted(p)) return acc;
     if (sanitizeProjectPM(p.pm).toLowerCase() === normCoord) {
       const rName = (p.risorsa || '').trim().toLowerCase();
       if (!rName || rName === normCoord) {
@@ -598,6 +583,7 @@ function renderPmWorkloadOverview() {
 
     const coordNameSet = new Set(officialCoords.map(c => c.name));
     projects.forEach(p => {
+      if (isProjectCompleted(p)) return;
       const pmName = sanitizeProjectPM(p.pm);
       if (!coordNameSet.has(pmName)) return; // Skip anyone not in the official list
       pmEfforts[pmName].count += 1;
@@ -735,8 +721,10 @@ function renderAnalyticsView() {
   const totalPrj = projects.length;
   if (totalPrj === 0) return;
 
-  // 1. Top KPI Calculations
-  const totalEffort = projects.reduce((acc, p) => acc + (p.effort || 0), 0);
+  const activeProjects = projects.filter(p => !isProjectCompleted(p));
+
+  // 1. Top KPI Calculations (active workload)
+  const totalEffort = activeProjects.reduce((acc, p) => acc + (p.effort || 0), 0);
   const totalFTE = (totalEffort / 100).toFixed(1);
 
   // Saturation Rate (% of official coordinators capacity, 6 * 100% = 600%)
@@ -746,16 +734,16 @@ function renderAnalyticsView() {
 
   const avgProgress = Math.round(projects.reduce((acc, p) => acc + (p.avanzamento || 0), 0) / totalPrj);
 
-  const atRiskCount = projects.filter(p => {
+  const atRiskCount = activeProjects.filter(p => {
     const st = (p.stato_tempistiche || '').toLowerCase();
-    return st === 'a rischio' || st === 'in ritardo';
+    return st === 'a riskio' || st === 'a rischio' || st === 'in ritardo';
   }).length;
-  const riskRatio = Math.round((atRiskCount / totalPrj) * 100);
+  const riskRatio = activeProjects.length > 0 ? Math.round((atRiskCount / activeProjects.length) * 100) : 0;
 
-  // Department breakdown
+  // Department breakdown (active projects effort)
   const deptEffort = {};
   const deptCount = {};
-  projects.forEach(p => {
+  activeProjects.forEach(p => {
     const dept = p.reparto || 'Non Specificato';
     deptEffort[dept] = (deptEffort[dept] || 0) + (p.effort || 0);
     deptCount[dept] = (deptCount[dept] || 0) + 1;
@@ -1510,15 +1498,29 @@ function renderCoordinatorsGrid() {
           </div>
           <div class="pm-accordion-body">
             ${prjList.length === 0 ? '<div style="font-size:0.82rem; color:var(--text-dim);">Nessun progetto assegnato</div>' : ''}
-            ${prjList.map(p => `
-              <div class="pm-project-item">
-                <div>
-                  <span style="font-weight:600;">${p.progetto}</span>
-                  <span class="badge ${getBadgeClass(p.stato)}" style="margin-left:0.4rem; font-size:0.7rem;">${p.stato}</span>
+            ${prjList.map(p => {
+              const isDone = isProjectCompleted(p);
+              if (isDone) {
+                return `
+                  <div class="pm-project-item" style="opacity:0.75;">
+                    <div>
+                      <span style="font-weight:600; text-decoration:line-through; color:var(--text-dim);">${p.progetto}</span>
+                      <span class="badge badge-success" style="margin-left:0.4rem; font-size:0.7rem;">Concluso</span>
+                    </div>
+                    <span style="font-weight:700; color:var(--success); font-size:0.8rem;">0% effort</span>
+                  </div>
+                `;
+              }
+              return `
+                <div class="pm-project-item">
+                  <div>
+                    <span style="font-weight:600;">${p.progetto}</span>
+                    <span class="badge ${getBadgeClass(p.stato)}" style="margin-left:0.4rem; font-size:0.7rem;">${p.stato}</span>
+                  </div>
+                  <span style="font-weight:700; color:var(--mp95-orange);">${p.effort}%</span>
                 </div>
-                <span style="font-weight:700; color:var(--mp95-orange);">${p.effort}%</span>
-              </div>
-            `).join('')}
+              `;
+            }).join('')}
           </div>
         </div>
 
@@ -1586,6 +1588,53 @@ window.toggleAccordion = function(id) {
   if (el) el.classList.toggle('open');
 };
 
+function getProjectsForResource(resourceName, rawProjectsList = []) {
+  if (!resourceName) return [];
+  const cleanResName = resourceName.trim().toLowerCase();
+  
+  const projectMap = new Map();
+
+  // 1. First add all projects from global `projects` array assigned to this resource
+  projects.forEach(p => {
+    if (p.risorsa && p.risorsa.trim().toLowerCase() === cleanResName) {
+      const key = p.progetto.trim().toLowerCase();
+      projectMap.set(key, p);
+    }
+  });
+
+  // 2. Process rawProjectsList on resource object
+  (rawProjectsList || []).forEach(pName => {
+    if (!pName || !pName.trim()) return;
+    const cleanPName = pName.trim();
+    const normKey = cleanPName.toLowerCase();
+
+    if (projectMap.has(normKey)) return;
+
+    // Alias / prefix check
+    const existingPrj = projects.find(p => {
+      const pNorm = p.progetto.trim().toLowerCase();
+      return pNorm === normKey || normKey.startsWith(pNorm) || pNorm.startsWith(normKey);
+    });
+
+    if (existingPrj) {
+      const matchKey = existingPrj.progetto.trim().toLowerCase();
+      if (!projectMap.has(matchKey)) {
+        projectMap.set(matchKey, existingPrj);
+      }
+    } else {
+      projectMap.set(normKey, {
+        id: null,
+        progetto: cleanPName,
+        effort: 0,
+        stato: 'In corso',
+        isVirtual: true
+      });
+    }
+  });
+
+  return Array.from(projectMap.values());
+}
+
 window.renderResourceProjects = function(selectEl, encodedPmName) {
   const pmName = decodeURIComponent(encodedPmName);
   const resourceIdx = selectEl.value;
@@ -1597,21 +1646,28 @@ window.renderResourceProjects = function(selectEl, encodedPmName) {
   }
 
   const res = coordinatorResources[pmName][resourceIdx];
-  const resPrjs = res.projects || [];
+  const resourceProjects = getProjectsForResource(res.name, res.projects);
 
-  if (resPrjs.length === 0) {
+  if (resourceProjects.length === 0) {
     container.innerHTML = `<div style="font-size:0.8rem; color:var(--text-dim);">Nessun progetto attualmente in carico a ${res.name}.</div>`;
     return;
   }
 
-  container.innerHTML = resPrjs.map(pName => {
-    const prjObj = projects.find(p => p.progetto.trim().toLowerCase() === pName.trim().toLowerCase());
-    const effort = prjObj ? prjObj.effort : 'N/D';
+  container.innerHTML = resourceProjects.map(prjObj => {
+    const isDone = isProjectCompleted(prjObj);
+    if (isDone) {
+      return `
+        <div class="resource-project-tag" style="opacity:0.75; background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.2);">
+          <span><i class="fa-solid fa-box-archive" style="color:var(--success); margin-right:0.3rem;"></i> ${prjObj.progetto}</span>
+          <span style="color:var(--success); font-weight:700; font-size:0.75rem;">Concluso (0% effort)</span>
+        </div>
+      `;
+    }
 
     return `
       <div class="resource-project-tag">
-        <span><i class="fa-solid fa-cube" style="color:var(--mp95-orange); margin-right:0.3rem;"></i> ${pName}</span>
-        <span style="color:var(--mp95-blue); font-weight:700;">${effort}% effort</span>
+        <span><i class="fa-solid fa-cube" style="color:var(--mp95-orange); margin-right:0.3rem;"></i> ${prjObj.progetto}</span>
+        <span style="color:var(--mp95-blue); font-weight:700;">${prjObj.effort}% effort</span>
       </div>
     `;
   }).join('');
