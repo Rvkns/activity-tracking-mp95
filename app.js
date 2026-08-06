@@ -1482,9 +1482,14 @@ function renderCoordinatorsGrid() {
 
       <div class="pm-dropdown-section">
 
-        <!-- DROPDOWN 1: PROGETTI DEL COORDINATORE -->
+        <!-- DROPDOWN 1: PROGETTI DEL COORDINATORE (solo dove il coordinatore è anche risorsa attiva) -->
         ${(() => {
-          const activePrjList = prjList.filter(p => !isProjectCompleted(p));
+          const normCoord = pmName.trim().toLowerCase();
+          const activePrjList = prjList.filter(p => {
+            if (isProjectCompleted(p)) return false;
+            const rName = (p.risorsa || '').trim().toLowerCase();
+            return !rName || rName === normCoord;
+          });
           return `
             <div class="pm-accordion open" id="accordion-prj-${pmIndex}">
               <div class="pm-accordion-header" onclick="toggleAccordion('accordion-prj-${pmIndex}')">
