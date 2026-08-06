@@ -112,10 +112,87 @@ let projects = (JSON.parse(localStorage.getItem('mp95_projects')) || [...INITIAL
 }));
 let coordinatorResources = JSON.parse(localStorage.getItem('mp95_resources')) || DEFAULT_COORDINATOR_RESOURCES;
 
+function syncResourceProjectsToProjectsTable() {
+  const allCoords = getAllCoordinators();
+  let maxIdNum = 0;
+  projects.forEach(p => {
+    const match = (p.id || '').match(/^PRJ-(\d+)$/);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (num > maxIdNum) maxIdNum = num;
+    }
+  });
+
+  let changed = false;
+
+  Object.keys(coordinatorResources).forEach(pmName => {
+    const coordObj = allCoords.find(c => c.name.toLowerCase() === pmName.toLowerCase());
+    const reparto = coordObj ? coordObj.reparto : null;
+    const resList = coordinatorResources[pmName] || [];
+
+    resList.forEach(r => {
+      const rName = typeof r === 'string' ? r : r.name;
+      const rProjects = typeof r === 'object' && r.projects ? r.projects : [];
+
+      rProjects.forEach(pName => {
+        if (!pName || !pName.trim()) return;
+        const normPName = pName.trim().toLowerCase();
+        const normPm = pmName.trim().toLowerCase();
+
+        const existingWithRes = projects.find(p =>
+          p.progetto.trim().toLowerCase() === normPName &&
+          sanitizeProjectPM(p.pm).toLowerCase() === normPm &&
+          p.risorsa && p.risorsa.trim().toLowerCase() === rName.trim().toLowerCase()
+        );
+
+        if (!existingWithRes) {
+          const existingNoRes = projects.find(p =>
+            p.progetto.trim().toLowerCase() === normPName &&
+            sanitizeProjectPM(p.pm).toLowerCase() === normPm &&
+            (!p.risorsa || p.risorsa.trim() === '')
+          );
+
+          if (existingNoRes) {
+            existingNoRes.risorsa = rName;
+            if (!existingNoRes.reparto && reparto) existingNoRes.reparto = reparto;
+            changed = true;
+          } else {
+            maxIdNum++;
+            const newId = `PRJ-${String(maxIdNum).padStart(3, '0')}`;
+            projects.push({
+              id: newId,
+              progetto: pName.trim(),
+              stato: 'In corso',
+              pm: pmName,
+              effort: 10,
+              risorsa: rName,
+              reparto: reparto,
+              descrizione: null,
+              effort_previsto: 0,
+              effort_residuo: 0,
+              avanzamento: 0,
+              data_inizio: new Date().toISOString().slice(0, 10),
+              scadenza: null,
+              stato_tempistiche: 'In linea',
+              criticita: null
+            });
+            changed = true;
+          }
+        }
+      });
+    });
+  });
+
+  if (changed) {
+    localStorage.setItem('mp95_projects', JSON.stringify(projects));
+  }
+}
+
 // DOM Load
 document.addEventListener('DOMContentLoaded', async () => {
   initTheme();
   initNavigation();
+  syncResourceProjectsToProjectsTable();
   initDashboard();
   initProjectsView();
   initCoordinatorsView();
@@ -191,6 +268,7 @@ async function fetchFromNeonDB() {
   } catch (err) {
     console.log("Using LocalStorage offline cache.");
   } finally {
+    syncResourceProjectsToProjectsTable();
     refreshAllViews();
   }
 }
@@ -997,8 +1075,76 @@ async function handleSaveResourceForm(e) {
     coordinatorResources[pmName] = [];
   }
 
-  const newRes = { name, role, projects: projectsArr };
-  coordinatorResources[pmName].push(newRes);
+  const existingIdx = coordinatorResources[pmName].findIndex(r => (typeof r === 'string' ? r : r.name).toLowerCase() === name.toLowerCase());
+  if (existingIdx >= 0) {
+    const existing = coordinatorResources[pmName][existingIdx];
+    const existingProjects = typeof existing === 'object' && existing.projects ? existing.projects : [];
+    const combinedPrjs = [...new Set([...existingProjects, ...projectsArr])];
+    coordinatorResources[pmName][existingIdx] = {
+      name: name,
+      role: role || (typeof existing === 'object' ? existing.role : 'Specialista IT'),
+      projects: combinedPrjs
+    };
+  } else {
+    const newRes = { name, role, projects: projectsArr };
+    coordinatorResources[pmName].push(newRes);
+  }
+
+  // Find coordinator reparto
+  const allCoords = getAllCoordinators();
+  const coordObj = allCoords.find(c => c.name.toLowerCase() === pmName.toLowerCase());
+  const reparto = coordObj ? coordObj.reparto : null;
+
+  let maxIdNum = 0;
+  projects.forEach(p => {
+    const match = (p.id || '').match(/^PRJ-(\d+)$/);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (num > maxIdNum) maxIdNum = num;
+    }
+  });
+
+  const affectedProjects = [];
+
+  // Update or create project rows for this resource
+  projectsArr.forEach(pName => {
+    const normPName = pName.trim().toLowerCase();
+    const normPm = pmName.trim().toLowerCase();
+
+    const existingPrj = projects.find(p =>
+      p.progetto.trim().toLowerCase() === normPName &&
+      sanitizeProjectPM(p.pm).toLowerCase() === normPm &&
+      (!p.risorsa || p.risorsa.trim() === '' || p.risorsa.trim().toLowerCase() === name.toLowerCase())
+    );
+
+    if (existingPrj) {
+      existingPrj.risorsa = name;
+      if (!existingPrj.reparto && reparto) existingPrj.reparto = reparto;
+      affectedProjects.push(existingPrj);
+    } else {
+      maxIdNum++;
+      const newId = `PRJ-${String(maxIdNum).padStart(3, '0')}`;
+      const newPrj = {
+        id: newId,
+        progetto: pName.trim(),
+        stato: 'In corso',
+        pm: pmName,
+        effort: 10,
+        risorsa: name,
+        reparto: reparto,
+        descrizione: null,
+        effort_previsto: 0,
+        effort_residuo: 0,
+        avanzamento: 0,
+        data_inizio: new Date().toISOString().slice(0, 10),
+        scadenza: null,
+        stato_tempistiche: 'In linea',
+        criticita: null
+      };
+      projects.push(newPrj);
+      affectedProjects.push(newPrj);
+    }
+  });
 
   try {
     await fetch('/api/resources', {
@@ -1011,23 +1157,55 @@ async function handleSaveResourceForm(e) {
         assigned_projects: projectsArr
       })
     });
+
+    if (affectedProjects.length > 0) {
+      await fetch('/api/projects/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'merge',
+          projects: affectedProjects
+        })
+      });
+    }
   } catch (err) {
     console.log("Saved LocalStorage.");
   }
 
   saveState();
   closeResourceModal();
-  showToast(`Nuova risorsa ${name} aggiunta al team di ${pmName}!`);
+  showToast(`Nuova risorsa ${name} ed i relativi progetti aggiunti con successo!`);
 }
 
 window.deleteTeamResource = async function(encodedPmName, resourceIdx) {
   const pmName = decodeURIComponent(encodedPmName);
   if (!coordinatorResources[pmName] || !coordinatorResources[pmName][resourceIdx]) return;
 
-  const resName = coordinatorResources[pmName][resourceIdx].name;
+  const resObj = coordinatorResources[pmName][resourceIdx];
+  const resName = typeof resObj === 'string' ? resObj : resObj.name;
   if (!confirm(`Sei sicuro di voler rimuovere ${resName} dal team di ${pmName}?`)) return;
 
   coordinatorResources[pmName].splice(resourceIdx, 1);
+
+  // Clear risorsa association in projects
+  const affected = [];
+  projects.forEach(p => {
+    if (sanitizeProjectPM(p.pm).toLowerCase() === pmName.toLowerCase() && p.risorsa && p.risorsa.trim().toLowerCase() === resName.toLowerCase()) {
+      p.risorsa = null;
+      affected.push(p);
+    }
+  });
+
+  if (affected.length > 0) {
+    try {
+      await fetch('/api/projects/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'merge', projects: affected })
+      });
+    } catch (e) { console.log("Saved LocalStorage."); }
+  }
+
   saveState();
   showToast(`Risorsa ${resName} rimossa dal team.`);
 };
@@ -2376,6 +2554,28 @@ async function handleSaveProject(e) {
       body: JSON.stringify(savedProjects)
     });
   } catch (err) { console.log("Saved local."); }
+
+  // Sync resource back to coordinatorResources
+  allocations.forEach(alloc => {
+    if (alloc.risorsa && pm) {
+      if (!coordinatorResources[pm]) {
+        coordinatorResources[pm] = [];
+      }
+      const existingRes = coordinatorResources[pm].find(r => (typeof r === 'string' ? r : r.name).toLowerCase() === alloc.risorsa.toLowerCase());
+      if (existingRes) {
+        if (typeof existingRes === 'object') {
+          if (!existingRes.projects) existingRes.projects = [];
+          if (!existingRes.projects.includes(progetto)) existingRes.projects.push(progetto);
+        }
+      } else {
+        coordinatorResources[pm].push({
+          name: alloc.risorsa,
+          role: 'Specialista IT',
+          projects: [progetto]
+        });
+      }
+    }
+  });
 
   saveState();
   closeProjectModal();
