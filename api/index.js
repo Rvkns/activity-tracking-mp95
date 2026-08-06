@@ -43,6 +43,26 @@ app.get(['/api/projects', '/projects'], async (req, res) => {
   }
 });
 
+// 1b. GET /api/projects/:id/history - Progress snapshots over time for one project
+app.get(['/api/projects/:id/history', '/projects/:id/history'], async (req, res) => {
+  const { id } = req.params;
+  const pool = getPool();
+  try {
+    const result = await pool.query(
+      `SELECT id, project_id, operation, progetto, stato, pm, risorsa, reparto,
+              effort, effort_previsto, effort_residuo, avanzamento, stato_tempistiche, recorded_at
+       FROM mp95_project_history WHERE project_id = $1 ORDER BY recorded_at ASC`,
+      [id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching project history:', err);
+    res.status(500).json({ error: err.message || 'Errore durante il recupero dello storico del progetto.' });
+  } finally {
+    await pool.end();
+  }
+});
+
 // 2. POST /api/projects - Create a new project
 app.post(['/api/projects', '/projects'], async (req, res) => {
   const {

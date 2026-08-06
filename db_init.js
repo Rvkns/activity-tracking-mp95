@@ -121,6 +121,63 @@ async function initDatabase() {
     `);
     console.log("✓ Migrazione nuove colonne e allineamento Coordinatori ufficiali completato.");
 
+    // 2b. Progress history: one snapshot row per meaningful change, written by a
+    // DB trigger so it captures every write path (single edit, batch import, or
+    // direct SQL) rather than relying on application code to remember to log it.
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS mp95_project_history (
+        id SERIAL PRIMARY KEY,
+        project_id VARCHAR(50) NOT NULL,
+        operation VARCHAR(10) NOT NULL,
+        progetto VARCHAR(255),
+        stato VARCHAR(100),
+        pm VARCHAR(255),
+        risorsa VARCHAR(255),
+        reparto VARCHAR(100),
+        effort INTEGER,
+        effort_previsto NUMERIC(6,1),
+        effort_residuo NUMERIC(6,1),
+        avanzamento INTEGER,
+        stato_tempistiche VARCHAR(50),
+        recorded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_mp95_project_history_project_id
+        ON mp95_project_history(project_id);
+
+      CREATE OR REPLACE FUNCTION log_mp95_project_history() RETURNS TRIGGER AS $trg$
+      BEGIN
+        INSERT INTO mp95_project_history (
+          project_id, operation, progetto, stato, pm, risorsa, reparto,
+          effort, effort_previsto, effort_residuo, avanzamento, stato_tempistiche
+        ) VALUES (
+          NEW.id, TG_OP, NEW.progetto, NEW.stato, NEW.pm, NEW.risorsa, NEW.reparto,
+          NEW.effort, NEW.effort_previsto, NEW.effort_residuo, NEW.avanzamento, NEW.stato_tempistiche
+        );
+        RETURN NEW;
+      END;
+      $trg$ LANGUAGE plpgsql;
+
+      DROP TRIGGER IF EXISTS trg_mp95_project_history_insert ON mp95_projects;
+      CREATE TRIGGER trg_mp95_project_history_insert
+        AFTER INSERT ON mp95_projects
+        FOR EACH ROW EXECUTE FUNCTION log_mp95_project_history();
+
+      DROP TRIGGER IF EXISTS trg_mp95_project_history_update ON mp95_projects;
+      CREATE TRIGGER trg_mp95_project_history_update
+        AFTER UPDATE ON mp95_projects
+        FOR EACH ROW
+        WHEN (
+          OLD.avanzamento IS DISTINCT FROM NEW.avanzamento OR
+          OLD.stato IS DISTINCT FROM NEW.stato OR
+          OLD.effort IS DISTINCT FROM NEW.effort OR
+          OLD.effort_previsto IS DISTINCT FROM NEW.effort_previsto OR
+          OLD.effort_residuo IS DISTINCT FROM NEW.effort_residuo
+        )
+        EXECUTE FUNCTION log_mp95_project_history();
+    `);
+    console.log("✓ Tabella 'mp95_project_history' e trigger di tracciamento avanzamento verificati/creati.");
+
     // 3. Check if projects exist
     const prjCheck = await client.query("SELECT COUNT(*) FROM mp95_projects");
     if (parseInt(prjCheck.rows[0].count) === 0) {
