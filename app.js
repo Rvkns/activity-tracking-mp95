@@ -1491,38 +1491,29 @@ function renderCoordinatorsGrid() {
       <div class="pm-dropdown-section">
 
         <!-- DROPDOWN 1: PROGETTI DEL COORDINATORE -->
-        <div class="pm-accordion open" id="accordion-prj-${pmIndex}">
-          <div class="pm-accordion-header" onclick="toggleAccordion('accordion-prj-${pmIndex}')">
-            <span><i class="fa-solid fa-folder-tree" style="color:var(--mp95-orange); margin-right:0.4rem;"></i> Progetti del Coordinatore (${prjList.length})</span>
-            <i class="fa-solid fa-chevron-down"></i>
-          </div>
-          <div class="pm-accordion-body">
-            ${prjList.length === 0 ? '<div style="font-size:0.82rem; color:var(--text-dim);">Nessun progetto assegnato</div>' : ''}
-            ${prjList.map(p => {
-              const isDone = isProjectCompleted(p);
-              if (isDone) {
-                return `
-                  <div class="pm-project-item" style="opacity:0.75;">
+        ${(() => {
+          const activePrjList = prjList.filter(p => !isProjectCompleted(p));
+          return `
+            <div class="pm-accordion open" id="accordion-prj-${pmIndex}">
+              <div class="pm-accordion-header" onclick="toggleAccordion('accordion-prj-${pmIndex}')">
+                <span><i class="fa-solid fa-folder-tree" style="color:var(--mp95-orange); margin-right:0.4rem;"></i> Progetti del Coordinatore (${activePrjList.length})</span>
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+              <div class="pm-accordion-body">
+                ${activePrjList.length === 0 ? '<div style="font-size:0.82rem; color:var(--text-dim);">Nessun progetto attivo assegnato</div>' : ''}
+                ${activePrjList.map(p => `
+                  <div class="pm-project-item">
                     <div>
-                      <span style="font-weight:600; text-decoration:line-through; color:var(--text-dim);">${p.progetto}</span>
-                      <span class="badge badge-success" style="margin-left:0.4rem; font-size:0.7rem;">Concluso</span>
+                      <span style="font-weight:600;">${p.progetto}</span>
+                      <span class="badge ${getBadgeClass(p.stato)}" style="margin-left:0.4rem; font-size:0.7rem;">${p.stato}</span>
                     </div>
-                    <span style="font-weight:700; color:var(--success); font-size:0.8rem;">0% effort</span>
+                    <span style="font-weight:700; color:var(--mp95-orange);">${p.effort}%</span>
                   </div>
-                `;
-              }
-              return `
-                <div class="pm-project-item">
-                  <div>
-                    <span style="font-weight:600;">${p.progetto}</span>
-                    <span class="badge ${getBadgeClass(p.stato)}" style="margin-left:0.4rem; font-size:0.7rem;">${p.stato}</span>
-                  </div>
-                  <span style="font-weight:700; color:var(--mp95-orange);">${p.effort}%</span>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        })()}
 
         <!-- DROPDOWN 2: RISORSE DEL TEAM -->
         <div class="pm-accordion" id="accordion-res-${pmIndex}">
@@ -1594,8 +1585,9 @@ function getProjectsForResource(resourceName, rawProjectsList = []) {
   
   const projectMap = new Map();
 
-  // 1. First add all projects from global `projects` array assigned to this resource
+  // 1. First add all active projects from global `projects` array assigned to this resource
   projects.forEach(p => {
+    if (isProjectCompleted(p)) return;
     if (p.risorsa && p.risorsa.trim().toLowerCase() === cleanResName) {
       const key = p.progetto.trim().toLowerCase();
       projectMap.set(key, p);
@@ -1617,6 +1609,7 @@ function getProjectsForResource(resourceName, rawProjectsList = []) {
     });
 
     if (existingPrj) {
+      if (isProjectCompleted(existingPrj)) return;
       const matchKey = existingPrj.progetto.trim().toLowerCase();
       if (!projectMap.has(matchKey)) {
         projectMap.set(matchKey, existingPrj);
@@ -1646,24 +1639,14 @@ window.renderResourceProjects = function(selectEl, encodedPmName) {
   }
 
   const res = coordinatorResources[pmName][resourceIdx];
-  const resourceProjects = getProjectsForResource(res.name, res.projects);
+  const activeResourceProjects = getProjectsForResource(res.name, res.projects).filter(p => !isProjectCompleted(p));
 
-  if (resourceProjects.length === 0) {
-    container.innerHTML = `<div style="font-size:0.8rem; color:var(--text-dim);">Nessun progetto attualmente in carico a ${res.name}.</div>`;
+  if (activeResourceProjects.length === 0) {
+    container.innerHTML = `<div style="font-size:0.8rem; color:var(--text-dim);">Nessun progetto attivo attualmente in carico a ${res.name}.</div>`;
     return;
   }
 
-  container.innerHTML = resourceProjects.map(prjObj => {
-    const isDone = isProjectCompleted(prjObj);
-    if (isDone) {
-      return `
-        <div class="resource-project-tag" style="opacity:0.75; background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.2);">
-          <span><i class="fa-solid fa-box-archive" style="color:var(--success); margin-right:0.3rem;"></i> ${prjObj.progetto}</span>
-          <span style="color:var(--success); font-weight:700; font-size:0.75rem;">Concluso (0% effort)</span>
-        </div>
-      `;
-    }
-
+  container.innerHTML = activeResourceProjects.map(prjObj => {
     return `
       <div class="resource-project-tag">
         <span><i class="fa-solid fa-cube" style="color:var(--mp95-orange); margin-right:0.3rem;"></i> ${prjObj.progetto}</span>
