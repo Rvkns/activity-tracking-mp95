@@ -194,6 +194,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initNavigation();
   syncResourceProjectsToProjectsTable();
   initDashboard();
+  initAnalyticsView();
   initProjectsView();
   initCoordinatorsView();
   initTimelineView();
@@ -282,6 +283,7 @@ function saveState() {
 
 function refreshAllViews() {
   renderDashboard();
+  renderAnalyticsView();
   renderProjectsTable();
   renderCoordinatorsGrid();
   populatePmFilterOptions();
@@ -305,6 +307,7 @@ function initNavigation() {
 
   const titles = {
     dashboard: { title: "Executive Dashboard", subtitle: "Panoramica generale dell'effort e delle attività dei coordinatori MP95" },
+    analytics: { title: "Analytics & Executive KPI", subtitle: "Analisi avanzata delle metriche di effort, reparto e saturazione delle risorse MP95" },
     projects: { title: "Gestione Progetti & Effort", subtitle: "Elenco completo dei progetti censiti con allocazioni percentuale" },
     coordinators: { title: "Carico di Lavoro & Risorse Coordinatori", subtitle: "Analisi della capacità, progetti e risorse gestite per ciascun PM" },
     timeline: { title: "Governance Temporale & Timeline", subtitle: "Monitoraggio della durata, pianificazione e calendario delle attività MP95" },
@@ -621,6 +624,234 @@ function renderPmWorkloadOverview() {
         </div>
       `;
       container.innerHTML += rowHtml;
+    });
+  }
+}
+
+/* ----------------------------------------------------
+   ANALYTICS & EXECUTIVE KPI VIEW
+---------------------------------------------------- */
+function initAnalyticsView() {
+  renderAnalyticsView();
+}
+
+function renderAnalyticsView() {
+  const totalPrj = projects.length;
+  if (totalPrj === 0) return;
+
+  // 1. Top KPI Calculations
+  const totalEffort = projects.reduce((acc, p) => acc + (p.effort || 0), 0);
+  const totalFTE = (totalEffort / 100).toFixed(1);
+
+  // Saturation Rate (% of official coordinators capacity, 6 * 100% = 600%)
+  const officialCoordsCount = OFFICIAL_COORDINATORS.length;
+  const maxCapacity = officialCoordsCount * 100;
+  const saturationPct = Math.round((totalEffort / maxCapacity) * 100);
+
+  const avgProgress = Math.round(projects.reduce((acc, p) => acc + (p.avanzamento || 0), 0) / totalPrj);
+
+  const atRiskCount = projects.filter(p => {
+    const st = (p.stato_tempistiche || '').toLowerCase();
+    return st === 'a rischio' || st === 'in ritardo';
+  }).length;
+  const riskRatio = Math.round((atRiskCount / totalPrj) * 100);
+
+  // Department breakdown
+  const deptEffort = {};
+  const deptCount = {};
+  projects.forEach(p => {
+    const dept = p.reparto || 'Non Specificato';
+    deptEffort[dept] = (deptEffort[dept] || 0) + (p.effort || 0);
+    deptCount[dept] = (deptCount[dept] || 0) + 1;
+  });
+
+  let topDept = 'Non Specificato';
+  let maxDeptEffort = -1;
+  Object.keys(deptEffort).forEach(d => {
+    if (deptEffort[d] > maxDeptEffort) {
+      maxDeptEffort = deptEffort[d];
+      topDept = d;
+    }
+  });
+
+  // Render Top KPI Cards
+  const satEl = document.getElementById('analyticsKpiSaturation');
+  if (satEl) satEl.textContent = `${saturationPct}%`;
+  const fteEl = document.getElementById('analyticsKpiFTE');
+  if (fteEl) fteEl.textContent = totalFTE;
+  const topDeptEl = document.getElementById('analyticsKpiTopDept');
+  if (topDeptEl) topDeptEl.textContent = topDept;
+  const avgProgEl = document.getElementById('analyticsKpiAvgProgress');
+  if (avgProgEl) avgProgEl.textContent = `${avgProgress}%`;
+  const riskRatioEl = document.getElementById('analyticsKpiRiskRatio');
+  if (riskRatioEl) riskRatioEl.textContent = `${riskRatio}% (${atRiskCount} prj)`;
+
+  // 2. Department Breakdown Widget
+  const deptContainer = document.getElementById('analyticsDepartmentContainer');
+  const deptTag = document.getElementById('analyticsDeptCountTag');
+  if (deptTag) deptTag.textContent = `${Object.keys(deptEffort).length} Reparti Attivi`;
+
+  if (deptContainer) {
+    deptContainer.innerHTML = '';
+    const sortedDepts = Object.keys(deptEffort).sort((a, b) => deptEffort[b] - deptEffort[a]);
+
+    const colorMap = {
+      'Data Management': '#06B6D4',
+      'Data management': '#06B6D4',
+      'Innovation':      '#A78BFA',
+      'IT&Digital':      '#2872FA',
+      'Digital':         '#2872FA',
+      'Corporate':       '#F59E0B',
+      'Support&Help Desk': '#10B981',
+      'Governance':      '#10B981',
+      'Infrastructure, Network & Security': '#EC4899',
+      'Infra':           '#EC4899'
+    };
+
+    sortedDepts.forEach(dept => {
+      const eff = deptEffort[dept];
+      const count = deptCount[dept];
+      const pctOfTotal = Math.round((eff / totalEffort) * 100) || 0;
+      const fte = (eff / 100).toFixed(1);
+      const color = colorMap[dept] || '#94A3B8';
+
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex; flex-direction:column; gap:0.4rem; padding:0.65rem 0.85rem; background:rgba(255,255,255,0.02); border-radius:var(--radius-md); border:1px solid var(--border-color);';
+      row.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <span style="font-weight:700; font-size:0.9rem; color:var(--text-main);">${dept}</span>
+            <span style="font-size:0.75rem; color:var(--text-dim); margin-left:0.4rem;">(${count} progetti)</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.6rem;">
+            <span style="font-size:0.78rem; font-weight:700; color:${color};">${fte} FTE</span>
+            <span style="font-weight:800; font-size:0.85rem; color:var(--text-main);">${eff}% (${pctOfTotal}%)</span>
+          </div>
+        </div>
+        <div class="effort-progress-bg" style="height:7px;">
+          <div class="effort-progress-fill" style="width: ${Math.min(eff, 100)}%; background: ${color};"></div>
+        </div>
+      `;
+      deptContainer.appendChild(row);
+    });
+  }
+
+  // 3. Coordinators Load & Capacity Matrix Widget
+  const coordContainer = document.getElementById('analyticsCoordinatorsContainer');
+  if (coordContainer) {
+    coordContainer.innerHTML = '';
+    const allCoords = getAllCoordinators();
+
+    allCoords.forEach(coord => {
+      const pmName = coord.name;
+      const pmPrjs = projects.filter(p => sanitizeProjectPM(p.pm).toLowerCase() === pmName.toLowerCase());
+      const pmEffort = pmPrjs.reduce((acc, p) => acc + (p.effort || 0), 0);
+      const pmAvgAv = pmPrjs.length > 0 ? Math.round(pmPrjs.reduce((acc, p) => acc + (p.avanzamento || 0), 0) / pmPrjs.length) : 0;
+      const teamRes = coordinatorResources[pmName] || [];
+
+      let badgeText = '🟢 Bilanciato';
+      let badgeColor = 'var(--success)';
+      if (pmEffort > 100) {
+        badgeText = '🔴 Overload';
+        badgeColor = 'var(--danger)';
+      } else if (pmEffort < 40 && pmPrjs.length > 0) {
+        badgeText = '🟡 Sotto-utilizzato';
+        badgeColor = 'var(--warning)';
+      }
+
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex; flex-direction:column; gap:0.4rem; padding:0.65rem 0.85rem; background:rgba(255,255,255,0.02); border-radius:var(--radius-md); border:1px solid var(--border-color);';
+      row.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <span style="font-weight:700; font-size:0.9rem;">${pmName}</span>
+            <span style="font-size:0.75rem; color:var(--text-dim); margin-left:0.4rem;">(${coord.reparto || 'Generale'})</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <span style="font-size:0.75rem; font-weight:700; color:${badgeColor};">${badgeText}</span>
+            <span style="font-weight:800; font-size:0.85rem; color:var(--mp95-orange);">${pmEffort}% effort</span>
+          </div>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.78rem; color:var(--text-muted); margin-top:0.1rem;">
+          <span>Progetti: <strong>${pmPrjs.length}</strong> | Team: <strong>${teamRes.length} persone</strong></span>
+          <span>Avanzamento Medio: <strong>${pmAvgAv}%</strong></span>
+        </div>
+        <div class="effort-progress-bg" style="height:6px; margin-top:0.2rem;">
+          <div class="effort-progress-fill" style="width: ${Math.min(pmEffort, 100)}%; background: ${pmEffort > 100 ? 'var(--danger)' : 'var(--mp95-blue)'};"></div>
+        </div>
+      `;
+      coordContainer.appendChild(row);
+    });
+  }
+
+  // 4. Progress & Health Container Widget
+  const healthContainer = document.getElementById('analyticsProgressHealthContainer');
+  if (healthContainer) {
+    healthContainer.innerHTML = '';
+
+    const avBuckets = {
+      'Iniziale (0-25%)': 0,
+      'Intermedio (26-75%)': 0,
+      'Avanzato (76-99%)': 0,
+      'Completato (100%)': 0
+    };
+
+    projects.forEach(p => {
+      const av = parseInt(p.avanzamento) || 0;
+      if (av >= 100) avBuckets['Completato (100%)']++;
+      else if (av >= 76) avBuckets['Avanzato (76-99%)']++;
+      else if (av >= 26) avBuckets['Intermedio (26-75%)']++;
+      else avBuckets['Iniziale (0-25%)']++;
+    });
+
+    Object.keys(avBuckets).forEach(bucket => {
+      const count = avBuckets[bucket];
+      const pct = Math.round((count / totalPrj) * 100) || 0;
+
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex; flex-direction:column; gap:0.35rem;';
+      row.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem;">
+          <span style="font-weight:600; color:var(--text-main);">${bucket}</span>
+          <span style="font-weight:700;">${count} progetti (${pct}%)</span>
+        </div>
+        <div class="effort-progress-bg" style="height:6px;">
+          <div class="effort-progress-fill" style="width: ${pct}%; background: linear-gradient(90deg, var(--mp95-blue), var(--success));"></div>
+        </div>
+      `;
+      healthContainer.appendChild(row);
+    });
+  }
+
+  // 5. Activity Types & Status Breakdown Widget
+  const typeContainer = document.getElementById('analyticsActivityTypesContainer');
+  if (typeContainer) {
+    typeContainer.innerHTML = '';
+
+    const statusCounts = {};
+    projects.forEach(p => {
+      const st = p.stato.trim();
+      statusCounts[st] = (statusCounts[st] || 0) + 1;
+    });
+
+    Object.keys(statusCounts).forEach(status => {
+      const cnt = statusCounts[status];
+      const pct = Math.round((cnt / totalPrj) * 100) || 0;
+      const statusEffort = projects.filter(p => p.stato.trim() === status).reduce((acc, p) => acc + (p.effort || 0), 0);
+
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex; flex-direction:column; gap:0.4rem; padding:0.6rem 0.8rem; background:rgba(255,255,255,0.02); border-radius:var(--radius-sm); border:1px solid var(--border-color);';
+      row.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="badge ${getBadgeClass(status)}">${status}</span>
+          <span style="font-weight:700; font-size:0.85rem;">${cnt} progetti (${pct}%)</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.78rem; color:var(--text-dim); margin-top:0.1rem;">
+          <span>Effort Cumulativo: <strong>${statusEffort}%</strong></span>
+          <span>FTE: <strong>${(statusEffort / 100).toFixed(1)}</strong></span>
+        </div>
+      `;
+      typeContainer.appendChild(row);
     });
   }
 }

@@ -36,6 +36,10 @@
           <i class="fa-solid fa-chart-line"></i>
           <span>Dashboard</span>
         </li>
+        <li class="nav-item" data-view="analytics">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>Analytics & KPI</span>
+        </li>
         <li class="nav-item" data-view="projects">
           <i class="fa-solid fa-diagram-project"></i>
           <span>Progetti & Effort</span>
@@ -167,6 +171,99 @@
               <!-- Dynamic PM Workload Rows -->
             </div>
           </div>
+        </div>
+      </section>
+
+      <!-- View: ANALYTICS & KPI -->
+      <section id="view-analytics" class="view-section">
+        <!-- Top Analytics KPI Row -->
+        <div class="kpi-grid">
+          <div class="kpi-card kpi-blue">
+            <div class="kpi-info">
+              <span>Saturazione Capacità</span>
+              <h3 id="analyticsKpiSaturation">0%</h3>
+              <p>Effort totale vs capacità standard</p>
+            </div>
+            <div class="kpi-icon"><i class="fa-solid fa-gauge-high"></i></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <span>FTE Totali (Giornate/Uomo)</span>
+              <h3 id="analyticsKpiFTE">0.0</h3>
+              <p>Capacità equivalente allocata</p>
+            </div>
+            <div class="kpi-icon"><i class="fa-solid fa-user-group"></i></div>
+          </div>
+          <div class="kpi-card kpi-active">
+            <div class="kpi-info">
+              <span>Reparto Top Effort</span>
+              <h3 id="analyticsKpiTopDept">—</h3>
+              <p>Area aziendale con maggior carico</p>
+            </div>
+            <div class="kpi-icon"><i class="fa-solid fa-building-user"></i></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <span>Media Avanzamento</span>
+              <h3 id="analyticsKpiAvgProgress">0%</h3>
+              <p>Stato di completamento globale</p>
+            </div>
+            <div class="kpi-icon"><i class="fa-solid fa-chart-line"></i></div>
+          </div>
+          <div class="kpi-card" style="border-left: 3px solid var(--danger);">
+            <div class="kpi-info">
+              <span>Indice Rischio Temporale</span>
+              <h3 id="analyticsKpiRiskRatio" style="color:var(--danger);">0%</h3>
+              <p>Progetti in ritardo o a rischio</p>
+            </div>
+            <div class="kpi-icon" style="color:var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          </div>
+        </div>
+
+        <!-- Analytics Content Grid -->
+        <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); margin-top:1.5rem;">
+          
+          <!-- Card: Ripartizione Effort per Reparto -->
+          <div class="card">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+              <h3><i class="fa-solid fa-chart-column" style="color:var(--mp95-blue);"></i> Allocazione Effort per Reparto</h3>
+              <span id="analyticsDeptCountTag" class="badge badge-in-corso" style="font-size:0.75rem;">6 Reparti</span>
+            </div>
+            <div id="analyticsDepartmentContainer" style="display:flex; flex-direction:column; gap:0.9rem; margin-top:1rem;">
+              <!-- Dynamic Department Rows -->
+            </div>
+          </div>
+
+          <!-- Card: Matrice Coordinatori & Carico Team -->
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-users-viewfinder" style="color:var(--mp95-orange);"></i> Efficienza & Carico Coordinatori (PM)</h3>
+            </div>
+            <div id="analyticsCoordinatorsContainer" style="display:flex; flex-direction:column; gap:0.9rem; margin-top:1rem;">
+              <!-- Dynamic PM Performance Rows -->
+            </div>
+          </div>
+
+          <!-- Card: Avanzamento Progetti & Salute Temporale -->
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-chart-gantt" style="color:var(--success);"></i> Salute Temporale & Avanzamento</h3>
+            </div>
+            <div id="analyticsProgressHealthContainer" style="display:flex; flex-direction:column; gap:1rem; margin-top:1rem;">
+              <!-- Dynamic Progress & Health Rows -->
+            </div>
+          </div>
+
+          <!-- Card: Concentrazione Effort & Risorse -->
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-network-wired" style="color:var(--accent-cyan);"></i> Distribuzione & Tipologia Attività</h3>
+            </div>
+            <div id="analyticsActivityTypesContainer" style="display:flex; flex-direction:column; gap:0.9rem; margin-top:1rem;">
+              <!-- Dynamic Activity Type Rows -->
+            </div>
+          </div>
+
         </div>
       </section>
 
