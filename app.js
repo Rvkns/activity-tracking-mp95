@@ -475,17 +475,21 @@ function initKpiPopovers() {
 
     const showPopover = () => {
       clearTimeout(hideTimer);
-      // Position using fixed coords from card's bounding rect
       const rect = card.getBoundingClientRect();
       const vw = window.innerWidth;
+      const vh = window.innerHeight;
 
-      const top = rect.bottom + 8;
+      let top = rect.bottom + 8;
       let left = rect.left;
 
-      // Clamp to viewport right edge (leave 12px margin)
       const popoverWidth = 360;
-      if (left + popoverWidth > vw - 12) {
-        left = vw - popoverWidth - 12;
+      if (left + popoverWidth > vw - 16) {
+        left = Math.max(16, vw - popoverWidth - 16);
+      }
+
+      const popoverHeight = 320;
+      if (top + popoverHeight > vh - 16 && rect.top > popoverHeight + 16) {
+        top = rect.top - popoverHeight - 8;
       }
 
       popover.style.top = `${top}px`;
@@ -496,13 +500,13 @@ function initKpiPopovers() {
     const hidePopover = () => {
       hideTimer = setTimeout(() => {
         popover.classList.remove('popover-active');
-      }, 120);
+      }, 150);
     };
 
-    card.addEventListener('mouseenter', showPopover);
-    card.addEventListener('mouseleave', hidePopover);
-    popover.addEventListener('mouseenter', () => clearTimeout(hideTimer));
-    popover.addEventListener('mouseleave', hidePopover);
+    card.onmouseenter = showPopover;
+    card.onmouseleave = hidePopover;
+    popover.onmouseenter = () => clearTimeout(hideTimer);
+    popover.onmouseleave = hidePopover;
   });
 }
 
