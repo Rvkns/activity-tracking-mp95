@@ -296,6 +296,7 @@ header.topbar {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1.25rem;
+  overflow: visible;
 }
 
 .kpi-card {
@@ -307,7 +308,7 @@ header.topbar {
   align-items: flex-start;
   justify-content: space-between;
   position: relative;
-  overflow: visible;
+  overflow: hidden;
   transition: transform var(--transition-fast), border-color var(--transition-fast);
   cursor: default;
 }
@@ -316,6 +317,7 @@ header.topbar {
   transform: translateY(-2px);
   border-color: var(--border-color-light);
   z-index: 70;
+  overflow: visible;
 }
 
 .kpi-card::before {
@@ -350,11 +352,9 @@ header.topbar {
 
 /* ─── KPI Card Hover Popover ─── */
 .kpi-popover {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 0;
-  min-width: 320px;
-  max-width: 420px;
+  position: fixed;
+  min-width: 300px;
+  max-width: 400px;
   width: max-content;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -362,7 +362,7 @@ header.topbar {
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.55), 0 0 1px rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(20px);
   padding: 1.1rem 1.25rem;
-  z-index: 1000;
+  z-index: 9999;
   opacity: 0;
   visibility: hidden;
   transform: translateY(8px);
@@ -373,17 +373,11 @@ header.topbar {
   gap: 0.75rem;
 }
 
-.kpi-card:hover .kpi-popover,
-.kpi-popover:hover {
+.kpi-popover.popover-active {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
   pointer-events: auto;
-}
-
-.kpi-popover.popover-right {
-  left: auto;
-  right: 0;
 }
 
 .kpi-popover-head {

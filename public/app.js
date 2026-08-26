@@ -462,6 +462,48 @@ function initDashboard() {
   }
 
   renderDashboard();
+  initKpiPopovers();
+}
+
+function initKpiPopovers() {
+  const cards = document.querySelectorAll('.kpi-card[id]');
+  cards.forEach(card => {
+    const popover = card.querySelector('.kpi-popover');
+    if (!popover) return;
+
+    let hideTimer;
+
+    const showPopover = () => {
+      clearTimeout(hideTimer);
+      // Position using fixed coords from card's bounding rect
+      const rect = card.getBoundingClientRect();
+      const vw = window.innerWidth;
+
+      const top = rect.bottom + 8;
+      let left = rect.left;
+
+      // Clamp to viewport right edge (leave 12px margin)
+      const popoverWidth = 360;
+      if (left + popoverWidth > vw - 12) {
+        left = vw - popoverWidth - 12;
+      }
+
+      popover.style.top = `${top}px`;
+      popover.style.left = `${left}px`;
+      popover.classList.add('popover-active');
+    };
+
+    const hidePopover = () => {
+      hideTimer = setTimeout(() => {
+        popover.classList.remove('popover-active');
+      }, 120);
+    };
+
+    card.addEventListener('mouseenter', showPopover);
+    card.addEventListener('mouseleave', hidePopover);
+    popover.addEventListener('mouseenter', () => clearTimeout(hideTimer));
+    popover.addEventListener('mouseleave', hidePopover);
+  });
 }
 
 function renderDashboard() {
