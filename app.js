@@ -641,11 +641,18 @@ function renderDashboardPopovers(activeProjects) {
   // 3. Popover: Coordinatori / PM
   const popoverCoords = document.getElementById('kpiPopoverCoordinators');
   if (popoverCoords) {
-    const allCoords = getAllCoordinators();
+    const allCoords = OFFICIAL_COORDINATORS;
     const coordData = allCoords.map(c => {
       const pmPrjs = getProjectsForCoordinator(c.name).filter(p => !isProjectCompleted(p));
-      const totalEff = pmPrjs.reduce((s, p) => s + (p.effort || 0), 0);
-      return { name: c.name, reparto: c.reparto, count: pmPrjs.length, effort: totalEff };
+      const personalEffort = getCoordinatorPersonalEffort(c.name);
+      const teamEffort = pmPrjs.reduce((s, p) => s + (p.effort || 0), 0);
+      return { 
+        name: c.name, 
+        reparto: c.reparto, 
+        count: pmPrjs.length, 
+        effort: personalEffort,
+        teamEffort: teamEffort
+      };
     }).sort((a, b) => b.effort - a.effort);
 
     popoverCoords.innerHTML = `
@@ -664,9 +671,11 @@ function renderDashboardPopovers(activeProjects) {
                 <span style="font-weight:700; color:var(--text-main); font-size:0.82rem;">${c.name}</span>
                 <span style="font-size:0.7rem; color:var(--text-dim);">${c.reparto || 'Generale'} • ${c.count} attività</span>
               </div>
-              <span class="badge ${isOverloaded ? 'badge-terminato' : 'badge-manutenzione'}" style="font-size:0.72rem; font-weight:800;">
-                ${isOverloaded ? '⚠️ ' : ''}${c.effort}%
-              </span>
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.15rem;">
+                <span class="badge ${isOverloaded ? 'badge-terminato' : 'badge-manutenzione'}" style="font-size:0.72rem; font-weight:800;">
+                  ${isOverloaded ? '⚠️ Overload ' : ''}${c.effort}%
+                </span>
+              </div>
             </div>
           `;
         }).join('')}
