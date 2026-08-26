@@ -56,12 +56,10 @@
   padding: 0;
 }
 
-head,
-script,
-style,
-meta,
-link,
-title {
+/* Nasconde eventuali dump del sorgente (<pre id="injected-...">) iniettati a
+   runtime nel body da tool esterni agganciati al dev server (non fanno parte
+   dell'app — vedi removeInjectedSourceDumps() in app.js) */
+pre[id^="injected-"] {
   display: none !important;
 }
 

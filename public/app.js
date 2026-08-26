@@ -169,34 +169,26 @@ function syncResourceProjectsToProjectsTable() {
   }
 }
 
-// Ensure no rogue text nodes or raw HTML source displays on page
-function cleanRogueTextNodes() {
+// Rimuove i blocchi <pre id="injected-html"/"injected-js"> che un tool esterno
+// (IDE/estensione di sviluppo agganciata al dev server) inietta a runtime nel
+// body con il sorgente completo di index.html/app.js. Non fanno parte
+// dell'app: non sono presenti nella risposta del server né nei file sorgente,
+// vengono aggiunti solo lato client dopo il caricamento della pagina.
+function removeInjectedSourceDumps() {
   try {
-    [document.documentElement, document.head, document.body, document.getElementById('app')].forEach(parent => {
-      if (!parent) return;
-      Array.from(parent.childNodes).forEach(node => {
-        if (node.nodeType === Node.TEXT_NODE && node.textContent && (node.textContent.includes('DOCTYPE') || node.textContent.includes('<html') || node.textContent.includes('<head') || node.textContent.includes('<body'))) {
-          node.remove();
-        }
-      });
-    });
-
-    document.querySelectorAll('*').forEach(el => {
-      if (el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE' && el.children.length === 0) {
-        const txt = el.textContent || '';
-        if (txt.includes('<!DOCTYPE') || (txt.includes('<html') && txt.includes('<head>'))) {
-          el.remove();
-        }
-      }
-    });
+    document.querySelectorAll('[id^="injected-"]').forEach(el => el.remove());
   } catch (e) {
-    console.warn('cleanRogueTextNodes err:', e);
+    console.warn('removeInjectedSourceDumps err:', e);
   }
 }
 
+// Osserva il body e ripulisce eventuali nuovi dump iniettati in qualsiasi momento
+const injectedSourceObserver = new MutationObserver(() => removeInjectedSourceDumps());
+injectedSourceObserver.observe(document.body, { childList: true });
+
 // DOM Load
 document.addEventListener('DOMContentLoaded', async () => {
-  cleanRogueTextNodes();
+  removeInjectedSourceDumps();
   initTheme();
   initNavigation();
   initDashboard();
@@ -212,7 +204,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Load from Neon DB API — single source of truth
   // syncResourceProjectsToProjectsTable runs AFTER DB data arrives
   await fetchFromNeonDB();
-  cleanRogueTextNodes();
+  removeInjectedSourceDumps();
 });
 
 /* ----------------------------------------------------
