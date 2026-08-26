@@ -106,86 +106,47 @@
 
       <!-- View: DASHBOARD -->
       <section id="view-dashboard" class="view-section active">
-        <!-- KPI Row with Interactive Hover Popovers -->
+        <!-- KPI Row -->
         <div class="kpi-grid">
-          <!-- Card 1: Totale Progetti -->
           <div class="kpi-card" id="kpiCardTotalProjects">
             <div class="kpi-info">
               <span>Totale Progetti</span>
               <h3 id="kpiTotalProjects">36</h3>
               <p>Progetti censiti nel sistema MP95</p>
-              <div class="kpi-hover-hint"><i class="fa-solid fa-circle-info"></i> Passa sopra per dettagli</div>
             </div>
             <div class="kpi-icon"><i class="fa-solid fa-folder-open"></i></div>
-            
-            <!-- Hover Popover -->
-            <div class="kpi-popover" id="kpiPopoverTotalProjects">
-              <!-- Rendered dynamically by app.js -->
-            </div>
           </div>
-
-          <!-- Card 2: Progetti In Corso / Attivi -->
           <div class="kpi-card kpi-active" id="kpiCardActiveProjects">
             <div class="kpi-info">
               <span>Progetti In Corso</span>
               <h3 id="kpiActiveProjects">18</h3>
               <p>Attivamente in sviluppo</p>
-              <div class="kpi-hover-hint"><i class="fa-solid fa-circle-info"></i> Passa sopra per dettagli</div>
             </div>
             <div class="kpi-icon"><i class="fa-solid fa-spinner"></i></div>
-
-            <!-- Hover Popover -->
-            <div class="kpi-popover" id="kpiPopoverActiveProjects">
-              <!-- Rendered dynamically by app.js -->
-            </div>
           </div>
-
-          <!-- Card 3: Coordinatori / PM -->
           <div class="kpi-card kpi-blue" id="kpiCardCoordinators">
             <div class="kpi-info">
               <span>Coordinatori / PM</span>
               <h3 id="kpiTotalPMs">5</h3>
               <p>Gestori delle risorse</p>
-              <div class="kpi-hover-hint"><i class="fa-solid fa-circle-info"></i> Passa sopra per dettagli</div>
             </div>
             <div class="kpi-icon"><i class="fa-solid fa-users"></i></div>
-
-            <!-- Hover Popover -->
-            <div class="kpi-popover" id="kpiPopoverCoordinators">
-              <!-- Rendered dynamically by app.js -->
-            </div>
           </div>
-
-          <!-- Card 4: Effort Medio Progetto -->
           <div class="kpi-card" id="kpiCardAvgEffort">
             <div class="kpi-info">
               <span>Effort Medio Progetto</span>
               <h3 id="kpiAvgEffort">16.4%</h3>
               <p>Allocazione media per progetto</p>
-              <div class="kpi-hover-hint"><i class="fa-solid fa-circle-info"></i> Passa sopra per dettagli</div>
             </div>
             <div class="kpi-icon"><i class="fa-solid fa-percent"></i></div>
-
-            <!-- Hover Popover (aligned right to prevent screen overflow) -->
-            <div class="kpi-popover popover-right" id="kpiPopoverAvgEffort">
-              <!-- Rendered dynamically by app.js -->
-            </div>
           </div>
-
-          <!-- Card 5: A Rischio / In Ritardo -->
           <div class="kpi-card" id="kpiCardAtRisk" style="border-left: 3px solid var(--danger);">
             <div class="kpi-info">
               <span>A Rischio / In Ritardo</span>
               <h3 id="kpiAtRisk" style="color:var(--danger);">0</h3>
               <p>Progetti con tempistiche critiche</p>
-              <div class="kpi-hover-hint"><i class="fa-solid fa-triangle-exclamation" style="color:var(--danger);"></i> Passa sopra per i progetti</div>
             </div>
             <div class="kpi-icon" style="color:var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i></div>
-
-            <!-- Hover Popover (aligned right to prevent screen overflow) -->
-            <div class="kpi-popover popover-right" id="kpiPopoverAtRisk">
-              <!-- Rendered dynamically by app.js -->
-            </div>
           </div>
         </div>
 

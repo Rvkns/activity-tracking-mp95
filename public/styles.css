@@ -296,7 +296,6 @@ header.topbar {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1.25rem;
-  overflow: visible;
 }
 
 .kpi-card {
@@ -316,8 +315,6 @@ header.topbar {
 .kpi-card:hover {
   transform: translateY(-2px);
   border-color: var(--border-color-light);
-  z-index: 70;
-  overflow: visible;
 }
 
 .kpi-card::before {
