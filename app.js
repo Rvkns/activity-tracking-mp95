@@ -1917,6 +1917,59 @@ function closeAddCoordinatorModal() {
 ---------------------------------------------------- */
 let currentCalendarDate = new Date();
 let currentTimelineViewMode = 'gantt'; // 'gantt' or 'calendar'
+let currentTimelineTypeFilter = 'roadmap'; // 'roadmap', 'continuous', or 'all'
+
+/**
+ * Identifies whether an activity is continuous / maintenance / ad-hoc spot support (AMS / BAU).
+ */
+function isContinuousActivity(p) {
+  if (!p) return false;
+  const st = (p.stato || '').toLowerCase().trim();
+  if (st === 'manutenzione' || st === 'attività periodica' || st === 'attivita periodica') return true;
+  if (st.includes('manutenz') || st.includes('periodica') || st.includes('spot') || st.includes('supporto')) return true;
+  const name = (p.progetto || '').toLowerCase();
+  if (name.includes('estrazion') || name.includes('ticket') || name.includes('backlog bearit') || name.includes('support')) return true;
+  return false;
+}
+
+function isRoadmapProject(p) {
+  return !isContinuousActivity(p);
+}
+
+function getContinuousTaskIcon(p) {
+  const name = (p.progetto || '').toLowerCase();
+  const st = (p.stato || '').toLowerCase();
+  if (name.includes('estrazion') || name.includes('data') || name.includes('kpi') || name.includes('survey')) {
+    return 'fa-solid fa-database';
+  }
+  if (name.includes('ticket') || name.includes('support') || name.includes('help')) {
+    return 'fa-solid fa-headset';
+  }
+  if (st.includes('periodica') || name.includes('fatturazion') || name.includes('chiusur')) {
+    return 'fa-solid fa-rotate';
+  }
+  return 'fa-solid fa-wrench';
+}
+
+function updateTimelineBadges() {
+  const activeProjects = projects.filter(p => !isProjectCompleted(p));
+  const roadmapPrjs = activeProjects.filter(isRoadmapProject);
+  const continuousPrjs = activeProjects.filter(isContinuousActivity);
+
+  const roadmapBadge = document.getElementById('roadmapCountBadge');
+  const continuousBadge = document.getElementById('continuousCountBadge');
+  const allBadge = document.getElementById('allTimelineCountBadge');
+  const totalBAUBadge = document.getElementById('continuousTotalBAUEffortBadge');
+
+  if (roadmapBadge) roadmapBadge.textContent = roadmapPrjs.length;
+  if (continuousBadge) continuousBadge.textContent = continuousPrjs.length;
+  if (allBadge) allBadge.textContent = activeProjects.length;
+
+  const totalBAUEffort = continuousPrjs.reduce((sum, p) => sum + (p.effort || 0), 0);
+  if (totalBAUBadge) {
+    totalBAUBadge.textContent = `Totale Capacità BAU: ${totalBAUEffort}%`;
+  }
+}
 
 function initTimelineView() {
   const pmFilter = document.getElementById('timelinePmFilter');
@@ -1924,6 +1977,23 @@ function initTimelineView() {
 
   if (pmFilter) pmFilter.addEventListener('change', refreshTimelineView);
   if (statusFilter) statusFilter.addEventListener('change', refreshTimelineView);
+
+  // Type Filter Tabs: Roadmap vs Continuous vs All
+  const typeButtons = [
+    document.getElementById('timelineFilterRoadmapBtn'),
+    document.getElementById('timelineFilterContinuousBtn'),
+    document.getElementById('timelineFilterAllBtn')
+  ];
+
+  typeButtons.forEach(btn => {
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      typeButtons.forEach(b => b && b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTimelineTypeFilter = btn.getAttribute('data-type-filter') || 'roadmap';
+      refreshTimelineView();
+    });
+  });
 
   const toggleGanttBtn = document.getElementById('toggleGanttViewBtn');
   const toggleCalendarBtn = document.getElementById('toggleCalendarViewBtn');
@@ -1990,11 +2060,32 @@ function refreshTimelineView() {
 }
 
 function renderGanttChart() {
+  updateTimelineBadges();
+
+  const ganttCard = document.getElementById('ganttChartCard');
+  const continuousPanel = document.getElementById('continuousPanelSection');
   const container = document.getElementById('ganttChartContainer');
+
   if (!container) return;
 
-  const pmFilterVal = (document.getElementById('timelinePmFilter').value || '').toLowerCase();
-  const statusFilterVal = (document.getElementById('timelineStatusFilter').value || '').toLowerCase();
+  // Control visibility according to currentTimelineTypeFilter
+  if (currentTimelineTypeFilter === 'continuous') {
+    if (ganttCard) ganttCard.style.display = 'none';
+    if (continuousPanel) continuousPanel.style.display = 'flex';
+    renderContinuousActivitiesPanel();
+    return;
+  } else if (currentTimelineTypeFilter === 'roadmap') {
+    if (ganttCard) ganttCard.style.display = 'block';
+    if (continuousPanel) continuousPanel.style.display = 'none';
+  } else {
+    // 'all'
+    if (ganttCard) ganttCard.style.display = 'block';
+    if (continuousPanel) continuousPanel.style.display = 'flex';
+    renderContinuousActivitiesPanel();
+  }
+
+  const pmFilterVal = (document.getElementById('timelinePmFilter')?.value || '').toLowerCase();
+  const statusFilterVal = (document.getElementById('timelineStatusFilter')?.value || '').toLowerCase();
 
   const currentYear = new Date().getFullYear();
   const months = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giug', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
@@ -2007,7 +2098,7 @@ function renderGanttChart() {
   let html = `
     <div class="gantt-grid">
       <div class="gantt-header-row">
-        <div>Coordinatore / Attività</div>
+        <div>Coordinatore / Progetto</div>
         ${months.map(m => `<div>${m} ${currentYear}</div>`).join('')}
       </div>
   `;
@@ -2015,6 +2106,9 @@ function renderGanttChart() {
   coordsToDisplay.forEach(coord => {
     const pmName = coord.name;
     let pmProjects = getProjectsForCoordinator(pmName);
+
+    // Only include Roadmap projects in the Gantt timeline
+    pmProjects = pmProjects.filter(p => isRoadmapProject(p));
 
     if (statusFilterVal) {
       pmProjects = pmProjects.filter(p => p.stato.toLowerCase().includes(statusFilterVal));
@@ -2028,7 +2122,7 @@ function renderGanttChart() {
       <div class="gantt-coord-group">
         <div class="gantt-coord-title">
           <span><i class="fa-solid fa-user-tie"></i> ${pmName} (${coord.reparto || 'Generale'})</span>
-          <span style="font-size:0.78rem; font-weight:700; color:var(--text-muted);">${pmProjects.length} attività temporali</span>
+          <span style="font-size:0.78rem; font-weight:700; color:var(--text-muted);">${pmProjects.length} progetti con roadmap</span>
         </div>
     `;
 
@@ -2064,9 +2158,9 @@ function renderGanttChart() {
             </div>
           </div>
           <div class="gantt-timeline-track">
-            <div class="gantt-bar" style="left:${leftPct}%; width:${widthPct}%;" onclick="openEditProjectModal('${p.id}')" title="Attività: ${p.progetto} (${effortVal}% effort, Avanzamento ${avPct}%)\nDal ${startDate.toLocaleDateString('it-IT')} al ${endDate.toLocaleDateString('it-IT')}">
-              <span>${p.progetto.length > 18 ? p.progetto.slice(0, 16) + '...' : p.progetto}</span>
-              <span>${effortVal}%</span>
+            <div class="gantt-bar" style="left:${leftPct}%; width:${widthPct}%;" onclick="openEditProjectModal('${p.id}')" title="Progetto: ${p.progetto} (${effortVal}% effort, Avanzamento ${avPct}%)\nDal ${startDate.toLocaleDateString('it-IT')} al ${endDate.toLocaleDateString('it-IT')}">
+              <span>${p.progetto.length > 20 ? p.progetto.slice(0, 18) + '...' : p.progetto}</span>
+              <span>${effortVal}% (${avPct}%)</span>
             </div>
           </div>
         </div>
@@ -2081,14 +2175,110 @@ function renderGanttChart() {
   if (totalTasksRendered === 0) {
     container.innerHTML = `
       <div style="text-align:center; padding:3rem 1.5rem; color:var(--text-muted);">
-        <i class="fa-solid fa-calendar-xmark" style="font-size:2.5rem; color:var(--mp95-orange); margin-bottom:1rem;"></i>
-        <h4 style="margin:0 0 0.5rem 0; font-size:1.1rem; color:var(--text-main);">Nessuna attività temporale trovata</h4>
+        <i class="fa-solid fa-route" style="font-size:2.5rem; color:var(--mp95-blue); margin-bottom:1rem;"></i>
+        <h4 style="margin:0 0 0.5rem 0; font-size:1.1rem; color:var(--text-main);">Nessun progetto con roadmap trovato</h4>
         <p style="font-size:0.88rem; color:var(--text-dim); max-width:480px; margin:0 auto 1.25rem auto;">
-          Nessun progetto soddisfa i filtri selezionati. Prova a selezionare "Tutti i Coordinatori" oppure aggiungi una nuova attività temporale!
+          Nessun progetto a milestone soddisfa i filtri selezionati. Puoi visualizzare le attività continue dal pulsante "Manutenzioni & Spot".
         </p>
         <button class="btn btn-primary btn-sm" onclick="openCreateProjectModal()">
-          <i class="fa-solid fa-plus"></i> Nuova Attività Temporale
+          <i class="fa-solid fa-plus"></i> Nuovo Progetto a Roadmap
         </button>
+      </div>
+    `;
+  } else {
+    container.innerHTML = html;
+  }
+}
+
+/**
+ * Formats a date value (string or Date) into YYYY-MM-DD using local timezone to avoid UTC offset shifts.
+ */
+function formatLocalDateISO(dateVal) {
+  if (!dateVal) return '';
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return '';
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function renderContinuousActivitiesPanel() {
+  const container = document.getElementById('continuousActivitiesContainer');
+  if (!container) return;
+
+  const pmFilterVal = (document.getElementById('timelinePmFilter')?.value || '').toLowerCase();
+  const statusFilterVal = (document.getElementById('timelineStatusFilter')?.value || '').toLowerCase();
+
+  const allCoordinatorsList = getAllCoordinators();
+  const coordsToDisplay = allCoordinatorsList.filter(c => !pmFilterVal || c.name.toLowerCase().includes(pmFilterVal));
+
+  let html = '';
+  let totalCardsCount = 0;
+
+  coordsToDisplay.forEach(coord => {
+    const pmName = coord.name;
+    let pmProjects = getProjectsForCoordinator(pmName).filter(p => !isProjectCompleted(p));
+
+    // Only include continuous/maintenance/spot activities
+    let continuousTasks = pmProjects.filter(p => isContinuousActivity(p));
+
+    if (statusFilterVal) {
+      continuousTasks = continuousTasks.filter(p => p.stato.toLowerCase().includes(statusFilterVal));
+    }
+
+    if (continuousTasks.length === 0) return;
+
+    totalCardsCount++;
+    const totalCoordBAUEffort = continuousTasks.reduce((sum, p) => sum + (p.effort || 0), 0);
+
+    html += `
+      <div class="continuous-coord-card">
+        <div class="continuous-coord-head">
+          <div class="continuous-coord-info">
+            <h4><i class="fa-solid fa-user-tie" style="color:var(--mp95-blue);"></i> ${pmName}</h4>
+            <p>${coord.reparto || 'Area Generale'} • ${continuousTasks.length} attività continuative</p>
+          </div>
+          <span class="continuous-effort-badge" title="Totale effort assorbito da manutenzioni ed attività continuative">
+            Effort BAU: ${totalCoordBAUEffort}%
+          </span>
+        </div>
+
+        <div class="continuous-item-list">
+          ${continuousTasks.map(p => {
+            const iconClass = getContinuousTaskIcon(p);
+            const effortVal = p.effort || 0;
+            const resName = p.risorsa || 'Team';
+            return `
+              <div class="continuous-task-item" onclick="openEditProjectModal('${p.id}')" title="Fai clic per modificare ${p.progetto}\nRisorsa: ${resName}\nEffort: ${effortVal}%">
+                <div class="continuous-task-main">
+                  <div class="continuous-task-name">
+                    <i class="${iconClass}" style="color:#06B6D4; margin-right:0.35rem; font-size:0.8rem;"></i> ${p.progetto}
+                  </div>
+                  <div class="continuous-task-sub">
+                    <span class="badge ${getBadgeClass(p.stato)}" style="font-size:0.65rem; padding:0.1rem 0.35rem;">${p.stato}</span>
+                    <span><i class="fa-solid fa-user" style="font-size:0.65rem;"></i> ${resName}</span>
+                  </div>
+                </div>
+                <div class="continuous-task-right">
+                  <span class="continuous-effort-pill">${effortVal}%</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  });
+
+  if (totalCardsCount === 0) {
+    container.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align:center; padding:2.5rem 1.5rem; color:var(--text-muted); background:var(--bg-card); border:1px dashed var(--border-color); border-radius:var(--radius-lg);">
+        <i class="fa-solid fa-wrench" style="font-size:2.2rem; color:#06B6D4; margin-bottom:0.75rem;"></i>
+        <h4 style="margin:0 0 0.4rem 0; font-size:1.05rem; color:var(--text-main);">Nessuna attività di manutenzione o spot trovata</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin:0 auto;">
+          Nessuna attività continuativa soddisfa i filtri impostati.
+        </p>
       </div>
     `;
   } else {
@@ -2099,6 +2289,7 @@ function renderGanttChart() {
 function renderCalendarGrid() {
   const container = document.getElementById('calendarGridContainer');
   const titleEl = document.getElementById('calendarMonthTitle');
+  const sidebarContainer = document.getElementById('calendarContinuousListContainer');
   if (!container) return;
 
   const year = currentCalendarDate.getFullYear();
@@ -2106,18 +2297,57 @@ function renderCalendarGrid() {
   const monthNames = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
   
   if (titleEl) {
-    titleEl.innerHTML = `<i class="fa-solid fa-calendar-days" style="color:var(--mp95-orange);"></i> Calendario Attività MP95 — ${monthNames[month]} ${year}`;
+    titleEl.innerHTML = `<i class="fa-solid fa-calendar-days" style="color:var(--mp95-orange);"></i> Calendario Rilasci & Scadenze Progetti — ${monthNames[month]} ${year}`;
   }
 
-  const pmFilterVal = (document.getElementById('timelinePmFilter').value || '').toLowerCase();
-  const statusFilterVal = (document.getElementById('timelineStatusFilter').value || '').toLowerCase();
+  const pmFilterVal = (document.getElementById('timelinePmFilter')?.value || '').toLowerCase();
+  const statusFilterVal = (document.getElementById('timelineStatusFilter')?.value || '').toLowerCase();
 
-  let filteredProjects = projects;
+  let filteredProjects = projects.filter(p => !isProjectCompleted(p));
   if (pmFilterVal) {
     filteredProjects = filteredProjects.filter(p => sanitizeProjectPM(p.pm).toLowerCase().includes(pmFilterVal));
   }
   if (statusFilterVal) {
     filteredProjects = filteredProjects.filter(p => p.stato.toLowerCase().includes(statusFilterVal));
+  }
+
+  // Filter roadmap projects for the calendar day cells
+  const roadmapPrjs = filteredProjects.filter(isRoadmapProject);
+  const continuousPrjs = filteredProjects.filter(isContinuousActivity);
+
+  // Render Calendar Companion Sidebar (Continuous Activities)
+  if (sidebarContainer) {
+    const totalBAUMonthEffort = continuousPrjs.reduce((sum, p) => sum + (p.effort || 0), 0);
+    let sidebarHtml = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem; font-size:0.8rem;">
+        <span style="color:var(--text-dim);">${continuousPrjs.length} attività continuative</span>
+        <span style="font-weight:800; color:#06B6D4;">${totalBAUMonthEffort}% effort</span>
+      </div>
+    `;
+
+    if (continuousPrjs.length === 0) {
+      sidebarHtml += `
+        <div style="font-size:0.8rem; color:var(--text-dim); text-align:center; padding:1.5rem 0.5rem;">
+          Nessuna attività continuativa attiva per i filtri selezionati.
+        </div>
+      `;
+    } else {
+      sidebarHtml += continuousPrjs.map(p => `
+        <div class="continuous-task-item" style="padding:0.5rem 0.65rem;" onclick="openEditProjectModal('${p.id}')" title="${p.progetto} (${p.pm}) - ${p.effort}% effort">
+          <div class="continuous-task-main">
+            <div class="continuous-task-name" style="font-size:0.78rem;">
+              <i class="${getContinuousTaskIcon(p)}" style="color:#06B6D4; margin-right:0.3rem;"></i> ${p.progetto}
+            </div>
+            <div class="continuous-task-sub" style="font-size:0.68rem;">
+              <span>${p.pm}</span>
+              ${p.risorsa ? `• ${p.risorsa}` : ''}
+            </div>
+          </div>
+          <span class="continuous-effort-pill" style="font-size:0.72rem; padding:0.1rem 0.35rem;">${p.effort}%</span>
+        </div>
+      `).join('');
+    }
+    sidebarContainer.innerHTML = sidebarHtml;
   }
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -2145,10 +2375,11 @@ function renderCalendarGrid() {
     const isToday = today.getDate() === d && today.getMonth() === month && today.getFullYear() === year;
     const dayDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 
-    const dayProjects = filteredProjects.filter(p => {
+    // Only milestone/roadmap projects with dates matching this day using local timezone format
+    const dayProjects = roadmapPrjs.filter(p => {
       if (!p.scadenza && !p.data_inizio) return false;
-      const startStr = p.data_inizio ? String(p.data_inizio).slice(0, 10) : '';
-      const endStr = p.scadenza ? String(p.scadenza).slice(0, 10) : '';
+      const startStr = formatLocalDateISO(p.data_inizio);
+      const endStr = formatLocalDateISO(p.scadenza);
       return startStr === dayDateStr || endStr === dayDateStr;
     });
 
@@ -2159,7 +2390,7 @@ function renderCalendarGrid() {
           ${isToday ? `<span style="font-size:0.65rem; font-weight:800; color:var(--mp95-orange);">OGGI</span>` : ''}
         </div>
         ${dayProjects.map(p => `
-          <div class="calendar-project-pill" onclick="openEditProjectModal('${p.id}')" title="${p.progetto} (${p.pm}) - ${p.effort}% effort">
+          <div class="calendar-project-pill" onclick="openEditProjectModal('${p.id}')" title="${p.progetto} (${p.pm}) - ${p.effort}% effort\nData Inizio: ${p.data_inizio ? formatLocalDateISO(p.data_inizio) : 'N/D'}\nScadenza: ${p.scadenza ? formatLocalDateISO(p.scadenza) : 'N/D'}">
             ${p.progetto.length > 14 ? p.progetto.slice(0, 12) + '..' : p.progetto} (${p.effort}%)
           </div>
         `).join('')}

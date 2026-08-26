@@ -526,7 +526,7 @@
             <div>
               <h3 style="margin:0; font-size:1.1rem; color:var(--text-main);">Governance Temporale & Monitoraggio Attività</h3>
               <p style="margin:0.25rem 0 0 0; font-size:0.85rem; color:var(--text-muted);">
-                Monitora la durata temporale di ciascun progetto, le date di inizio/scadenza, l'avanzamento ed i picchi di effort nel tempo per ogni Coordinatore.
+                Monitora la roadmap temporale dei progetti con milestone e la quota di capacità dedicata a manutenzione continua ed estrazioni spot.
               </p>
             </div>
           </div>
@@ -540,14 +540,27 @@
           </div>
         </div>
 
-        <!-- Filter Bar -->
+        <!-- Filter & Scope Bar -->
         <div class="card" style="margin-bottom:1.5rem; padding:1rem 1.25rem;">
           <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:1rem;">
+            <!-- Scope Filter Tabs: Roadmap vs Continuous vs All -->
+            <div class="timeline-type-tabs">
+              <button type="button" class="timeline-tab-btn active" data-type-filter="roadmap" id="timelineFilterRoadmapBtn">
+                <i class="fa-solid fa-route"></i> Roadmap Progetti <span class="tab-badge" id="roadmapCountBadge">0</span>
+              </button>
+              <button type="button" class="timeline-tab-btn" data-type-filter="continuous" id="timelineFilterContinuousBtn">
+                <i class="fa-solid fa-wrench"></i> Manutenzioni & Spot <span class="tab-badge" id="continuousCountBadge">0</span>
+              </button>
+              <button type="button" class="timeline-tab-btn" data-type-filter="all" id="timelineFilterAllBtn">
+                <i class="fa-solid fa-layer-group"></i> Vista Completa <span class="tab-badge" id="allTimelineCountBadge">0</span>
+              </button>
+            </div>
+
             <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
-              <select id="timelinePmFilter" class="form-select" style="min-width:220px;">
+              <select id="timelinePmFilter" class="form-select" style="min-width:210px;">
                 <option value="">Tutti i Coordinatori</option>
               </select>
-              <select id="timelineStatusFilter" class="form-select" style="min-width:160px;">
+              <select id="timelineStatusFilter" class="form-select" style="min-width:150px;">
                 <option value="">Tutti gli Stati</option>
                 <option value="In corso">In corso</option>
                 <option value="Manutenzione">Manutenzione</option>
@@ -556,36 +569,80 @@
                 <option value="Da iniziare">Da iniziare</option>
                 <option value="Attività periodica">Attività periodica</option>
               </select>
+              <button class="btn btn-primary btn-sm" onclick="openCreateProjectModal()">
+                <i class="fa-solid fa-plus"></i> Nuova Attività
+              </button>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="openCreateProjectModal()">
-              <i class="fa-solid fa-plus"></i> Nuova Attività Temporale
-            </button>
           </div>
         </div>
 
         <!-- Gantt View Container -->
-        <div id="ganttViewSection" class="card">
-          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-            <h3><i class="fa-solid fa-chart-gantt" style="color:var(--mp95-blue);"></i> Vista Timeline Gantt Attività</h3>
-            <span style="font-size:0.8rem; color:var(--text-dim);">Fai clic su un'attività per modificarne le date o l'effort</span>
+        <div id="ganttViewSection">
+          <!-- Section 1: Gantt Chart for Roadmap Projects -->
+          <div class="card" id="ganttChartCard">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+              <h3><i class="fa-solid fa-chart-gantt" style="color:var(--mp95-blue);"></i> Roadmap Temporale Progetti (Delivery & Milestone)</h3>
+              <span style="font-size:0.8rem; color:var(--text-dim);">Fai clic su una barra per modificare date o effort</span>
+            </div>
+            <div id="ganttChartContainer" style="overflow-x:auto; margin-top:1rem;">
+              <!-- Rendered dynamically by app.js -->
+            </div>
           </div>
-          <div id="ganttChartContainer" style="overflow-x:auto; margin-top:1rem;">
-            <!-- Rendered dynamically by app.js -->
+
+          <!-- Section 2: Dedicated Continuous & Maintenance / Spot Panel (BAU) -->
+          <div class="continuous-panel-container" id="continuousPanelSection">
+            <div class="continuous-header-card">
+              <div>
+                <h3 style="margin:0; font-size:1.1rem; color:var(--text-main); display:flex; align-items:center; gap:0.5rem;">
+                  <i class="fa-solid fa-gears" style="color:#06B6D4;"></i> Attività Continue, Manutenzioni & Estrazioni Spot (AMS / BAU)
+                </h3>
+                <p style="margin:0.25rem 0 0 0; font-size:0.84rem; color:var(--text-muted);">
+                  Attività continuative ad assorbimento costante di capacità. Non hanno una data di fine progetto fissa e garantiscono la continuità operativa.
+                </p>
+              </div>
+              <div style="display:flex; align-items:center; gap:0.6rem;">
+                <span id="continuousTotalBAUEffortBadge" class="continuous-effort-badge" style="font-size:0.85rem; padding:0.35rem 0.8rem;">
+                  Totale Capacità BAU: 0%
+                </span>
+              </div>
+            </div>
+
+            <div id="continuousActivitiesContainer" class="continuous-coord-grid">
+              <!-- Rendered dynamically by app.js -->
+            </div>
           </div>
         </div>
 
         <!-- Calendar View Container (Hidden by default) -->
-        <div id="calendarViewSection" class="card" style="display:none;">
-          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-            <h3 id="calendarMonthTitle"><i class="fa-solid fa-calendar-days" style="color:var(--mp95-orange);"></i> Calendario Attività MP95</h3>
-            <div style="display:flex; gap:0.5rem;">
-              <button id="prevMonthBtn" class="btn btn-secondary btn-sm"><i class="fa-solid fa-chevron-left"></i> Mese Prec.</button>
-              <button id="todayMonthBtn" class="btn btn-secondary btn-sm">Mese Corrente</button>
-              <button id="nextMonthBtn" class="btn btn-secondary btn-sm">Mese Succ. <i class="fa-solid fa-chevron-right"></i></button>
+        <div id="calendarViewSection" style="display:none;">
+          <div class="calendar-layout-wrapper">
+            <!-- Main Calendar Grid Card -->
+            <div class="card">
+              <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 id="calendarMonthTitle"><i class="fa-solid fa-calendar-days" style="color:var(--mp95-orange);"></i> Calendario Rilasci & Scadenze Progetti</h3>
+                <div style="display:flex; gap:0.5rem;">
+                  <button id="prevMonthBtn" class="btn btn-secondary btn-sm"><i class="fa-solid fa-chevron-left"></i> Mese Prec.</button>
+                  <button id="todayMonthBtn" class="btn btn-secondary btn-sm">Mese Corrente</button>
+                  <button id="nextMonthBtn" class="btn btn-secondary btn-sm">Mese Succ. <i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+              </div>
+              <div id="calendarGridContainer" style="margin-top:1rem;">
+                <!-- Rendered dynamically by app.js -->
+              </div>
             </div>
-          </div>
-          <div id="calendarGridContainer" style="margin-top:1rem;">
-            <!-- Rendered dynamically by app.js -->
+
+            <!-- Calendar Companion Sidebar: Active Continuous & Maintenance Tasks -->
+            <div class="calendar-sidebar-card">
+              <div class="calendar-sidebar-head">
+                <h4><i class="fa-solid fa-wrench" style="color:#06B6D4;"></i> Attività Continue del Mese</h4>
+                <p style="margin:0.25rem 0 0 0; font-size:0.75rem; color:var(--text-dim);">
+                  Manutenzioni ed estrazioni spot sempre attive in parallelo ai progetti.
+                </p>
+              </div>
+              <div id="calendarContinuousListContainer" style="display:flex; flex-direction:column; gap:0.55rem;">
+                <!-- Rendered dynamically by app.js -->
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -887,37 +944,44 @@
           <!-- Section 9: Timeline -->
           <div class="wiki-section-card" id="wiki-timeline">
             <h3><i class="fa-solid fa-calendar-days" style="color:var(--mp95-blue);"></i> 9. Timeline Gantt & Calendario</h3>
-            <p>La sezione <b>Timeline & Calendario</b> offre due viste complementari per la governance temporale delle attività.</p>
+            <p>La sezione <b>Timeline & Calendario</b> offre viste complementari per la governance temporale delle attività, separando nettamente i <b>Progetti con Roadmap</b> dalle <b>Attività Continue & Manutenzioni / Spot</b>.</p>
 
-            <p style="font-weight:700; margin-top:1rem; color:var(--mp95-blue);"><i class="fa-solid fa-chart-gantt"></i> Vista Gantt (default):</p>
+            <p style="font-weight:700; margin-top:1rem; color:var(--mp95-blue);"><i class="fa-solid fa-chart-gantt"></i> Vista Roadmap Progetti (Gantt):</p>
             <div class="wiki-feature-box">
               <ul style="margin-left:1.2rem; line-height:1.8;">
-                <li>I progetti sono visualizzati come <b>barre orizzontali colorate</b> disposte lungo una griglia di 12 mesi (Gen — Dic dell'anno corrente).</li>
-                <li>Le barre sono raggruppate per <b>Coordinatore</b>: ogni gruppo mostra il nome del PM, il reparto e il numero di attività temporali.</li>
-                <li>Ogni barra mostra il <b>nome del progetto</b> e la <b>percentuale di effort</b>.</li>
-                <li><b>Passando il mouse</b> su una barra, appare un tooltip con dettagli completi (effort, avanzamento, date inizio e fine).</li>
+                <li>Mostra esclusivamente i <b>progetti di sviluppo e delivery con data inizio/fine o milestone</b>, senza ingombrare la visuale con barre fittizie per le manutenzioni.</li>
+                <li>I progetti sono visualizzati come <b>barre orizzontali graduate</b> disposte lungo la griglia dei 12 mesi dell'anno corrente.</li>
+                <li>Le barre sono raggruppate per <b>Coordinatore</b>: ogni gruppo mostra il PM, il reparto e il conteggio dei progetti attivi.</li>
+                <li>Ogni barra indica il <b>nome del progetto</b>, l'<b>effort (%)</b> e l'<b>avanzamento (%)</b>.</li>
                 <li><b>Cliccando</b> su una barra, si apre direttamente il form di modifica del progetto.</li>
-                <li>I progetti senza data inizio o scadenza vengono visualizzati come barre che coprono l'intero anno.</li>
               </ul>
             </div>
 
-            <p style="font-weight:700; margin-top:1rem; color:var(--mp95-orange);"><i class="fa-solid fa-calendar-week"></i> Vista Calendario Mensile:</p>
+            <p style="font-weight:700; margin-top:1rem; color:#06B6D4;"><i class="fa-solid fa-gears"></i> Pannello Attività Continue, Manutenzioni & Spot (AMS / BAU):</p>
+            <div class="wiki-feature-box" style="border-left-color:#06B6D4;">
+              <ul style="margin-left:1.2rem; line-height:1.8;">
+                <li>Raccoglie in card dedicate per Coordinatore tutte le attività a flusso continuo (<b>Manutenzione applicativa</b>, <b>Estrazioni Dati Spot</b>, <b>Attività periodiche</b> e supporto operativo).</li>
+                <li>Evidenzia il <b>Totale Capacità BAU (%)</b> assorbito da ciascun team e risorsa.</li>
+                <li>Ogni voce include badge di stato, risorsa assegnata, percentuale di effort allocata e accesso con click alla modifica.</li>
+              </ul>
+            </div>
+
+            <p style="font-weight:700; margin-top:1rem; color:var(--mp95-orange);"><i class="fa-solid fa-calendar-week"></i> Vista Calendario Mensile con Companion Sidebar:</p>
             <div class="wiki-feature-box orange">
               <ul style="margin-left:1.2rem; line-height:1.8;">
-                <li>Clicca il pulsante <b>"Calendario Mensile"</b> nella barra superiore della sezione Timeline per passare alla vista calendario.</li>
-                <li>Il calendario mostra un mese alla volta con evidenziato il <b>giorno corrente</b> (con etichetta "OGGI").</li>
-                <li>I progetti con data di inizio o scadenza che coincidono con un giorno specifico vengono visualizzati come <b>pillole colorate</b> dentro la cella del giorno.</li>
+                <li>Clicca il pulsante <b>"Calendario Mensile"</b> nella barra superiore per passare alla vista calendario.</li>
+                <li>La griglia mensile mostra <b>esclusivamente le scadenze e gli avvii effettivi dei progetti</b>, mantenendo le caselle dei giorni ordinate e leggibili.</li>
+                <li>Il pannello laterale <b>"Attività Continue del Mese"</b> elenca in tempo reale le manutenzioni e le estrazioni spot attive in background con il loro peso di effort.</li>
                 <li>Usa i pulsanti <b>"◄ Mese Prec."</b>, <b>"Mese Corrente"</b> e <b>"Mese Succ. ►"</b> per navigare tra i mesi.</li>
-                <li>Cliccando su una pillola-progetto nel calendario, si apre il form di modifica.</li>
               </ul>
             </div>
 
-            <p style="font-weight:700; margin-top:1rem;"><i class="fa-solid fa-filter"></i> Filtri della Timeline:</p>
+            <p style="font-weight:700; margin-top:1rem;"><i class="fa-solid fa-filter"></i> Filtri e Selettori della Timeline:</p>
             <div class="wiki-feature-box">
               <ul style="margin-left:1.2rem; line-height:1.8;">
-                <li><b>Filtro Coordinatore:</b> Seleziona un coordinatore specifico per vedere solo i suoi progetti nella timeline/calendario.</li>
-                <li><b>Filtro Stato:</b> Filtra per stato del progetto (In corso, Manutenzione, ecc.).</li>
-                <li>Il pulsante <b>"+ Nuova Attività Temporale"</b> apre il form di creazione progetto direttamente dalla Timeline.</li>
+                <li><b>Tab Selettore Ambito:</b> Passa istantaneamente tra <i>Roadmap Progetti</i>, <i>Manutenzioni & Spot</i> e <i>Vista Completa</i> con badge contatore.</li>
+                <li><b>Filtro Coordinatore:</b> Seleziona un coordinatore specifico per isolare le sue attività.</li>
+                <li><b>Filtro Stato:</b> Filtra per stato del progetto (In corso, Manutenzione, Da iniziare, ecc.).</li>
               </ul>
             </div>
           </div>
