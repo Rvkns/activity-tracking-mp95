@@ -485,8 +485,275 @@ function renderDashboard() {
   const kpiRisk = document.getElementById('kpiAtRisk');
   if (kpiRisk) kpiRisk.textContent = atRisk;
 
+  renderDashboardPopovers(activeProjects);
   renderStatusDistribution();
   renderPmWorkloadOverview();
+}
+
+function renderDashboardPopovers(activeProjects) {
+  const allProjects = projects;
+  const totalCount = allProjects.length;
+
+  // 1. Popover: Totale Progetti
+  const popoverTotal = document.getElementById('kpiPopoverTotalProjects');
+  if (popoverTotal) {
+    const completedCount = allProjects.filter(isProjectCompleted).length;
+    const roadmapCount = activeProjects.filter(isRoadmapProject).length;
+    const continuousCount = activeProjects.filter(isContinuousActivity).length;
+
+    // Dept counts for active projects
+    const deptMap = {};
+    activeProjects.forEach(p => {
+      const d = p.reparto || 'Non Specificato';
+      deptMap[d] = (deptMap[d] || 0) + 1;
+    });
+    const topDepts = Object.entries(deptMap).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+    popoverTotal.innerHTML = `
+      <div class="kpi-popover-head">
+        <div class="kpi-popover-title">
+          <i class="fa-solid fa-folder-open" style="color:var(--mp95-orange);"></i> Panoramica Portfolio Progetti
+        </div>
+        <span class="kpi-popover-badge badge-periodica">${totalCount} totali</span>
+      </div>
+      <div class="kpi-popover-list">
+        <div class="kpi-popover-item">
+          <span><i class="fa-solid fa-route" style="color:var(--mp95-blue); margin-right:0.35rem;"></i> Progetti a Roadmap (Delivery)</span>
+          <span style="font-weight:800; color:var(--text-main);">${roadmapCount}</span>
+        </div>
+        <div class="kpi-popover-item">
+          <span><i class="fa-solid fa-wrench" style="color:#06B6D4; margin-right:0.35rem;"></i> Manutenzioni & Spot (AMS)</span>
+          <span style="font-weight:800; color:var(--text-main);">${continuousCount}</span>
+        </div>
+        <div class="kpi-popover-item">
+          <span><i class="fa-solid fa-box-archive" style="color:var(--success); margin-right:0.35rem;"></i> Completati & Archiviati</span>
+          <span style="font-weight:800; color:var(--text-main);">${completedCount}</span>
+        </div>
+        ${topDepts.length > 0 ? `
+          <div style="font-size:0.75rem; color:var(--text-dim); margin-top:0.25rem; font-weight:700;">
+            Aree con maggior volume:
+          </div>
+          ${topDepts.map(([dName, cnt]) => `
+            <div class="kpi-popover-item" style="font-size:0.75rem; padding:0.35rem 0.6rem;">
+              <span>${dName}</span>
+              <span style="font-weight:700; color:var(--mp95-blue);">${cnt} prj</span>
+            </div>
+          `).join('')}
+        ` : ''}
+      </div>
+      <div class="kpi-popover-footer">
+        <span>Portfolio censito in MP95</span>
+        <span style="color:var(--mp95-blue); font-weight:700;">Tabella Progetti →</span>
+      </div>
+    `;
+  }
+
+  // 2. Popover: Progetti In Corso (Top progetti per effort/avanzamento)
+  const popoverActive = document.getElementById('kpiPopoverActiveProjects');
+  if (popoverActive) {
+    const topActiveProjects = [...activeProjects].sort((a, b) => (b.effort || 0) - (a.effort || 0)).slice(0, 5);
+
+    popoverActive.innerHTML = `
+      <div class="kpi-popover-head">
+        <div class="kpi-popover-title">
+          <i class="fa-solid fa-spinner" style="color:var(--success);"></i> Top Progetti Attivi per Effort
+        </div>
+        <span class="kpi-popover-badge badge-in-corso">${activeProjects.length} attivi</span>
+      </div>
+      <div class="kpi-popover-list">
+        ${topActiveProjects.map(p => `
+          <div class="kpi-popover-item clickable" onclick="openEditProjectModal('${p.id}')" title="Clicca per aprire la scheda di ${p.progetto}">
+            <div style="display:flex; flex-direction:column; gap:0.15rem; min-width:0;">
+              <span style="font-weight:700; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:230px;">
+                ${p.progetto}
+              </span>
+              <span style="font-size:0.7rem; color:var(--text-dim);">
+                ${p.pm}${p.risorsa ? ` • ${p.risorsa}` : ''}
+              </span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.15rem; flex-shrink:0;">
+              <span class="badge ${getBadgeClass(p.stato)}" style="font-size:0.65rem; padding:0.1rem 0.35rem;">${p.effort}%</span>
+              <span style="font-size:0.68rem; font-weight:700; color:var(--text-muted);">${p.avanzamento || 0}% av.</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="kpi-popover-footer">
+        <span>Fai clic su un progetto per aprirlo</span>
+        <span style="color:var(--success); font-weight:700;">Modifica rapida ✏️</span>
+      </div>
+    `;
+  }
+
+  // 3. Popover: Coordinatori / PM
+  const popoverCoords = document.getElementById('kpiPopoverCoordinators');
+  if (popoverCoords) {
+    const allCoords = getAllCoordinators();
+    const coordData = allCoords.map(c => {
+      const pmPrjs = getProjectsForCoordinator(c.name).filter(p => !isProjectCompleted(p));
+      const totalEff = pmPrjs.reduce((s, p) => s + (p.effort || 0), 0);
+      return { name: c.name, reparto: c.reparto, count: pmPrjs.length, effort: totalEff };
+    }).sort((a, b) => b.effort - a.effort);
+
+    popoverCoords.innerHTML = `
+      <div class="kpi-popover-head">
+        <div class="kpi-popover-title">
+          <i class="fa-solid fa-users" style="color:var(--mp95-blue);"></i> Carico di Lavoro Coordinatori
+        </div>
+        <span class="kpi-popover-badge badge-in-corso">${coordData.length} PM</span>
+      </div>
+      <div class="kpi-popover-list">
+        ${coordData.map(c => {
+          const isOverloaded = c.effort > 100;
+          return `
+            <div class="kpi-popover-item">
+              <div style="display:flex; flex-direction:column; gap:0.1rem;">
+                <span style="font-weight:700; color:var(--text-main); font-size:0.82rem;">${c.name}</span>
+                <span style="font-size:0.7rem; color:var(--text-dim);">${c.reparto || 'Generale'} • ${c.count} attività</span>
+              </div>
+              <span class="badge ${isOverloaded ? 'badge-terminato' : 'badge-manutenzione'}" style="font-size:0.72rem; font-weight:800;">
+                ${isOverloaded ? '⚠️ ' : ''}${c.effort}%
+              </span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+      <div class="kpi-popover-footer">
+        <span>Capacità standard: 100% per coordinatore</span>
+        <span style="color:var(--mp95-blue); font-weight:700;">Vista Coordinatori →</span>
+      </div>
+    `;
+  }
+
+  // 4. Popover: Effort Medio Progetto
+  const popoverAvg = document.getElementById('kpiPopoverAvgEffort');
+  if (popoverAvg) {
+    const totalEffort = activeProjects.reduce((acc, p) => acc + (p.effort || 0), 0);
+    const avgEffort = activeProjects.length > 0 ? (totalEffort / activeProjects.length).toFixed(1) : 0;
+    const fteVal = (totalEffort / 100).toFixed(1);
+
+    const largePrjs = activeProjects.filter(p => (p.effort || 0) >= 25).length;
+    const medPrjs = activeProjects.filter(p => (p.effort || 0) >= 10 && (p.effort || 0) < 25).length;
+    const smallPrjs = activeProjects.filter(p => (p.effort || 0) < 10).length;
+
+    popoverAvg.innerHTML = `
+      <div class="kpi-popover-head">
+        <div class="kpi-popover-title">
+          <i class="fa-solid fa-percent" style="color:var(--mp95-orange);"></i> Analisi Dimensionamento Effort
+        </div>
+        <span class="kpi-popover-badge badge-periodica">${fteVal} FTE</span>
+      </div>
+      <div class="kpi-popover-list">
+        <div class="kpi-popover-item">
+          <span><i class="fa-solid fa-chart-simple" style="color:var(--mp95-blue); margin-right:0.35rem;"></i> Effort Totale Cumulativo</span>
+          <span style="font-weight:800; color:var(--mp95-orange); font-size:0.9rem;">${totalEffort}%</span>
+        </div>
+        <div class="kpi-popover-item">
+          <span><i class="fa-solid fa-user-gear" style="color:var(--success); margin-right:0.35rem;"></i> Risorse Equivalenti a Tempo Pieno</span>
+          <span style="font-weight:800; color:var(--text-main);">${fteVal} FTE</span>
+        </div>
+        <div style="font-size:0.75rem; color:var(--text-dim); margin-top:0.25rem; font-weight:700;">
+          Ripartizione per grandezza:
+        </div>
+        <div class="kpi-popover-item" style="font-size:0.75rem; padding:0.35rem 0.6rem;">
+          <span>🔴 Progetti Grandi (≥ 25% effort)</span>
+          <span style="font-weight:700;">${largePrjs} progetti</span>
+        </div>
+        <div class="kpi-popover-item" style="font-size:0.75rem; padding:0.35rem 0.6rem;">
+          <span>🟡 Progetti Medi (10% — 24%)</span>
+          <span style="font-weight:700;">${medPrjs} progetti</span>
+        </div>
+        <div class="kpi-popover-item" style="font-size:0.75rem; padding:0.35rem 0.6rem;">
+          <span>🟢 Micro / Task leggeri (&lt; 10%)</span>
+          <span style="font-weight:700;">${smallPrjs} progetti</span>
+        </div>
+      </div>
+      <div class="kpi-popover-footer">
+        <span>Media calcolata su ${activeProjects.length} progetti attivi</span>
+        <span style="color:var(--mp95-orange); font-weight:700;">Media: ${avgEffort}%</span>
+      </div>
+    `;
+  }
+
+  // 5. Popover: A Rischio / In Ritardo (Detailed critical projects requested by user!)
+  const popoverRisk = document.getElementById('kpiPopoverAtRisk');
+  if (popoverRisk) {
+    const atRiskProjects = activeProjects.filter(p => {
+      const st = (p.stato_tempistiche || '').toLowerCase();
+      return st === 'a rischio' || st === 'in ritardo';
+    });
+
+    if (atRiskProjects.length === 0) {
+      popoverRisk.innerHTML = `
+        <div class="kpi-popover-head">
+          <div class="kpi-popover-title">
+            <i class="fa-solid fa-circle-check" style="color:var(--success);"></i> Tempistiche di Consegna
+          </div>
+          <span class="kpi-popover-badge badge-in-corso" style="background:rgba(16,185,129,0.15); color:var(--success);">0 criticità</span>
+        </div>
+        <div style="text-align:center; padding:1.5rem 0.75rem; color:var(--text-muted); font-size:0.85rem;">
+          <i class="fa-solid fa-circle-check" style="font-size:2rem; color:var(--success); margin-bottom:0.6rem; display:block;"></i>
+          <span style="font-weight:700; color:var(--text-main); display:block;">Tutti i progetti sono in linea!</span>
+          Nessuna attività presenta ritardi o segnalazioni di rischio al momento.
+        </div>
+        <div class="kpi-popover-footer">
+          <span>Monitoraggio continuo tempistiche</span>
+          <span style="color:var(--success); font-weight:700;">100% On-Track</span>
+        </div>
+      `;
+    } else {
+      popoverRisk.innerHTML = `
+        <div class="kpi-popover-head">
+          <div class="kpi-popover-title">
+            <i class="fa-solid fa-triangle-exclamation" style="color:var(--danger);"></i> Progetti con Tempistiche Critiche
+          </div>
+          <span class="kpi-popover-badge" style="background:rgba(239,68,68,0.15); color:var(--danger); border:1px solid rgba(239,68,68,0.3);">
+            ${atRiskProjects.length} critic${atRiskProjects.length === 1 ? 'ità' : 'ità'}
+          </span>
+        </div>
+        <div class="kpi-popover-list">
+          ${atRiskProjects.map(p => {
+            const isLate = (p.stato_tempistiche || '').toLowerCase().includes('ritardo');
+            const itemClass = isLate ? 'danger-item' : 'warning-item';
+            const badgeIcon = isLate ? '🔴 In ritardo' : '🟡 A rischio';
+            const deadlineFormatted = p.scadenza ? formatLocalDateISO(p.scadenza) : 'Data fine non definita';
+
+            return `
+              <div class="kpi-popover-item clickable ${itemClass}" onclick="openEditProjectModal('${p.id}')" title="Clicca per aprire ${p.progetto} e aggiornare tempistiche/criticità">
+                <div style="display:flex; flex-direction:column; gap:0.2rem; min-width:0;">
+                  <div style="font-weight:800; color:var(--text-main); font-size:0.84rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:240px;">
+                    ${p.progetto}
+                  </div>
+                  <div style="font-size:0.72rem; color:var(--text-dim); display:flex; align-items:center; gap:0.35rem; flex-wrap:wrap;">
+                    <span><i class="fa-solid fa-user-tie" style="font-size:0.68rem;"></i> ${p.pm}</span>
+                    ${p.risorsa ? `<span>• <i class="fa-solid fa-user" style="font-size:0.68rem;"></i> ${p.risorsa}</span>` : ''}
+                  </div>
+                  <div style="font-size:0.7rem; color:${isLate ? 'var(--danger)' : '#F59E0B'}; font-weight:700;">
+                    <i class="fa-regular fa-calendar"></i> Scadenza: ${deadlineFormatted}
+                  </div>
+                  ${p.criticita ? `
+                    <div style="font-size:0.68rem; color:var(--text-muted); font-style:italic; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:240px;">
+                      "${p.criticita}"
+                    </div>
+                  ` : ''}
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.25rem; flex-shrink:0;">
+                  <span style="font-size:0.68rem; font-weight:800; padding:0.15rem 0.45rem; border-radius:var(--radius-full); ${isLate ? 'background:rgba(239,68,68,0.2); color:var(--danger);' : 'background:rgba(245,158,11,0.2); color:#F59E0B;'}">
+                    ${badgeIcon}
+                  </span>
+                  <span style="font-size:0.72rem; font-weight:700; color:var(--mp95-orange);">${p.effort || 0}% effort</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+        <div class="kpi-popover-footer">
+          <span>Fai clic su un progetto per gestirlo</span>
+          <span style="color:var(--danger); font-weight:700;">Intervento richiesto ⚠️</span>
+        </div>
+      `;
+    }
+  }
 }
 
 function renderStatusDistribution() {
