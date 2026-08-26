@@ -56,6 +56,15 @@
   padding: 0;
 }
 
+head,
+script,
+style,
+meta,
+link,
+title {
+  display: none !important;
+}
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--bg-dark);

@@ -169,8 +169,34 @@ function syncResourceProjectsToProjectsTable() {
   }
 }
 
+// Ensure no rogue text nodes or raw HTML source displays on page
+function cleanRogueTextNodes() {
+  try {
+    [document.documentElement, document.head, document.body, document.getElementById('app')].forEach(parent => {
+      if (!parent) return;
+      Array.from(parent.childNodes).forEach(node => {
+        if (node.nodeType === Node.TEXT_NODE && node.textContent && (node.textContent.includes('DOCTYPE') || node.textContent.includes('<html') || node.textContent.includes('<head') || node.textContent.includes('<body'))) {
+          node.remove();
+        }
+      });
+    });
+
+    document.querySelectorAll('*').forEach(el => {
+      if (el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE' && el.children.length === 0) {
+        const txt = el.textContent || '';
+        if (txt.includes('<!DOCTYPE') || (txt.includes('<html') && txt.includes('<head>'))) {
+          el.remove();
+        }
+      }
+    });
+  } catch (e) {
+    console.warn('cleanRogueTextNodes err:', e);
+  }
+}
+
 // DOM Load
 document.addEventListener('DOMContentLoaded', async () => {
+  cleanRogueTextNodes();
   initTheme();
   initNavigation();
   initDashboard();
@@ -186,6 +212,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Load from Neon DB API — single source of truth
   // syncResourceProjectsToProjectsTable runs AFTER DB data arrives
   await fetchFromNeonDB();
+  cleanRogueTextNodes();
 });
 
 /* ----------------------------------------------------
