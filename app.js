@@ -468,8 +468,15 @@ function initDashboard() {
 function initKpiPopovers() {
   const cards = document.querySelectorAll('.kpi-card[id]');
   cards.forEach(card => {
-    const popover = card.querySelector('.kpi-popover');
+    const cardId = card.id;
+    const popoverId = cardId.replace('kpiCard', 'kpiPopover');
+    let popover = card.querySelector('.kpi-popover') || document.getElementById(popoverId);
     if (!popover) return;
+
+    // Move to body to prevent clipping from card's overflow:hidden and hover transform
+    if (popover.parentNode !== document.body) {
+      document.body.appendChild(popover);
+    }
 
     let hideTimer;
 
