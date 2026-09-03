@@ -316,6 +316,7 @@
               <option value="Stand by">Stand by</option>
               <option value="Da iniziare">Da iniziare</option>
               <option value="Attività periodica">Attività periodica</option>
+              <option value="Spot">Spot</option>
             </select>
             <select id="pmFilter" class="select-input">
               <option value="">Tutti i PM / Coordinatori</option>
@@ -597,6 +598,7 @@
                 <option value="Stand by">Stand by</option>
                 <option value="Da iniziare">Da iniziare</option>
                 <option value="Attività periodica">Attività periodica</option>
+                <option value="Spot">Spot</option>
               </select>
               <button class="btn btn-primary btn-sm" onclick="openCreateProjectModal()">
                 <i class="fa-solid fa-plus"></i> Nuova Attività
@@ -752,7 +754,7 @@
 
             <p style="margin-top:1rem; font-weight:700;">Grafici Dashboard (riga inferiore):</p>
             <ul style="margin-left:1.5rem; color:var(--text-muted); font-size:0.9rem; line-height:1.8;">
-              <li><b>📊 Distribuzione Stato Progetti:</b> Mostra quanti progetti rientrano in ciascun stato (In corso, Manutenzione, Terminato, Stand by, Da iniziare, Attività periodica) con barre di percentuale colorate.</li>
+              <li><b>📊 Distribuzione Stato Progetti:</b> Mostra quanti progetti rientrano in ciascun stato (In corso, Manutenzione, Terminato, Stand by, Da iniziare, Attività periodica, Spot) con barre di percentuale colorate.</li>
               <li><b>👤 Carico di Lavoro Coordinatori:</b> Elenca ogni risorsa/coordinatore con il suo effort totale (capacità standard 100%). Le risorse in <span style="color:var(--danger);">overload (&gt;100%)</span> sono evidenziate in rosso.</li>
             </ul>
             <div class="wiki-feature-box">
@@ -777,7 +779,7 @@
                   <tr><td style="padding:0.3rem 0.6rem;"><b>Nome Progetto</b></td><td style="padding:0.3rem 0.6rem;">Nome completo del progetto, con eventuale descrizione</td></tr>
                   <tr><td style="padding:0.3rem 0.6rem;"><b>Reparto</b></td><td style="padding:0.3rem 0.6rem;">Area aziendale (Data management, Digital, Corporate, Innovation, ecc.)</td></tr>
                   <tr><td style="padding:0.3rem 0.6rem;"><b>Risorsa</b></td><td style="padding:0.3rem 0.6rem;">Persona operativa assegnata al progetto (se presente)</td></tr>
-                  <tr><td style="padding:0.3rem 0.6rem;"><b>Stato</b></td><td style="padding:0.3rem 0.6rem;">Stato corrente: In corso, Manutenzione, Terminato, Stand by, Da iniziare, Attività periodica</td></tr>
+                  <tr><td style="padding:0.3rem 0.6rem;"><b>Stato</b></td><td style="padding:0.3rem 0.6rem;">Stato corrente: In corso, Manutenzione, Terminato, Stand by, Da iniziare, Attività periodica, Spot</td></tr>
                   <tr><td style="padding:0.3rem 0.6rem;"><b>PM / Coordinatore</b></td><td style="padding:0.3rem 0.6rem;">Il coordinatore responsabile del progetto</td></tr>
                   <tr><td style="padding:0.3rem 0.6rem;"><b>Effort %</b></td><td style="padding:0.3rem 0.6rem;">Percentuale di effort allocata (con barra di progresso visiva)</td></tr>
                   <tr><td style="padding:0.3rem 0.6rem;"><b>Avanzamento</b></td><td style="padding:0.3rem 0.6rem;">Percentuale di completamento del progetto (0-100%)</td></tr>
@@ -798,7 +800,7 @@
             <div class="wiki-feature-box">
               <ul style="margin-left:1.2rem; line-height:1.8;">
                 <li><b>🔍 Ricerca Testuale:</b> Digita nel campo di ricerca per filtrare in tempo reale per <b>nome progetto</b>, <b>nome coordinatore</b> o <b>nome risorsa</b>. La ricerca è istantanea ad ogni carattere digitato.</li>
-                <li><b>📋 Filtro Stato:</b> Seleziona uno stato specifico dal menu a tendina (In corso, Manutenzione, Terminato, Stand by, Da iniziare, Attività periodica) per visualizzare solo i progetti con quello stato.</li>
+                <li><b>📋 Filtro Stato:</b> Seleziona uno stato specifico dal menu a tendina (In corso, Manutenzione, Terminato, Stand by, Da iniziare, Attività periodica, Spot) per visualizzare solo i progetti con quello stato.</li>
                 <li><b>👤 Filtro PM / Coordinatore:</b> Seleziona un coordinatore per visualizzare solo i suoi progetti.</li>
                 <li><b>⏱️ Filtro Tempistiche:</b> Filtra per stato delle tempistiche (🟢 In linea, 🟡 A rischio, 🔴 In ritardo).</li>
                 <li><b>🏢 Filtro Reparto:</b> Filtra per area aziendale (Data management, Innovation, Digital, Corporate, Governance, Infrastructure).</li>
@@ -821,7 +823,7 @@
               </ol>
               <ul style="margin-left:2.4rem; line-height:1.8; margin-top:0.3rem;">
                 <li><b>Nome Progetto *</b> (obbligatorio) — Il nome identificativo del progetto.</li>
-                <li><b>Stato *</b> (obbligatorio) — Seleziona: In corso, Da iniziare, In fase di chiusura, Completato, In attesa, Manutenzione, Terminato, Stand by, Attività periodica.</li>
+                <li><b>Stato *</b> (obbligatorio) — Seleziona: In corso, Da iniziare, In fase di chiusura, Completato, In attesa, Manutenzione, Terminato, Stand by, Attività periodica, Spot.</li>
                 <li><b>Avanzamento %</b> — Percentuale di completamento (0-100).</li>
                 <li><b>PM / Coordinatore *</b> (obbligatorio) — Seleziona il coordinatore responsabile dall'elenco. Quando scegli un coordinatore, il campo Reparto si auto-compila con il reparto corrispondente.</li>
                 <li><b>Reparto</b> — L'area aziendale di appartenenza (auto-compilato, ma modificabile).</li>
@@ -1158,6 +1160,7 @@
               <option value="Terminato">Terminato</option>
               <option value="Stand by">Stand by</option>
               <option value="Attività periodica">Attività periodica</option>
+              <option value="Spot">Spot</option>
             </select>
           </div>
           <div class="form-group">

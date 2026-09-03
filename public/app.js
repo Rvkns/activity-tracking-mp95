@@ -853,7 +853,8 @@ function renderStatusDistribution() {
     'Terminato': 'badge-terminato',
     'Stand by': 'badge-stand-by',
     'Da iniziare': 'badge-da-iniziare',
-    'Attività periodica': 'badge-periodica'
+    'Attività periodica': 'badge-periodica',
+    'Spot': 'badge-spot'
   };
 
   container.innerHTML = '';
@@ -1316,6 +1317,7 @@ function populatePmFilterOptions() {
 
 function getBadgeClass(status) {
   const st = status.toLowerCase();
+  if (st.includes('spot')) return 'badge-spot';
   if (st.includes('in corso')) return 'badge-in-corso';
   if (st.includes('manutenzione')) return 'badge-manutenzione';
   if (st.includes('terminato')) return 'badge-terminato';
@@ -2273,7 +2275,7 @@ let currentTimelineTypeFilter = 'roadmap'; // 'roadmap', 'continuous', or 'all'
 function isContinuousActivity(p) {
   if (!p) return false;
   const st = (p.stato || '').toLowerCase().trim();
-  if (st === 'manutenzione' || st === 'attività periodica' || st === 'attivita periodica') return true;
+  if (st === 'manutenzione' || st === 'attività periodica' || st === 'attivita periodica' || st === 'spot' || st === 'attività spot' || st === 'attivita spot') return true;
   if (st.includes('manutenz') || st.includes('periodica') || st.includes('spot') || st.includes('supporto')) return true;
   const name = (p.progetto || '').toLowerCase();
   if (name.includes('estrazion') || name.includes('ticket') || name.includes('backlog bearit') || name.includes('support')) return true;
