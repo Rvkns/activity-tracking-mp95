@@ -112,7 +112,8 @@ async function initDatabase() {
         ADD COLUMN IF NOT EXISTS scadenza DATE,
         ADD COLUMN IF NOT EXISTS stato_tempistiche VARCHAR(50) DEFAULT 'In linea',
         ADD COLUMN IF NOT EXISTS criticita TEXT,
-        ADD COLUMN IF NOT EXISTS reparto VARCHAR(100);
+        ADD COLUMN IF NOT EXISTS reparto VARCHAR(100),
+        ADD COLUMN IF NOT EXISTS allocazioni JSONB;
 
       UPDATE mp95_projects SET pm = 'Serena Lacorte' WHERE pm LIKE '%Aurora Parisi%';
       UPDATE mp95_projects SET pm = 'Valerio Andreuccioli' WHERE pm LIKE '%Daniele De Dominicis%';
@@ -139,8 +140,16 @@ async function initDatabase() {
         effort_residuo NUMERIC(6,1),
         avanzamento INTEGER,
         stato_tempistiche VARCHAR(50),
+        descrizione TEXT,
+        criticita TEXT,
+        allocazioni JSONB,
         recorded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
+
+      ALTER TABLE mp95_project_history
+        ADD COLUMN IF NOT EXISTS descrizione TEXT,
+        ADD COLUMN IF NOT EXISTS criticita TEXT,
+        ADD COLUMN IF NOT EXISTS allocazioni JSONB;
 
       CREATE INDEX IF NOT EXISTS idx_mp95_project_history_project_id
         ON mp95_project_history(project_id);
@@ -149,10 +158,12 @@ async function initDatabase() {
       BEGIN
         INSERT INTO mp95_project_history (
           project_id, operation, progetto, stato, pm, risorsa, reparto,
-          effort, effort_previsto, effort_residuo, avanzamento, stato_tempistiche
+          effort, effort_previsto, effort_residuo, avanzamento, stato_tempistiche,
+          descrizione, criticita, allocazioni
         ) VALUES (
           NEW.id, TG_OP, NEW.progetto, NEW.stato, NEW.pm, NEW.risorsa, NEW.reparto,
-          NEW.effort, NEW.effort_previsto, NEW.effort_residuo, NEW.avanzamento, NEW.stato_tempistiche
+          NEW.effort, NEW.effort_previsto, NEW.effort_residuo, NEW.avanzamento, NEW.stato_tempistiche,
+          NEW.descrizione, NEW.criticita, NEW.allocazioni
         );
         RETURN NEW;
       END;
@@ -172,7 +183,10 @@ async function initDatabase() {
           OLD.stato IS DISTINCT FROM NEW.stato OR
           OLD.effort IS DISTINCT FROM NEW.effort OR
           OLD.effort_previsto IS DISTINCT FROM NEW.effort_previsto OR
-          OLD.effort_residuo IS DISTINCT FROM NEW.effort_residuo
+          OLD.effort_residuo IS DISTINCT FROM NEW.effort_residuo OR
+          OLD.descrizione IS DISTINCT FROM NEW.descrizione OR
+          OLD.criticita IS DISTINCT FROM NEW.criticita OR
+          OLD.allocazioni IS DISTINCT FROM NEW.allocazioni
         )
         EXECUTE FUNCTION log_mp95_project_history();
     `);

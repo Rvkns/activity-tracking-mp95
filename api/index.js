@@ -31,7 +31,7 @@ app.get(['/api/projects', '/projects'], async (req, res) => {
     const result = await pool.query(
       `SELECT id, progetto, stato, pm, effort,
               risorsa, descrizione, effort_previsto, effort_residuo,
-              avanzamento, data_inizio, scadenza, stato_tempistiche, criticita, reparto
+              avanzamento, data_inizio, scadenza, stato_tempistiche, criticita, reparto, allocazioni
        FROM mp95_projects ORDER BY id ASC`
     );
     res.json(result.rows);
@@ -50,7 +50,8 @@ app.get(['/api/projects/:id/history', '/projects/:id/history'], async (req, res)
   try {
     const result = await pool.query(
       `SELECT id, project_id, operation, progetto, stato, pm, risorsa, reparto,
-              effort, effort_previsto, effort_residuo, avanzamento, stato_tempistiche, recorded_at
+              effort, effort_previsto, effort_residuo, avanzamento, stato_tempistiche,
+              descrizione, criticita, allocazioni, recorded_at
        FROM mp95_project_history WHERE project_id = $1 ORDER BY recorded_at ASC`,
       [id]
     );
@@ -68,16 +69,17 @@ app.post(['/api/projects', '/projects'], async (req, res) => {
   const {
     id, progetto, stato, pm, effort,
     risorsa, descrizione, effort_previsto, effort_residuo,
-    avanzamento, data_inizio, scadenza, stato_tempistiche, criticita, reparto
+    avanzamento, data_inizio, scadenza, stato_tempistiche, criticita, reparto, allocazioni
   } = req.body;
   const pool = getPool();
   try {
+    const allocJson = allocazioni ? JSON.stringify(allocazioni) : null;
     const result = await pool.query(
       `INSERT INTO mp95_projects
          (id, progetto, stato, pm, effort, risorsa, descrizione,
           effort_previsto, effort_residuo, avanzamento, data_inizio, scadenza,
-          stato_tempistiche, criticita, reparto)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+          stato_tempistiche, criticita, reparto, allocazioni)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
        RETURNING *`,
       [
         id, progetto, stato, pm, parseInt(effort) || 0,
@@ -85,7 +87,7 @@ app.post(['/api/projects', '/projects'], async (req, res) => {
         parseFloat(effort_previsto) || 0, parseFloat(effort_residuo) || 0,
         parseInt(avanzamento) || 0, data_inizio || null, scadenza || null,
         stato_tempistiche || 'In linea', criticita || null,
-        reparto || null
+        reparto || null, allocJson
       ]
     );
     res.status(201).json(result.rows[0]);
@@ -103,28 +105,29 @@ app.put(['/api/projects/:id', '/projects/:id'], async (req, res) => {
   const {
     progetto, stato, pm, effort,
     risorsa, descrizione, effort_previsto, effort_residuo,
-    avanzamento, data_inizio, scadenza, stato_tempistiche, criticita, reparto
+    avanzamento, data_inizio, scadenza, stato_tempistiche, criticita, reparto, allocazioni
   } = req.body;
   const pool = getPool();
   try {
+    const allocJson = allocazioni ? JSON.stringify(allocazioni) : null;
     const result = await pool.query(
       `UPDATE mp95_projects SET
          progetto = $1, stato = $2, pm = $3, effort = $4,
-         risorsa = $5, descrizione = $6,
+         risorsa = $5, descrizione = COALESCE($6, descrizione),
          effort_previsto = $7, effort_residuo = $8,
          avanzamento = $9, data_inizio = $10, scadenza = $11,
-         stato_tempistiche = $12, criticita = $13,
-         reparto = $14,
+         stato_tempistiche = $12, criticita = COALESCE($13, criticita),
+         reparto = $14, allocazioni = $15,
          updated_at = CURRENT_TIMESTAMP
-       WHERE id = $15
+       WHERE id = $16
        RETURNING *`,
       [
         progetto, stato, pm, parseInt(effort) || 0,
-        risorsa || null, descrizione || null,
+        risorsa || null, descrizione,
         parseFloat(effort_previsto) || 0, parseFloat(effort_residuo) || 0,
         parseInt(avanzamento) || 0, data_inizio || null, scadenza || null,
-        stato_tempistiche || 'In linea', criticita || null,
-        reparto || null,
+        stato_tempistiche || 'In linea', criticita,
+        reparto || null, allocJson,
         id
       ]
     );
@@ -155,7 +158,7 @@ app.delete(['/api/projects/:id', '/projects/:id'], async (req, res) => {
   }
 });
 
-// 5. POST /api/projects/batch - Append/Merge array of projects (for Excel Upload)
+// 5. POST /api/projects/batch - Append/Merge array of projects (for Excel Upload & Save)
 app.post(['/api/projects/batch', '/projects/batch'], async (req, res) => {
   const payload = req.body;
   const projectsList = Array.isArray(payload) ? payload : (payload.projects || []);
@@ -192,18 +195,29 @@ app.post(['/api/projects/batch', '/projects/batch'], async (req, res) => {
 
       if (!progetto) continue;
 
-      const risorsa = (p.risorsa || '').trim();
+      const allocJson = p.allocazioni ? JSON.stringify(p.allocazioni) : null;
 
-      // Check if project exists by ID or by (progetto + pm + risorsa)
+      // Check if project exists by ID or by (progetto + pm) -> single project entity!
       const existing = await client.query(
-        `SELECT id FROM mp95_projects 
+        `SELECT id, descrizione, criticita FROM mp95_projects 
          WHERE id = $1 
-            OR (LOWER(progetto) = LOWER($2) AND LOWER(pm) = LOWER($3) AND LOWER(COALESCE(risorsa, '')) = LOWER(COALESCE($4, '')))`,
-        [p.id || '', progetto, pm, risorsa]
+            OR (LOWER(TRIM(progetto)) = LOWER($2) AND LOWER(TRIM(pm)) = LOWER($3))`,
+        [p.id || '', progetto, pm]
       );
 
       if (existing.rows.length > 0) {
         const targetId = existing.rows[0].id;
+        const currentDesc = existing.rows[0].descrizione;
+        const currentCrit = existing.rows[0].criticita;
+
+        // Preserve existing notes if incoming value is null/empty
+        const finalDesc = (p.descrizione !== undefined && p.descrizione !== null && p.descrizione !== '')
+          ? p.descrizione
+          : currentDesc;
+        const finalCrit = (p.criticita !== undefined && p.criticita !== null && p.criticita !== '')
+          ? p.criticita
+          : currentCrit;
+
         await client.query(
           `UPDATE mp95_projects SET
              progetto = $1, stato = $2, pm = $3, effort = $4,
@@ -211,16 +225,16 @@ app.post(['/api/projects/batch', '/projects/batch'], async (req, res) => {
              effort_previsto = $7, effort_residuo = $8,
              avanzamento = $9, data_inizio = $10, scadenza = $11,
              stato_tempistiche = $12, criticita = $13,
-             reparto = $14,
+             reparto = $14, allocazioni = $15,
              updated_at = CURRENT_TIMESTAMP
-           WHERE id = $15`,
+           WHERE id = $16`,
           [
             progetto, p.stato || 'In corso', pm, parseInt(p.effort) || 0,
-            p.risorsa || null, p.descrizione || null,
+            p.risorsa || null, finalDesc,
             parseFloat(p.effort_previsto) || 0, parseFloat(p.effort_residuo) || 0,
             parseInt(p.avanzamento) || 0, p.data_inizio || null, p.scadenza || null,
-            p.stato_tempistiche || 'In linea', p.criticita || null,
-            p.reparto || null,
+            p.stato_tempistiche || 'In linea', finalCrit,
+            p.reparto || null, allocJson,
             targetId
           ]
         );
@@ -231,15 +245,15 @@ app.post(['/api/projects/batch', '/projects/batch'], async (req, res) => {
           `INSERT INTO mp95_projects
              (id, progetto, stato, pm, effort, risorsa, descrizione,
               effort_previsto, effort_residuo, avanzamento, data_inizio, scadenza,
-              stato_tempistiche, criticita, reparto)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
+              stato_tempistiche, criticita, reparto, allocazioni)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
           [
             prjId, progetto, p.stato || 'In corso', pm, parseInt(p.effort) || 0,
             p.risorsa || null, p.descrizione || null,
             parseFloat(p.effort_previsto) || 0, parseFloat(p.effort_residuo) || 0,
             parseInt(p.avanzamento) || 0, p.data_inizio || null, p.scadenza || null,
             p.stato_tempistiche || 'In linea', p.criticita || null,
-            p.reparto || null
+            p.reparto || null, allocJson
           ]
         );
       }

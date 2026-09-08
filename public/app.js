@@ -112,15 +112,6 @@ let coordinatorResources = JSON.parse(localStorage.getItem('mp95_resources')) ||
 
 function syncResourceProjectsToProjectsTable() {
   const allCoords = getAllCoordinators();
-  let maxIdNum = 0;
-  projects.forEach(p => {
-    const match = (p.id || '').match(/^PRJ-(\d+)$/);
-    if (match) {
-      const num = parseInt(match[1], 10);
-      if (num > maxIdNum) maxIdNum = num;
-    }
-  });
-
   let changed = false;
 
   Object.keys(coordinatorResources).forEach(pmName => {
@@ -137,26 +128,21 @@ function syncResourceProjectsToProjectsTable() {
         const normPName = pName.trim().toLowerCase();
         const normPm = pmName.trim().toLowerCase();
 
-        const existingWithRes = projects.find(p => {
+        const existingPrj = projects.find(p => {
           const pNorm = p.progetto.trim().toLowerCase();
           const pmNorm = sanitizeProjectPM(p.pm).toLowerCase();
-          const resNorm = p.risorsa ? p.risorsa.trim().toLowerCase() : '';
-          const isNameMatch = pNorm === normPName || normPName.startsWith(pNorm) || pNorm.startsWith(normPName);
-          return isNameMatch && pmNorm === normPm && resNorm === rName.trim().toLowerCase();
+          return (pNorm === normPName || normPName.startsWith(pNorm) || pNorm.startsWith(normPName)) && pmNorm === normPm;
         });
 
-        if (!existingWithRes) {
-          const existingNoRes = projects.find(p => {
-            const pNorm = p.progetto.trim().toLowerCase();
-            const pmNorm = sanitizeProjectPM(p.pm).toLowerCase();
-            const resNorm = p.risorsa ? p.risorsa.trim() : '';
-            const isNameMatch = pNorm === normPName || normPName.startsWith(pNorm) || pNorm.startsWith(normPName);
-            return isNameMatch && pmNorm === normPm && !resNorm;
-          });
-
-          if (existingNoRes) {
-            existingNoRes.risorsa = rName;
-            if (!existingNoRes.reparto && reparto) existingNoRes.reparto = reparto;
+        if (existingPrj) {
+          if (!existingPrj.allocazioni) existingPrj.allocazioni = [];
+          const existsInAlloc = existingPrj.allocazioni.some(a => a && a.risorsa && a.risorsa.trim().toLowerCase() === rName.trim().toLowerCase());
+          if (!existsInAlloc) {
+            existingPrj.allocazioni.push({ risorsa: rName.trim(), effort: 10 });
+            const names = existingPrj.allocazioni.map(a => a.risorsa);
+            existingPrj.risorsa = names.join(', ');
+            existingPrj.effort = existingPrj.allocazioni.reduce((sum, a) => sum + (parseInt(a.effort) || 0), 0);
+            if (!existingPrj.reparto && reparto) existingPrj.reparto = reparto;
             changed = true;
           }
         }
@@ -883,9 +869,14 @@ function getResourceEffort(resourceName) {
   const cleanName = resourceName.trim().toLowerCase();
   return projects.reduce((acc, p) => {
     if (isProjectCompleted(p)) return acc;
-    const rName = (p.risorsa && p.risorsa.trim()) ? p.risorsa.trim().toLowerCase() : sanitizeProjectPM(p.pm).toLowerCase();
-    if (rName === cleanName) {
-      return acc + (p.effort || 0);
+    if (p.allocazioni && Array.isArray(p.allocazioni) && p.allocazioni.length > 0) {
+      const matched = p.allocazioni.find(a => a && a.risorsa && a.risorsa.trim().toLowerCase() === cleanName);
+      if (matched) return acc + (parseInt(matched.effort) || 0);
+    } else {
+      const rName = (p.risorsa && p.risorsa.trim()) ? p.risorsa.trim().toLowerCase() : sanitizeProjectPM(p.pm).toLowerCase();
+      if (rName.includes(cleanName)) {
+        return acc + (p.effort || 0);
+      }
     }
     return acc;
   }, 0);
@@ -897,9 +888,14 @@ function getCoordinatorPersonalEffort(coordName) {
   return projects.reduce((acc, p) => {
     if (isProjectCompleted(p)) return acc;
     if (sanitizeProjectPM(p.pm).toLowerCase() === normCoord) {
-      const rName = (p.risorsa || '').trim().toLowerCase();
-      if (!rName || rName === normCoord) {
-        return acc + (p.effort || 0);
+      if (p.allocazioni && Array.isArray(p.allocazioni) && p.allocazioni.length > 0) {
+        const matched = p.allocazioni.find(a => a && a.risorsa && a.risorsa.trim().toLowerCase() === normCoord);
+        if (matched) return acc + (parseInt(matched.effort) || 0);
+      } else {
+        const rName = (p.risorsa || '').trim().toLowerCase();
+        if (!rName || rName.includes(normCoord)) {
+          return acc + (p.effort || 0);
+        }
       }
     }
     return acc;
@@ -3641,8 +3637,17 @@ window.openEditProjectModal = function(id) {
 
   populateModalPmOptions(prj.pm);
 
-  // Render resource row for the target project entry
-  renderAllResourceRowsForPm(prj.pm, [{ risorsa: prj.risorsa, effort: prj.effort }]);
+  // Render all resource allocations for this project
+  let initialAllocations = [];
+  if (prj.allocazioni && Array.isArray(prj.allocazioni) && prj.allocazioni.length > 0) {
+    initialAllocations = prj.allocazioni;
+  } else if (prj.risorsa) {
+    const names = prj.risorsa.split(',').map(s => s.trim()).filter(Boolean);
+    const effPerRes = names.length > 0 ? Math.round((prj.effort || 0) / names.length) : (prj.effort || 0);
+    initialAllocations = names.map(n => ({ risorsa: n, effort: effPerRes }));
+  }
+
+  renderAllResourceRowsForPm(prj.pm, initialAllocations);
 
   document.getElementById('modalReparto').value = prj.reparto || '';
   document.getElementById('modalEffortPrevisto').value = prj.effort_previsto || '';
@@ -3802,11 +3807,9 @@ async function handleSaveProject(e) {
     }
   });
 
-  if (allocations.length === 0) {
-    allocations.push({ risorsa: null, effort: 0 });
-  }
+  const totalEffort = allocations.reduce((sum, a) => sum + (a.effort || 0), 0);
+  const resourceNames = allocations.map(a => a.risorsa).join(', ') || null;
 
-  // Calculate maximum existing numeric ID to prevent ID collisions
   let maxIdNum = 0;
   projects.forEach(p => {
     const match = (p.id || '').match(/^PRJ-(\d+)$/);
@@ -3816,94 +3819,70 @@ async function handleSaveProject(e) {
     }
   });
 
-  const savedProjects = [];
+  let savedPrj = null;
 
   if (id) {
-    // Editing an existing project row: update target project entry in place
+    // Editing an existing project row: update single project entry in place
     const existingIndex = projects.findIndex(p => p.id === id);
     if (existingIndex >= 0) {
-      const firstAlloc = allocations[0];
-      const updatedPrj = {
-        ...projects[existingIndex],
+      const targetPrj = projects[existingIndex];
+      const finalDesc = (descrizione !== null) ? descrizione : targetPrj.descrizione;
+      const finalCrit = (criticita !== null) ? criticita : targetPrj.criticita;
+
+      savedPrj = {
+        ...targetPrj,
         progetto,
         stato,
         pm,
-        effort: firstAlloc.effort,
-        risorsa: firstAlloc.risorsa,
+        effort: totalEffort,
+        risorsa: resourceNames,
+        allocazioni: allocations,
         reparto,
-        descrizione,
+        descrizione: finalDesc,
         effort_previsto,
         effort_residuo,
         avanzamento,
         data_inizio,
         scadenza,
         stato_tempistiche,
-        criticita
+        criticita: finalCrit
       };
-      projects[existingIndex] = updatedPrj;
-      savedProjects.push(updatedPrj);
-
-      // If extra resource rows were added, create new project entries for them
-      for (let i = 1; i < allocations.length; i++) {
-        const alloc = allocations[i];
-        maxIdNum++;
-        const newId = `PRJ-${String(maxIdNum).padStart(3, '0')}`;
-        const newObj = {
-          id: newId,
-          progetto,
-          stato,
-          pm,
-          effort: alloc.effort,
-          risorsa: alloc.risorsa,
-          reparto,
-          descrizione,
-          effort_previsto,
-          effort_residuo,
-          avanzamento,
-          data_inizio,
-          scadenza,
-          stato_tempistiche,
-          criticita
-        };
-        projects.push(newObj);
-        savedProjects.push(newObj);
-      }
+      projects[existingIndex] = savedPrj;
     }
   } else {
-    // Creating a brand new project
-    for (let i = 0; i < allocations.length; i++) {
-      const alloc = allocations[i];
-      maxIdNum++;
-      const newId = `PRJ-${String(maxIdNum).padStart(3, '0')}`;
-      const newObj = {
-        id: newId,
-        progetto,
-        stato,
-        pm,
-        effort: alloc.effort,
-        risorsa: alloc.risorsa,
-        reparto,
-        descrizione,
-        effort_previsto,
-        effort_residuo,
-        avanzamento,
-        data_inizio,
-        scadenza,
-        stato_tempistiche,
-        criticita
-      };
-      projects.push(newObj);
-      savedProjects.push(newObj);
-    }
+    // Creating a brand new single project
+    maxIdNum++;
+    const newId = `PRJ-${String(maxIdNum).padStart(3, '0')}`;
+    savedPrj = {
+      id: newId,
+      progetto,
+      stato,
+      pm,
+      effort: totalEffort,
+      risorsa: resourceNames,
+      allocazioni: allocations,
+      reparto,
+      descrizione,
+      effort_previsto,
+      effort_residuo,
+      avanzamento,
+      data_inizio,
+      scadenza,
+      stato_tempistiche,
+      criticita
+    };
+    projects.push(savedPrj);
   }
 
-  try {
-    await fetch('/api/projects/batch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(savedProjects)
-    });
-  } catch (err) { console.log("Saved local."); }
+  if (savedPrj) {
+    try {
+      await fetch('/api/projects/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify([savedPrj])
+      });
+    } catch (err) { console.log("Saved local."); }
+  }
 
   // Sync resource back to coordinatorResources
   allocations.forEach(alloc => {
