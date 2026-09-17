@@ -113,12 +113,14 @@ async function initDatabase() {
         ADD COLUMN IF NOT EXISTS stato_tempistiche VARCHAR(50) DEFAULT 'In linea',
         ADD COLUMN IF NOT EXISTS criticita TEXT,
         ADD COLUMN IF NOT EXISTS reparto VARCHAR(100),
-        ADD COLUMN IF NOT EXISTS allocazioni JSONB;
+        ADD COLUMN IF NOT EXISTS allocazioni JSONB,
+        ADD COLUMN IF NOT EXISTS data_ultimo_aggiornamento DATE DEFAULT CURRENT_DATE;
 
       UPDATE mp95_projects SET pm = 'Serena Lacorte' WHERE pm LIKE '%Aurora Parisi%';
       UPDATE mp95_projects SET pm = 'Valerio Andreuccioli' WHERE pm LIKE '%Daniele De Dominicis%';
       UPDATE mp95_projects SET pm = 'Stefano Giovannella' WHERE pm LIKE '%Federico Arte%';
       UPDATE mp95_projects SET pm = 'Emanuela Raschellà' WHERE pm LIKE '%Francesca Rozzi%';
+      UPDATE mp95_projects SET data_ultimo_aggiornamento = CURRENT_DATE WHERE data_ultimo_aggiornamento IS NULL;
     `);
     console.log("✓ Migrazione nuove colonne e allineamento Coordinatori ufficiali completato.");
 
@@ -143,13 +145,15 @@ async function initDatabase() {
         descrizione TEXT,
         criticita TEXT,
         allocazioni JSONB,
+        data_ultimo_aggiornamento DATE,
         recorded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
 
       ALTER TABLE mp95_project_history
         ADD COLUMN IF NOT EXISTS descrizione TEXT,
         ADD COLUMN IF NOT EXISTS criticita TEXT,
-        ADD COLUMN IF NOT EXISTS allocazioni JSONB;
+        ADD COLUMN IF NOT EXISTS allocazioni JSONB,
+        ADD COLUMN IF NOT EXISTS data_ultimo_aggiornamento DATE;
 
       CREATE INDEX IF NOT EXISTS idx_mp95_project_history_project_id
         ON mp95_project_history(project_id);
@@ -159,11 +163,11 @@ async function initDatabase() {
         INSERT INTO mp95_project_history (
           project_id, operation, progetto, stato, pm, risorsa, reparto,
           effort, effort_previsto, effort_residuo, avanzamento, stato_tempistiche,
-          descrizione, criticita, allocazioni
+          descrizione, criticita, allocazioni, data_ultimo_aggiornamento
         ) VALUES (
           NEW.id, TG_OP, NEW.progetto, NEW.stato, NEW.pm, NEW.risorsa, NEW.reparto,
           NEW.effort, NEW.effort_previsto, NEW.effort_residuo, NEW.avanzamento, NEW.stato_tempistiche,
-          NEW.descrizione, NEW.criticita, NEW.allocazioni
+          NEW.descrizione, NEW.criticita, NEW.allocazioni, NEW.data_ultimo_aggiornamento
         );
         RETURN NEW;
       END;
@@ -186,7 +190,8 @@ async function initDatabase() {
           OLD.effort_residuo IS DISTINCT FROM NEW.effort_residuo OR
           OLD.descrizione IS DISTINCT FROM NEW.descrizione OR
           OLD.criticita IS DISTINCT FROM NEW.criticita OR
-          OLD.allocazioni IS DISTINCT FROM NEW.allocazioni
+          OLD.allocazioni IS DISTINCT FROM NEW.allocazioni OR
+          OLD.data_ultimo_aggiornamento IS DISTINCT FROM NEW.data_ultimo_aggiornamento
         )
         EXECUTE FUNCTION log_mp95_project_history();
     `);

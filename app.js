@@ -1277,10 +1277,7 @@ function renderAnalyticsView() {
   }
 }
 
-/* ----------------------------------------------------
-   PROJECTS VIEW
----------------------------------------------------- */
-function initProjectsView() {
+/* ------------function initProjectsView() {
   populatePmFilterOptions();
 
   document.getElementById('projectSearchInput').addEventListener('input', renderProjectsTable);
@@ -1290,6 +1287,8 @@ function initProjectsView() {
   if (tFilter) tFilter.addEventListener('change', renderProjectsTable);
   const rFilter = document.getElementById('repartoFilter');
   if (rFilter) rFilter.addEventListener('change', renderProjectsTable);
+  const sSelect = document.getElementById('sortProjectsSelect');
+  if (sSelect) sSelect.addEventListener('change', renderProjectsTable);
 
   renderProjectsTable();
 }
@@ -1366,6 +1365,50 @@ function formatDateInizio(dateStr) {
   return `<span class="date-pill" style="background:rgba(16,185,129,0.15); color:var(--success); border-color:rgba(16,185,129,0.3);">${label}</span>`;
 }
 
+function formatFriendlyDate(dateStr) {
+  if (!dateStr) return '<span style="color:var(--text-dim); font-size:0.78rem;">—</span>';
+  
+  const rawStr = String(dateStr).slice(0, 10);
+  const parts = rawStr.split('-');
+  if (parts.length < 3) return `<span style="color:var(--text-dim); font-size:0.78rem;">${dateStr}</span>`;
+
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1;
+  const day = parseInt(parts[2], 10);
+  const d = new Date(year, month, day);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const dZero = new Date(d);
+  dZero.setHours(0, 0, 0, 0);
+
+  const diffDays = Math.round((today - dZero) / (1000 * 60 * 60 * 24));
+
+  let label = '';
+  let style = '';
+
+  if (diffDays === 0) {
+    label = 'Oggi';
+    style = 'background:rgba(16,185,129,0.15); color:var(--success); border:1px solid rgba(16,185,129,0.3); font-weight:700;';
+  } else if (diffDays === 1) {
+    label = 'Ieri';
+    style = 'background:rgba(40,114,250,0.15); color:var(--mp95-blue); border:1px solid rgba(40,114,250,0.3); font-weight:700;';
+  } else {
+    const formatted = `${String(day).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}/${year}`;
+    if (diffDays > 30) {
+      label = `⚠️ ${formatted}`;
+      style = 'background:rgba(245,158,11,0.15); color:#F59E0B; border:1px solid rgba(245,158,11,0.3); font-weight:700;';
+    } else {
+      label = formatted;
+      style = 'background:rgba(255,255,255,0.05); color:var(--text-muted); border:1px solid var(--border-color);';
+    }
+  }
+
+  const titleAttr = `Data ultimo aggiornamento: ${rawStr}${diffDays > 30 ? ' (non aggiornato da oltre 30 giorni)' : ''}`;
+  return `<span class="date-pill" style="${style}" title="${titleAttr}">${label}</span>`;
+}
+
 function renderProjectsTable() {
   const tbody = document.getElementById('projectsTableBody');
   if (!tbody) return;
@@ -1377,6 +1420,8 @@ function renderProjectsTable() {
   const tempisticheFilter = tFilter ? tFilter.value : '';
   const rFilter = document.getElementById('repartoFilter');
   const repartoFilter = rFilter ? rFilter.value : '';
+  const sortSelect = document.getElementById('sortProjectsSelect');
+  const sortOption = sortSelect ? sortSelect.value : 'updated-desc';
 
   const filtered = projects.filter(p => {
     const matchesSearch = p.progetto.toLowerCase().includes(search) || p.pm.toLowerCase().includes(search) ||
@@ -1389,9 +1434,20 @@ function renderProjectsTable() {
     return matchesSearch && matchesStatus && matchesPm && matchesTempistiche && matchesReparto;
   });
 
+  filtered.sort((a, b) => {
+    if (sortOption === 'updated-desc' || sortOption === 'updated-asc') {
+      const dateA = a.data_ultimo_aggiornamento ? new Date(a.data_ultimo_aggiornamento).getTime() : 0;
+      const dateB = b.data_ultimo_aggiornamento ? new Date(b.data_ultimo_aggiornamento).getTime() : 0;
+      return sortOption === 'updated-desc' ? dateB - dateA : dateA - dateB;
+    }
+    if (sortOption === 'effort-desc') return (b.effort || 0) - (a.effort || 0);
+    if (sortOption === 'avanzamento-desc') return (b.avanzamento || 0) - (a.avanzamento || 0);
+    return (a.id || '').localeCompare(b.id || '', undefined, { numeric: true });
+  });
+
   tbody.innerHTML = '';
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="13" style="text-align:center; padding:2rem; color:var(--text-muted);">Nessun progetto trovato</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="14" style="text-align:center; padding:2rem; color:var(--text-muted);">Nessun progetto trovato</td></tr>`;
     return;
   }
 
@@ -1403,6 +1459,7 @@ function renderProjectsTable() {
     const tempisticheClass = getTempisticheClass(tempisticheLabel);
     const startHtml = formatDateInizio(p.data_inizio);
     const scadenzaHtml = formatScadenza(p.scadenza);
+    const updatedHtml = formatFriendlyDate(p.data_ultimo_aggiornamento);
     const risorsaText = p.risorsa || '<span style="color:var(--text-dim); font-size:0.78rem;">—</span>';
 
     const tr = document.createElement('tr');
@@ -1434,6 +1491,7 @@ function renderProjectsTable() {
       </td>
       <td>${startHtml}</td>
       <td>${scadenzaHtml}</td>
+      <td>${updatedHtml}</td>
       <td><span class="${tempisticheClass}">${tempisticheLabel}</span></td>
       <td>
         ${p.criticita
@@ -1441,7 +1499,7 @@ function renderProjectsTable() {
                <i class="fa-solid fa-triangle-exclamation" style="color:var(--warning); font-size:0.85rem; flex-shrink:0;"></i>
                <span class="criticita-text">${p.criticita}</span>
              </div>`
-          : `<button class="btn btn-secondary btn-sm criticita-empty-btn" onclick="openEditProjectModal('${p.id}')" title="Aggiungi criticit\u00e0">
+          : `<button class="btn btn-secondary btn-sm criticita-empty-btn" onclick="openEditProjectModal('${p.id}')" title="Aggiungi criticità">
                <i class="fa-solid fa-plus" style="font-size:0.75rem;"></i> Aggiungi nota
              </button>`
         }
@@ -1454,6 +1512,13 @@ function renderProjectsTable() {
           <i class="fa-solid fa-pen-to-square"></i>
         </button>
         <button class="btn btn-secondary btn-sm" onclick="deleteProject('${p.id}')" style="color:var(--danger);">
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}er);">
           <i class="fa-solid fa-trash"></i>
         </button>
       </td>
@@ -3286,11 +3351,13 @@ function initReportsView() {
 }
 
 function exportCSV() {
-  const headers = 'ID,Progetto,Reparto,Stato,PM,Risorsa,Effort %,Avanzamento %,Effort Previsto (gg/u),Effort Residuo (gg/u),Scadenza,Stato Tempistiche,Descrizione,Criticità';
+  const headers = 'ID,Progetto,Reparto,Stato,PM,Risorsa,Effort %,Avanzamento %,Effort Previsto (gg/u),Effort Residuo (gg/u),Data Inizio,Scadenza,Data Ultimo Aggiornamento,Stato Tempistiche,Descrizione,Criticità';
   let csvContent = "data:text/csv;charset=utf-8," + headers + "\n";
   projects.forEach(p => {
+    const start = p.data_inizio ? String(p.data_inizio).slice(0, 10) : '';
     const scad = p.scadenza ? String(p.scadenza).slice(0, 10) : '';
-    csvContent += `"${p.id}","${p.progetto}","${p.reparto || ''}","${p.stato}","${p.pm}","${p.risorsa || ''}",${p.effort},${p.avanzamento || 0},${p.effort_previsto || 0},${p.effort_residuo || 0},"${scad}","${p.stato_tempistiche || 'In linea'}","${(p.descrizione || '').replace(/"/g, "''")}","${(p.criticita || '').replace(/"/g, "''")}"\n`;
+    const updated = p.data_ultimo_aggiornamento ? String(p.data_ultimo_aggiornamento).slice(0, 10) : '';
+    csvContent += `"${p.id}","${p.progetto}","${p.reparto || ''}","${p.stato}","${p.pm}","${p.risorsa || ''}",${p.effort},${p.avanzamento || 0},${p.effort_previsto || 0},${p.effort_residuo || 0},"${start}","${scad}","${updated}","${p.stato_tempistiche || 'In linea'}","${(p.descrizione || '').replace(/"/g, "''")}","${(p.criticita || '').replace(/"/g, "''")}"\n`;
   });
 
   const encodedUri = encodeURI(csvContent);
@@ -3392,6 +3459,14 @@ function initModals() {
   document.getElementById('cancelProjectBtn').addEventListener('click', closeProjectModal);
   document.getElementById('projectForm').addEventListener('submit', handleSaveProject);
   initProjectModalDropdowns();
+
+  const setTodayUpdateBtn = document.getElementById('setTodayUpdateDateBtn');
+  if (setTodayUpdateBtn) {
+    setTodayUpdateBtn.addEventListener('click', () => {
+      const updateEl = document.getElementById('modalDataUltimoAggiornamento');
+      if (updateEl) updateEl.value = new Date().toISOString().slice(0, 10);
+    });
+  }
 
   const closeHistoryX = document.getElementById('closeProjectHistoryModal');
   const closeHistoryBtn = document.getElementById('closeProjectHistoryBtn');
@@ -3618,6 +3693,8 @@ function openAddProjectModal() {
   const todayISO = new Date().toISOString().slice(0, 10);
   const dataInizioEl = document.getElementById('modalDataInizio');
   if (dataInizioEl) dataInizioEl.value = todayISO;
+  const dataUltimoAggEl = document.getElementById('modalDataUltimoAggiornamento');
+  if (dataUltimoAggEl) dataUltimoAggEl.value = todayISO;
   document.getElementById('modalScadenza').value = "";
   document.getElementById('modalStatoTempistiche').value = "In linea";
   document.getElementById('modalDescrizione').value = "";
@@ -3659,6 +3736,12 @@ window.openEditProjectModal = function(id) {
 
   const scadRaw = prj.scadenza ? String(prj.scadenza).slice(0, 10) : '';
   document.getElementById('modalScadenza').value = scadRaw;
+
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const updateRaw = prj.data_ultimo_aggiornamento ? String(prj.data_ultimo_aggiornamento).slice(0, 10) : todayISO;
+  const dataUltimoAggEl = document.getElementById('modalDataUltimoAggiornamento');
+  if (dataUltimoAggEl) dataUltimoAggEl.value = updateRaw;
+
   document.getElementById('modalStatoTempistiche').value = prj.stato_tempistiche || 'In linea';
   document.getElementById('modalDescrizione').value = prj.descrizione || '';
   document.getElementById('modalCriticita').value = prj.criticita || '';
@@ -3786,6 +3869,11 @@ async function handleSaveProject(e) {
   const dataInizioEl = document.getElementById('modalDataInizio');
   const data_inizio = dataInizioEl ? dataInizioEl.value || null : null;
   const scadenza = document.getElementById('modalScadenza').value || null;
+
+  const dataUltimoAggEl = document.getElementById('modalDataUltimoAggiornamento');
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const data_ultimo_aggiornamento = (dataUltimoAggEl && dataUltimoAggEl.value) ? dataUltimoAggEl.value : todayISO;
+
   const stato_tempistiche = document.getElementById('modalStatoTempistiche').value || 'In linea';
   const criticita = document.getElementById('modalCriticita').value.trim() || null;
 
@@ -3844,6 +3932,7 @@ async function handleSaveProject(e) {
         avanzamento,
         data_inizio,
         scadenza,
+        data_ultimo_aggiornamento,
         stato_tempistiche,
         criticita: finalCrit
       };
@@ -3868,6 +3957,7 @@ async function handleSaveProject(e) {
       avanzamento,
       data_inizio,
       scadenza,
+      data_ultimo_aggiornamento,
       stato_tempistiche,
       criticita
     };

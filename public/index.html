@@ -94,10 +94,6 @@
           <button id="openWikiBtn" class="btn btn-secondary">
             <i class="fa-solid fa-book-open" style="color:var(--mp95-orange);"></i> <span class="btn-text">Guida Wiki</span>
           </button>
-          <input type="file" id="topbarExcelFileInput" accept=".xlsx,.xls,.csv,.json" style="display:none;">
-          <button id="topbarUploadExcelBtn" class="btn btn-secondary">
-            <i class="fa-solid fa-file-excel" style="color:#10B981;"></i> <span class="btn-text">Carica File Excel (.xlsx)</span>
-          </button>
           <button id="addProjectBtn" class="btn btn-primary">
             <i class="fa-solid fa-folder-plus"></i> <span class="btn-text">Nuovo Progetto</span>
           </button>
@@ -337,9 +333,13 @@
               <option value="Governance">Governance</option>
               <option value="Infrastructure, Network & Security">Infrastructure, Network & Security</option>
             </select>
-            <button id="projectsUploadExcelBtn" class="btn btn-secondary btn-sm" style="display:flex; align-items:center; gap:0.4rem;">
-              <i class="fa-solid fa-file-excel" style="color:#10B981;"></i> Importa Excel
-            </button>
+            <select id="sortProjectsSelect" class="select-input">
+              <option value="updated-desc" selected>Ordinamento: Ultimo Aggiornamento (più recenti)</option>
+              <option value="updated-asc">Ordinamento: Ultimo Aggiornamento (meno recenti)</option>
+              <option value="id-asc">Ordinamento: ID Progetto</option>
+              <option value="effort-desc">Ordinamento: Effort % (decrescente)</option>
+              <option value="avanzamento-desc">Ordinamento: Avanzamento % (decrescente)</option>
+            </select>
           </div>
         </div>
 
@@ -357,6 +357,7 @@
                 <th style="width:120px;">Avanzamento</th>
                 <th>Data Inizio</th>
                 <th>Scadenza</th>
+                <th>Ultimo Agg.</th>
                 <th>Tempistiche</th>
                 <th style="width:200px;">Criticità / Note</th>
                 <th style="text-align: right;">Azioni</th>
@@ -511,12 +512,12 @@
       <!-- View: REPORTS & EXPORT -->
       <section id="view-reports" class="view-section">
         <div class="dashboard-grid">
-          <div class="card">
+          <div class="card" style="grid-column: span 2;">
             <div class="card-header">
               <h3><i class="fa-solid fa-download" style="color:var(--mp95-orange);"></i> Esportazione Dati MP95</h3>
             </div>
             <p style="font-size:0.9rem; color:var(--text-muted);">
-              Esporta il dataset completo dei progetti in formato Excel o JSON, con allocazione percentuale dell'effort e stato dei coordinatori.
+              Esporta il dataset completo dei progetti in formato Excel o JSON, con allocazione percentuale dell'effort, data di ultimo aggiornamento e stato dei coordinatori.
             </p>
             <div style="display:flex; gap:1rem; margin-top:1rem;">
               <button id="exportCsvBtn" class="btn btn-primary">
@@ -524,21 +525,6 @@
               </button>
               <button id="exportJsonBtn" class="btn btn-secondary">
                 <i class="fa-solid fa-code"></i> Esporta JSON
-              </button>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header">
-              <h3><i class="fa-solid fa-upload" style="color:var(--mp95-blue);"></i> Caricamento File Excel MP95</h3>
-            </div>
-            <p style="font-size:0.9rem; color:var(--text-muted);">
-              Seleziona un file Excel (<code>.xlsx</code> o <code>.xls</code>) strutturato con le colonne <b>Progetto</b>, <b>Stato</b>, <b>PM</b>, <b>Effort %</b> per popolare istantaneamente l'applicazione.
-            </p>
-            <div style="margin-top:1rem;">
-              <input type="file" id="importFileInput" accept=".xlsx,.xls,.csv,.json" style="display:none;">
-              <button id="triggerImportBtn" class="btn btn-secondary" style="border-color:#10B981;">
-                <i class="fa-solid fa-file-excel" style="color:#10B981;"></i> Seleziona File Excel (.xlsx) / CSV / JSON
               </button>
             </div>
           </div>
@@ -1211,12 +1197,12 @@
         <input type="hidden" id="modalEffort" value="0">
         <input type="hidden" id="modalRisorsa" value="">
 
-        <!-- Row 4: Governance Temporale (Data Inizio e Fine) -->
+        <!-- Row 4: Governance Temporale (Data Inizio, Fine e Ultimo Aggiornamento) -->
         <div style="background:rgba(40,114,250,0.06); border:1px solid rgba(40,114,250,0.2); border-radius:var(--radius-md); padding:0.85rem 1rem; margin-top:0.85rem;">
           <div style="font-size:0.82rem; font-weight:700; color:var(--mp95-blue); margin-bottom:0.6rem; display:flex; align-items:center; gap:0.4rem;">
             <i class="fa-solid fa-clock-rotate-left"></i> Governance Temporale & Pianificazione Attività
           </div>
-          <div class="form-grid-2">
+          <div class="form-grid-3">
             <div class="form-group">
               <label for="modalDataInizio">Data Inizio Attività</label>
               <input type="date" id="modalDataInizio" class="form-control">
@@ -1224,6 +1210,13 @@
             <div class="form-group">
               <label for="modalScadenza">Data Fine / Scadenza</label>
               <input type="date" id="modalScadenza" class="form-control">
+            </div>
+            <div class="form-group">
+              <label for="modalDataUltimoAggiornamento" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>Ultimo Aggiornamento</span>
+                <button type="button" class="btn btn-secondary btn-xs" id="setTodayUpdateDateBtn" style="padding:0.15rem 0.4rem; font-size:0.72rem;"><i class="fa-solid fa-calendar-day"></i> Oggi</button>
+              </label>
+              <input type="date" id="modalDataUltimoAggiornamento" class="form-control">
             </div>
           </div>
           <div style="display:flex; align-items:center; gap:0.4rem; margin-top:0.5rem; flex-wrap:wrap;">
@@ -1287,43 +1280,6 @@
       </div>
       <div class="modal-footer">
         <button type="button" id="closeProjectHistoryBtn" class="btn btn-secondary">Chiudi</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Select Coordinator for Excel Import -->
-  <div id="coordinatorModal" class="modal-backdrop">
-    <div class="modal">
-      <div class="modal-header">
-        <h3><i class="fa-solid fa-file-excel" style="color:#10B981; margin-right:0.5rem;"></i> Selezione Coordinatore per Importazione</h3>
-        <button class="modal-close" id="closeCoordinatorModal">&times;</button>
-      </div>
-      <div class="modal-body" style="padding:1rem 0;">
-        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:1rem;">
-          Stai caricando <strong id="coordinatorModalCount" style="color:var(--mp95-orange);">0</strong> attività dal file <code id="coordinatorModalFileName">file.xlsx</code>.
-        </p>
-        <!-- Smart column mapping preview -->
-        <div id="colMappingPreview" style="display:none; margin-bottom:1.2rem; background:var(--bg-secondary,#1a1d2e); border:1px solid var(--border-color,rgba(255,255,255,0.08)); border-radius:10px; padding:0.9rem 1rem; font-size:0.82rem;">
-          <div style="font-weight:700; margin-bottom:0.6rem; color:var(--mp95-blue);"><i class="fa-solid fa-wand-magic-sparkles"></i> Rilevamento Automatico Colonne</div>
-          <div id="colMappingMapped" style="margin-bottom:0.5rem;"></div>
-          <div id="colMappingMissing"></div>
-        </div>
-        <div class="form-group">
-          <label for="coordinatorSelectInput" style="font-weight:700;">Seleziona Coordinatore (PM) *</label>
-          <select id="coordinatorSelectInput" class="form-control" style="margin-bottom:0.75rem;">
-            <!-- Populated dynamically via JS -->
-          </select>
-        </div>
-        <div class="form-group" id="customCoordinatorGroup" style="display:none;">
-          <label for="customCoordinatorInput" style="font-weight:700;">Nome Nuovo Coordinatore *</label>
-          <input type="text" id="customCoordinatorInput" class="form-control" placeholder="Es. Stefano Giovannella (TMI External)">
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" id="cancelCoordinatorBtn" class="btn btn-secondary">Annulla</button>
-        <button type="button" id="confirmCoordinatorBtn" class="btn btn-primary" style="background:#10B981; border-color:#10B981;">
-          <i class="fa-solid fa-cloud-arrow-up"></i> Conferma e Importa
-        </button>
       </div>
     </div>
   </div>
