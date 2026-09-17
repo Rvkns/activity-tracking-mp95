@@ -3333,6 +3333,9 @@ function initReportsView() {
   document.getElementById('exportCsvBtn').addEventListener('click', exportCSV);
   document.getElementById('exportJsonBtn').addEventListener('click', exportJSON);
 
+  const fullDbBtn = document.getElementById('exportFullDbBtn');
+  if (fullDbBtn) fullDbBtn.addEventListener('click', exportFullDB);
+
   const fileInput = document.getElementById('importFileInput');
   const triggerBtn = document.getElementById('triggerImportBtn');
 
@@ -3377,6 +3380,128 @@ function exportJSON() {
   document.body.removeChild(link);
 
   showToast('Esportazione JSON MP95 completata!');
+}
+
+/**
+ * Esporta l'intero contenuto del database in un file Excel (.xlsx) multi-foglio.
+ * Foglio 1 — Progetti: tutti i campi di ciascun progetto, con allocazioni esplose.
+ * Foglio 2 — Risorse Allocate: una riga per ogni coppia progetto × risorsa allocata.
+ * Foglio 3 — Team Coordinatori: composizione del team di ciascun coordinatore/PM.
+ */
+function exportFullDB() {
+  if (typeof XLSX === 'undefined') {
+    showToast('Libreria XLSX non disponibile. Ricarica la pagina.', 'error');
+    return;
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const wb = XLSX.utils.book_new();
+
+  // ── Sheet 1: PROGETTI ──────────────────────────────────────────
+  const prjHeaders = [
+    'ID', 'Progetto', 'Reparto', 'Stato', 'PM / Coordinatore', 'Risorsa',
+    'Effort %', 'Avanzamento %', 'Effort Previsto (gg/u)', 'Effort Residuo (gg/u)',
+    'Data Inizio', 'Scadenza', 'Ultimo Aggiornamento', 'Stato Tempistiche',
+    'Descrizione', 'Criticità / Note', 'N. Risorse Allocate', 'Dettaglio Allocazioni'
+  ];
+  const prjRows = projects.map(p => {
+    const allocs = Array.isArray(p.allocazioni) ? p.allocazioni : [];
+    const allocDetail = allocs.map(a => `${a.risorsa || '?'} (${a.effort || 0}%)`).join('; ');
+    return [
+      p.id,
+      p.progetto,
+      p.reparto || '',
+      p.stato,
+      p.pm,
+      p.risorsa || '',
+      p.effort || 0,
+      p.avanzamento || 0,
+      p.effort_previsto || 0,
+      p.effort_residuo || 0,
+      p.data_inizio ? String(p.data_inizio).slice(0, 10) : '',
+      p.scadenza ? String(p.scadenza).slice(0, 10) : '',
+      p.data_ultimo_aggiornamento ? String(p.data_ultimo_aggiornamento).slice(0, 10) : '',
+      p.stato_tempistiche || 'In linea',
+      p.descrizione || '',
+      p.criticita || '',
+      allocs.length,
+      allocDetail
+    ];
+  });
+  const ws1 = XLSX.utils.aoa_to_sheet([prjHeaders, ...prjRows]);
+  // Auto-width columns
+  ws1['!cols'] = prjHeaders.map((h, i) => {
+    let maxLen = h.length;
+    prjRows.forEach(r => { const v = String(r[i] || ''); if (v.length > maxLen) maxLen = v.length; });
+    return { wch: Math.min(maxLen + 2, 60) };
+  });
+  XLSX.utils.book_append_sheet(wb, ws1, 'Progetti');
+
+  // ── Sheet 2: RISORSE ALLOCATE ──────────────────────────────────
+  const allocHeaders = [
+    'ID Progetto', 'Progetto', 'PM / Coordinatore', 'Reparto', 'Stato',
+    'Risorsa Allocata', 'Effort Risorsa %', 'Effort Totale Progetto %', 'Avanzamento %'
+  ];
+  const allocRows = [];
+  projects.forEach(p => {
+    const allocs = Array.isArray(p.allocazioni) ? p.allocazioni : [];
+    if (allocs.length === 0) {
+      // Progetto senza allocazioni: riga con dati progetto e risorsa vuota
+      allocRows.push([
+        p.id, p.progetto, p.pm, p.reparto || '', p.stato,
+        '', '', p.effort || 0, p.avanzamento || 0
+      ]);
+    } else {
+      allocs.forEach(a => {
+        allocRows.push([
+          p.id, p.progetto, p.pm, p.reparto || '', p.stato,
+          a.risorsa || '', a.effort || 0, p.effort || 0, p.avanzamento || 0
+        ]);
+      });
+    }
+  });
+  const ws2 = XLSX.utils.aoa_to_sheet([allocHeaders, ...allocRows]);
+  ws2['!cols'] = allocHeaders.map((h, i) => {
+    let maxLen = h.length;
+    allocRows.forEach(r => { const v = String(r[i] || ''); if (v.length > maxLen) maxLen = v.length; });
+    return { wch: Math.min(maxLen + 2, 50) };
+  });
+  XLSX.utils.book_append_sheet(wb, ws2, 'Risorse Allocate');
+
+  // ── Sheet 3: TEAM COORDINATORI ─────────────────────────────────
+  const teamHeaders = [
+    'Coordinatore / PM', 'Reparto', 'Risorsa', 'Ruolo', 'Progetti Assegnati'
+  ];
+  const teamRows = [];
+  const allCoords = getAllCoordinators();
+  Object.keys(coordinatorResources).forEach(pmName => {
+    const coordObj = allCoords.find(c => c.name.toLowerCase() === pmName.toLowerCase());
+    const reparto = coordObj ? coordObj.reparto : '';
+    const resList = coordinatorResources[pmName] || [];
+    if (resList.length === 0) {
+      teamRows.push([pmName, reparto, '', '', '']);
+    } else {
+      resList.forEach(r => {
+        const rName = typeof r === 'string' ? r : r.name;
+        const rRole = typeof r === 'object' ? (r.role || '') : '';
+        const rProjects = typeof r === 'object' && Array.isArray(r.projects)
+          ? r.projects.join(', ')
+          : (typeof r === 'object' && typeof r.projects === 'string' ? r.projects : '');
+        teamRows.push([pmName, reparto, rName, rRole, rProjects]);
+      });
+    }
+  });
+  const ws3 = XLSX.utils.aoa_to_sheet([teamHeaders, ...teamRows]);
+  ws3['!cols'] = teamHeaders.map((h, i) => {
+    let maxLen = h.length;
+    teamRows.forEach(r => { const v = String(r[i] || ''); if (v.length > maxLen) maxLen = v.length; });
+    return { wch: Math.min(maxLen + 2, 60) };
+  });
+  XLSX.utils.book_append_sheet(wb, ws3, 'Team Coordinatori');
+
+  // ── Download ───────────────────────────────────────────────────
+  XLSX.writeFile(wb, `MP95_DATABASE_COMPLETO_${today}.xlsx`);
+  showToast(`Esportazione completa DB (.xlsx) con ${projects.length} progetti, ${allocRows.length} allocazioni e ${teamRows.length} risorse completata!`);
 }
 
 function handleImportFileText(file) {

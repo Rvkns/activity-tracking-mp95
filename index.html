@@ -519,7 +519,10 @@
             <p style="font-size:0.9rem; color:var(--text-muted);">
               Esporta il dataset completo dei progetti in formato Excel o JSON, con allocazione percentuale dell'effort, data di ultimo aggiornamento e stato dei coordinatori.
             </p>
-            <div style="display:flex; gap:1rem; margin-top:1rem;">
+            <div style="display:flex; gap:1rem; margin-top:1rem; flex-wrap:wrap;">
+              <button id="exportFullDbBtn" class="btn btn-primary" style="background:linear-gradient(135deg, #10B981, #059669); border-color:#059669; font-weight:700;">
+                <i class="fa-solid fa-database"></i> Esporta Completo DB (.xlsx)
+              </button>
               <button id="exportCsvBtn" class="btn btn-primary">
                 <i class="fa-solid fa-file-excel"></i> Esporta Excel / CSV
               </button>
@@ -527,6 +530,10 @@
                 <i class="fa-solid fa-code"></i> Esporta JSON
               </button>
             </div>
+            <p style="font-size:0.78rem; color:var(--text-dim); margin-top:0.6rem;">
+              <i class="fa-solid fa-circle-info" style="color:var(--mp95-blue);"></i>
+              <strong>Esporta Completo DB</strong> genera un file Excel multi-foglio con: <em>Progetti</em> (tutti i campi), <em>Risorse Allocate</em> (effort per risorsa/progetto), e <em>Team Coordinatori</em> (composizione team).
+            </p>
           </div>
         </div>
       </section>
