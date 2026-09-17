@@ -1277,7 +1277,10 @@ function renderAnalyticsView() {
   }
 }
 
-/* ------------function initProjectsView() {
+/* ----------------------------------------------------
+   PROJECTS VIEW
+---------------------------------------------------- */
+function initProjectsView() {
   populatePmFilterOptions();
 
   document.getElementById('projectSearchInput').addEventListener('input', renderProjectsTable);
@@ -1512,13 +1515,6 @@ function renderProjectsTable() {
           <i class="fa-solid fa-pen-to-square"></i>
         </button>
         <button class="btn btn-secondary btn-sm" onclick="deleteProject('${p.id}')" style="color:var(--danger);">
-          <i class="fa-solid fa-trash"></i>
-        </button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}er);">
           <i class="fa-solid fa-trash"></i>
         </button>
       </td>
