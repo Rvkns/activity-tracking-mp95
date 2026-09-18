@@ -692,6 +692,7 @@
               <li><a href="#wiki-export"><i class="fa-solid fa-angle-right"></i> 11. Esportazione Dati (CSV / JSON)</a></li>
               <li><a href="#wiki-data"><i class="fa-solid fa-angle-right"></i> 12. Persistenza, Sicurezza e Sincronizzazione Dati</a></li>
               <li><a href="#wiki-completed"><i class="fa-solid fa-angle-right"></i> 13. Archivio & Delivery KPI Progetti Conclusi</a></li>
+              <li><a href="#wiki-effort-calc"><i class="fa-solid fa-angle-right"></i> 14. Modello e Calcolo degli Effort</a></li>
             </ul>
           </div>
 
@@ -783,6 +784,10 @@
                   <tr><td style="padding:0.3rem 0.6rem;"><b>Azioni</b></td><td style="padding:0.3rem 0.6rem;">Pulsanti per modificare (✏️) o eliminare (🗑️) il progetto</td></tr>
                 </tbody>
               </table>
+            </div>
+            <div class="wiki-feature-box" style="border-left-color:var(--accent-cyan); margin-top:0.75rem;">
+              <i class="fa-solid fa-calculator" style="color:var(--accent-cyan); margin-right:0.4rem;"></i>
+              <b>Approfondimento Calcolo Effort:</b> Per il dettaglio completo su come l'effort percentuale viene calcolato, aggregato sulle risorse allocate e conteggiato nei carichi complessivi, consulta il <a href="#wiki-effort-calc" style="color:var(--accent-cyan); font-weight:700; text-decoration:underline;">Capitolo 14 — Modello e Logiche di Calcolo degli Effort</a>.
             </div>
           </div>
 
@@ -913,6 +918,10 @@
                 <li><b style="color:var(--danger);">🔴 > 100%:</b> Overload / Sovraccarico — superamento della capacità standard (100%). Barra rossa con alert.</li>
               </ul>
             </div>
+            <div class="wiki-feature-box" style="border-left-color:var(--accent-cyan); margin-top:0.75rem;">
+              <i class="fa-solid fa-calculator" style="color:var(--accent-cyan); margin-right:0.4rem;"></i>
+              <b>Come viene calcolato l'effort dei Coordinatori?</b> La distinzione tra Effort Diretto del PM, saturazione del team e soglie di Overload (&gt;100%) è illustrata nel dettaglio al <a href="#wiki-effort-calc" style="color:var(--accent-cyan); font-weight:700; text-decoration:underline;">Capitolo 14 — Modello e Logiche di Calcolo degli Effort</a>.
+            </div>
 
             <p style="font-weight:700; margin-top:1rem; color:var(--mp95-blue);"><i class="fa-solid fa-user-plus"></i> Aggiungere un Nuovo Coordinatore:</p>
             <div class="wiki-feature-box">
@@ -962,6 +971,10 @@
                 <li>Clicca l'icona <b>🗑️ (cestino rosso)</b> a destra del nome della risorsa.</li>
                 <li>Conferma la rimozione nella finestra di dialogo. La risorsa verrà rimossa dal team del coordinatore.</li>
               </ol>
+            </div>
+            <div class="wiki-feature-box" style="border-left-color:var(--accent-cyan); margin-top:0.75rem;">
+              <i class="fa-solid fa-calculator" style="color:var(--accent-cyan); margin-right:0.4rem;"></i>
+              <b>Algoritmo di saturazione risorse:</b> La formula di aggregazione dell'effort su tutti i progetti attivi tramite <code>getResourceEffort()</code> e la soglia di Overload (&gt;100%) sono spiegate al <a href="#wiki-effort-calc" style="color:var(--accent-cyan); font-weight:700; text-decoration:underline;">Capitolo 14 — Modello e Logiche di Calcolo degli Effort</a>.
             </div>
           </div>
 
@@ -1116,6 +1129,246 @@
                 <li><b>🔄 Riapertura Rapida:</b> Cliccando sul pulsante <i>Riapri</i> nell'archivio, il progetto viene riportato allo stato <i>In corso</i> e riattivato istantaneamente in tutte le viste dell'app.</li>
               </ul>
             </div>
+          </div>
+
+          <!-- Section 14: Modello e Calcolo degli Effort -->
+          <div class="wiki-section-card" id="wiki-effort-calc">
+            <h3><i class="fa-solid fa-calculator" style="color:var(--mp95-orange);"></i> 14. Modello e Logiche di Calcolo degli Effort</h3>
+            <p>
+              In <b>TrackMaster MP95</b>, la gestione dell'effort adotta un approccio innovativo basato sulla <b>percentuale di capacità allocata</b> anziché sul tradizionale timesheet a ore consuntivate. Questo modello consente una governance strategica proattiva della saturazione delle risorse e dei team, garantendo trasparenza immediata su carichi, colli di bottiglia e disponibilità.
+            </p>
+
+            <!-- 14.1 Principio Fondamentale: Perimetro Attivo -->
+            <h4 style="color:var(--mp95-blue); font-size:1.05rem; margin-top:0.8rem; display:flex; align-items:center; gap:0.5rem;">
+              <i class="fa-solid fa-filter"></i> 14.1 Principio Fondamentale: Perimetro dei Progetti Attivi
+            </h4>
+            <p>
+              Tutte le metriche operative e i calcoli di carico (saturazione risorse, effort coordinatori, KPI di dashboard e analytics) applicano a monte la regola del <b>perimetro attivo</b>:
+            </p>
+            <div class="wiki-feature-box warning">
+              <b>Regola di Esclusione (Funzione <code>isProjectCompleted(p)</code>):</b>
+              <p style="margin-top:0.35rem; font-size:0.88rem;">
+                Un progetto viene considerato <b>concluso</b> e viene <b>automaticamente escluso</b> da tutti i conteggi di effort attivo quando soddisfa <u>almeno una</u> delle seguenti condizioni:
+              </p>
+              <ul style="margin-left:1.4rem; margin-top:0.3rem; line-height:1.7;">
+                <li>Stato impostato su <b>"Terminato"</b></li>
+                <li>Stato impostato su <b>"Completato"</b></li>
+                <li>Stato impostato su <b>"In fase di chiusura"</b></li>
+                <li>Percentuale di <b>Avanzamento &ge; 100%</b></li>
+              </ul>
+              <p style="margin-top:0.4rem; font-size:0.82rem; color:var(--text-dim);">
+                <i>Effetto pratico:</i> Appena un progetto viene completato o portato al 100%, l'effort delle risorse ad esso assegnate viene istantaneamente liberato, tornando disponibile per nuove attività senza richiedere cancellazioni manuali.
+              </p>
+            </div>
+
+            <!-- 14.2 Effort per Singolo Progetto -->
+            <h4 style="color:var(--mp95-orange); font-size:1.05rem; margin-top:1.2rem; display:flex; align-items:center; gap:0.5rem;">
+              <i class="fa-solid fa-diagram-project"></i> 14.2 Calcolo dell'Effort per Singolo Progetto
+            </h4>
+            <p>
+              L'effort complessivo di un progetto rappresenta il peso percentuale totale di impegno richiesto per la sua esecuzione. Può essere configurato in due modalità:
+            </p>
+            <div class="wiki-feature-box orange">
+              <b>A. Progetti Multi-Risorsa (Allocazioni Dinamiche):</b>
+              <p style="margin-top:0.35rem;">
+                Nel form di creazione/modifica del progetto è possibile assegnare una o più risorse operative (attraverso le righe dinamiche di allocazione), specificando per ciascuna la propria quota percentuale:
+              </p>
+              <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:var(--radius-sm); padding:0.6rem 0.9rem; font-family:monospace; font-size:0.92rem; margin:0.5rem 0; color:var(--mp95-orange);">
+                Effort Progetto (%) = &sum; Effort Allocazione Risorsa (i)
+              </div>
+              <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0.3rem;">
+                <b>Esempio pratico:</b> Se al progetto <i>WIDE-IT-Digital</i> partecipano <i>Aurora Parisi (15%)</i> e <i>Marco Rossi (10%)</i>, il sistema calcola automaticamente un Effort Progetto complessivo pari a <b>25%</b>.
+              </p>
+            </div>
+
+            <div class="wiki-feature-box">
+              <b>B. Progetti Monorisorsa o Legacy:</b>
+              <p style="margin-top:0.35rem;">
+                Nei progetti storici o importati senza dettaglio delle allocazioni singole, il valore <code>effort</code> inserito rappresenta direttamente il carico complessivo. Se nel campo risorsa sono presenti più nominativi separati da virgola, il sistema ripartisce l'effort in quote paritetiche tra le risorse indicate.
+              </p>
+            </div>
+
+            <div class="wiki-feature-box">
+              <b>C. Distinzione tra Effort % e Giornate-Uomo (gg/u):</b>
+              <ul style="margin-left:1.4rem; line-height:1.7; margin-top:0.3rem;">
+                <li><b>Effort %:</b> Misura la <i>capacità istantanea e continua</i> allocata nel periodo (ad es. il 20% della settimana lavorativa).</li>
+                <li><b>Effort Previsto (gg/u):</b> Stima volumetrica complessiva in <i>giornate-persona</i> necessarie alla realizzazione del progetto.</li>
+                <li><b>Effort Residuo (gg/u):</b> Stima delle <i>giornate-persona ancora necessarie</i> per completare le milestone rimanenti.</li>
+              </ul>
+            </div>
+
+            <!-- 14.3 Effort per Singola Risorsa Operativa -->
+            <h4 style="color:#06B6D4; font-size:1.05rem; margin-top:1.2rem; display:flex; align-items:center; gap:0.5rem;">
+              <i class="fa-solid fa-user-check"></i> 14.3 Calcolo dell'Effort per Singola Risorsa Operativa
+            </h4>
+            <p>
+              Il carico di ciascuna risorsa viene calcolato dinamicamente tramite la funzione di scansione <code>getResourceEffort(resourceName)</code>:
+            </p>
+            <div class="wiki-feature-box" style="border-left-color:#06B6D4;">
+              <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:var(--radius-sm); padding:0.6rem 0.9rem; font-family:monospace; font-size:0.92rem; margin:0.5rem 0; color:#06B6D4;">
+                Effort Risorsa = &sum; [ Quota di Effort assegnata alla Risorsa nei Progetti Attivi ]
+              </div>
+              <p style="margin-top:0.4rem; font-size:0.88rem;">
+                <b>Algoritmo di matching:</b>
+              </p>
+              <ol style="margin-left:1.4rem; line-height:1.7; font-size:0.86rem; color:var(--text-muted);">
+                <li>Il sistema analizza tutti i progetti censiti nel database, scartando quelli conclusi (<code>!isProjectCompleted(p)</code>).</li>
+                <li>Se il progetto possiede allocazioni strutturate (<code>p.allocazioni</code>), cerca la voce associata alla risorsa (confronto testuale normalizzato, senza distinzione tra maiuscole/minuscole e senza spazi residui) e ne estrae la percentuale esatta.</li>
+                <li>Se il progetto non ha allocazioni strutturate, verifica se il nome risorsa compare nella stringa <code>p.risorsa</code> e somma l'effort nominale.</li>
+              </ol>
+            </div>
+
+            <div class="wiki-feature-box warning">
+              <b>Soglia di Capacità Standard e Condizione di Overload (&gt;100%):</b>
+              <p style="margin-top:0.35rem; font-size:0.88rem;">
+                La capacità lavorativa teorica standard di una risorsa a tempo pieno è fissata al <b>100%</b> (1 FTE):
+              </p>
+              <ul style="margin-left:1.4rem; margin-top:0.3rem; line-height:1.8;">
+                <li><span style="color:var(--success); font-weight:700;">🟢 Effort &le; 100%:</span> <b>Capacità Standard (Std)</b>. La barra di avanzamento assume tonalità ciano/verde e il carico è pienamente sostenibile.</li>
+                <li><span style="color:var(--danger); font-weight:800;">🔴 Effort &gt; 100%:</span> <b>Sovraccarico (OVERLOAD)</b>. La barra diventa rossa e compare l'indicatore di allarme con l'eccedenza esatta (es. <i>120% ⚠️ Overload (+20%)</i>), segnalando al PM la necessità di riequilibrare le attività o redistribuire i compiti.</li>
+              </ul>
+            </div>
+
+            <!-- 14.4 Effort per Coordinatore (PM) -->
+            <h4 style="color:var(--mp95-blue); font-size:1.05rem; margin-top:1.2rem; display:flex; align-items:center; gap:0.5rem;">
+              <i class="fa-solid fa-user-gear"></i> 14.4 Calcolo dell'Effort per Coordinatore (PM)
+            </h4>
+            <p>
+              Per i Coordinatori ufficiali (Project Manager), il sistema articola la valutazione su <b>due dimensioni complementari</b>:
+            </p>
+            <div class="wiki-feature-box">
+              <b>1. Effort Diretto / Personale del PM (Funzione <code>getCoordinatorPersonalEffort(coordName)</code>):</b>
+              <p style="margin-top:0.35rem; font-size:0.88rem;">
+                Misura quanto il coordinatore opera in prima persona come specialista esecutore sui progetti sotto la propria responsabilità:
+              </p>
+              <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:var(--radius-sm); padding:0.6rem 0.9rem; font-family:monospace; font-size:0.92rem; margin:0.5rem 0; color:var(--mp95-blue);">
+                Effort Diretto PM = &sum; [ Quota riservata al PM nei Progetti Attivi di cui è responsabile ]
+              </div>
+              <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0.3rem;">
+                Se un progetto del PM è delegato interamente a membri del team (es. Daniele De Dominicis, Aurora Parisi), l'effort di quel progetto viene computato sulla risorsa esecutrice e non satura la capacità operativa diretta del PM.
+              </p>
+            </div>
+
+            <div class="wiki-feature-box orange">
+              <b>2. Governance del Team e Media di Saturazione:</b>
+              <p style="margin-top:0.35rem; font-size:0.88rem;">
+                Nelle card dei Coordinatori viene monitorata l'efficienza complessiva di tutto il team assegnato al PM:
+              </p>
+              <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:var(--radius-sm); padding:0.6rem 0.9rem; font-family:monospace; font-size:0.92rem; margin:0.5rem 0; color:var(--mp95-orange);">
+                Saturazione Media Team (%) = ( &sum; Effort delle Risorse del Team ) &divide; Numero Risorse del Team
+              </div>
+              <ul style="margin-left:1.4rem; line-height:1.7; font-size:0.86rem; color:var(--text-muted); margin-top:0.4rem;">
+                <li><b>Badge 🟢 Team in Capacità:</b> Visualizzato se nessuna risorsa del team supera il 100% e la media del team è &le;100%.</li>
+                <li><b>Badge 🔴 N Risorse in Overload:</b> Evidenzia immediatamente quanti membri del team superano la soglia critica del 100%.</li>
+              </ul>
+            </div>
+
+            <!-- 14.5 Metriche Cumulative e KPI Globali -->
+            <h4 style="color:#10B981; font-size:1.05rem; margin-top:1.2rem; display:flex; align-items:center; gap:0.5rem;">
+              <i class="fa-solid fa-chart-pie"></i> 14.5 Metriche Cumulative e KPI Globali (Dashboard & Analytics)
+            </h4>
+            <p>
+              Sulla Dashboard esecutiva e nella pagina di Analytics avanzata, il sistema aggrega gli effort di tutti i progetti attivi calcolando indicatori sintetici di livello direzionale:
+            </p>
+            <div class="wiki-feature-box" style="border-left-color:#10B981;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-top:0.3rem;">
+                <thead>
+                  <tr style="border-bottom:1px solid var(--border-color); text-align:left;">
+                    <th style="padding:0.45rem 0.6rem; color:#10B981;">Metrica Cumulativa</th>
+                    <th style="padding:0.45rem 0.6rem; color:var(--text-main);">Formula Matematica</th>
+                    <th style="padding:0.45rem 0.6rem; color:var(--text-muted);">Significato di Business</th>
+                  </tr>
+                </thead>
+                <tbody style="color:var(--text-muted);">
+                  <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                    <td style="padding:0.4rem 0.6rem; font-weight:700; color:var(--text-main);">Effort Totale Attivo</td>
+                    <td style="padding:0.4rem 0.6rem; font-family:monospace;">&sum; p.effort (progetti attivi)</td>
+                    <td style="padding:0.4rem 0.6rem;">Volume globale di carico di lavoro attivo attualmente gestito da MP95.</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                    <td style="padding:0.4rem 0.6rem; font-weight:700; color:var(--text-main);">Effort Medio per Progetto</td>
+                    <td style="padding:0.4rem 0.6rem; font-family:monospace;">Effort Totale &divide; N. Progetti Attivi</td>
+                    <td style="padding:0.4rem 0.6rem;">Dimensione media dell'impegno richiesto per ciascun progetto censito.</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                    <td style="padding:0.4rem 0.6rem; font-weight:700; color:var(--text-main);">FTE Totali (Full-Time Equivalent)</td>
+                    <td style="padding:0.4rem 0.6rem; font-family:monospace;">Effort Totale &divide; 100</td>
+                    <td style="padding:0.4rem 0.6rem;">Numero di risorse equivalenti a tempo pieno assorbite dai progetti attivi (es. 450% = 4.5 FTE).</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                    <td style="padding:0.4rem 0.6rem; font-weight:700; color:var(--text-main);">Tasso di Saturazione Aziendale</td>
+                    <td style="padding:0.4rem 0.6rem; font-family:monospace;">(Effort Totale &divide; Max Capacità) &times; 100</td>
+                    <td style="padding:0.4rem 0.6rem;">Grado di utilizzo della capacità complessiva dei coordinatori (dove Max Capacità = N. Coordinatori &times; 100%).</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                    <td style="padding:0.4rem 0.6rem; font-weight:700; color:var(--text-main);">Distribuzione Effort per Reparto</td>
+                    <td style="padding:0.4rem 0.6rem; font-family:monospace;">&sum; p.effort per Reparto</td>
+                    <td style="padding:0.4rem 0.6rem;">Assorbimento di capacità diviso per divisioni aziendali (Digital, Data Management, Corporate, Innovation, ecc.).</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:0.4rem 0.6rem; font-weight:700; color:var(--text-main);">Capacità AMS / BAU vs Delivery</td>
+                    <td style="padding:0.4rem 0.6rem; font-family:monospace;">&sum; Effort Manutenzioni / Spot vs Sviluppo</td>
+                    <td style="padding:0.4rem 0.6rem;">Ripartizione tra attività continuative di gestione ordinaria e progetti di innovazione con roadmap temporale.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- 14.6 Tabella Sinottica -->
+            <h4 style="color:var(--text-main); font-size:1.05rem; margin-top:1.2rem; display:flex; align-items:center; gap:0.5rem;">
+              <i class="fa-solid fa-table-list"></i> 14.6 Tabella Sinottica: Formule, Funzioni JS e Regole Operative
+            </h4>
+            <div class="wiki-feature-box orange">
+              <table style="width:100%; border-collapse:collapse; font-size:0.83rem;">
+                <thead>
+                  <tr style="border-bottom:1px solid var(--border-color); text-align:left;">
+                    <th style="padding:0.4rem 0.5rem; color:var(--mp95-orange);">Entità / Ambito</th>
+                    <th style="padding:0.4rem 0.5rem; color:var(--text-main);">Formula / Regola Logica</th>
+                    <th style="padding:0.4rem 0.5rem; color:var(--text-main);">Funzione Codice Sorgente</th>
+                    <th style="padding:0.4rem 0.5rem; color:var(--text-main);">Soglia / Alert</th>
+                  </tr>
+                </thead>
+                <tbody style="color:var(--text-muted);">
+                  <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                    <td style="padding:0.35rem 0.5rem; font-weight:700; color:var(--text-main);">Singolo Progetto</td>
+                    <td style="padding:0.35rem 0.5rem;">&sum; allocazioni.effort (oppure valore fisso se monorisorsa)</td>
+                    <td style="padding:0.35rem 0.5rem; font-family:monospace;">handleSaveProject()</td>
+                    <td style="padding:0.35rem 0.5rem;">Visualizzato con barra proporzionale (0-100%)</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                    <td style="padding:0.35rem 0.5rem; font-weight:700; color:var(--text-main);">Singola Risorsa</td>
+                    <td style="padding:0.35rem 0.5rem;">&sum; quote effort della risorsa su progetti attivi (!isCompleted)</td>
+                    <td style="padding:0.35rem 0.5rem; font-family:monospace;">getResourceEffort()</td>
+                    <td style="padding:0.35rem 0.5rem;"><span style="color:var(--danger); font-weight:700;">&gt; 100%</span> = Allarme OVERLOAD</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                    <td style="padding:0.35rem 0.5rem; font-weight:700; color:var(--text-main);">Effort Diretto PM</td>
+                    <td style="padding:0.35rem 0.5rem;">&sum; effort progetti attivi del PM eseguiti in prima persona</td>
+                    <td style="padding:0.35rem 0.5rem; font-family:monospace;">getCoordinatorPersonalEffort()</td>
+                    <td style="padding:0.35rem 0.5rem;"><span style="color:var(--danger); font-weight:700;">&gt; 100%</span> = Allarme OVERLOAD PM</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                    <td style="padding:0.35rem 0.5rem; font-weight:700; color:var(--text-main);">Team del PM</td>
+                    <td style="padding:0.35rem 0.5rem;">Media aritmetica degli effort delle risorse del team</td>
+                    <td style="padding:0.35rem 0.5rem; font-family:monospace;">renderCoordinatorsGrid()</td>
+                    <td style="padding:0.35rem 0.5rem;">Badge rosso se almeno 1 risorsa &gt;100%</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                    <td style="padding:0.35rem 0.5rem; font-weight:700; color:var(--text-main);">Dashboard Totale</td>
+                    <td style="padding:0.35rem 0.5rem;">&sum; p.effort (tutti i progetti con stato attivo)</td>
+                    <td style="padding:0.35rem 0.5rem; font-family:monospace;">renderDashboardKPIs()</td>
+                    <td style="padding:0.35rem 0.5rem;">Aggiornamento istantaneo ad ogni modifica DB</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:0.35rem 0.5rem; font-weight:700; color:var(--text-main);">Analytics Aziendale</td>
+                    <td style="padding:0.35rem 0.5rem;">Total FTE, Saturation Rate %, Scostamento consuntivo</td>
+                    <td style="padding:0.35rem 0.5rem; font-family:monospace;">renderAnalyticsView()</td>
+                    <td style="padding:0.35rem 0.5rem;">Dashboard direzionale per governance di capacità</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
           </div>
 
         </div>
