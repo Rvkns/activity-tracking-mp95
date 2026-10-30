@@ -3118,7 +3118,7 @@ function levenshteinDistance(a, b) {
  * Each field maps to an array of known aliases (normalized).
  */
 const COLUMN_ALIAS_MAP = {
-  progetto:    ['progetto', 'nome progetto', 'project', 'nome attivita', 'attivita', 'titolo', 'project name', 'name', 'oggetto', 'nome', 'descrizione progetto', 'activity', 'task'],
+  progetto:    ['progetto', 'nome progetto', 'nome progetto/attivita', 'project', 'nome attivita', 'attivita', 'titolo', 'project name', 'name', 'oggetto', 'nome', 'descrizione progetto', 'activity', 'task'],
   stato:       ['stato', 'status', 'fase', 'stato avanzamento', 'state', 'situazione', 'condizione'],
   effort:      ['effort', 'effort %', '% effort', 'impegno', '% impegno', 'allocazione', '% allocazione', 'carico', 'workload', 'fte %', 'percentuale', 'perc', 'occupazione', 'quota', 'effort percentuale'],
   risorsa:     ['risorsa', 'risorsa coinvolta', 'resource', 'persona', 'membro', 'utente', 'assegnatario', 'nome risorsa', 'collaboratore', 'nominativo'],
