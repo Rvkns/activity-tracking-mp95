@@ -109,6 +109,117 @@ let projects = (JSON.parse(localStorage.getItem('mp95_projects')) || [...INITIAL
   pm: sanitizeProjectPM(p.pm)
 }));
 let coordinatorResources = JSON.parse(localStorage.getItem('mp95_resources')) || DEFAULT_COORDINATOR_RESOURCES;
+let areaHistoryEvents = JSON.parse(localStorage.getItem('mp95_area_history')) || [];
+
+function recordLocalAreaUpdate({ pm, reparto, project_id, progetto, operation, changes }) {
+  if (!pm || !changes || changes.length === 0) return;
+  const cleanPm = sanitizeProjectPM(pm);
+  const allCoords = getAllCoordinators();
+  const coordObj = allCoords.find(c => c.name.toLowerCase() === cleanPm.toLowerCase());
+  const finalReparto = reparto || (coordObj ? coordObj.reparto : 'Generale');
+
+  const newEvent = {
+    id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    project_id: project_id || null,
+    progetto: progetto || 'Attività Area',
+    pm: cleanPm,
+    reparto: finalReparto,
+    operation: operation || 'UPDATE',
+    recorded_at: new Date().toISOString(),
+    changes,
+    isLocal: true
+  };
+
+  areaHistoryEvents.unshift(newEvent);
+  if (areaHistoryEvents.length > 300) {
+    areaHistoryEvents = areaHistoryEvents.slice(0, 300);
+  }
+  localStorage.setItem('mp95_area_history', JSON.stringify(areaHistoryEvents));
+}
+
+function computeProjectDiffChanges(oldPrj, newPrj) {
+  if (!oldPrj) {
+    return [
+      `Nuova attività inserita (Stato: ${newPrj.stato || 'In corso'}, Effort: ${newPrj.effort ?? 0}%, Avanzamento: ${newPrj.avanzamento ?? 0}%)`
+    ];
+  }
+  const changes = [];
+  if ((oldPrj.progetto || '').trim() !== (newPrj.progetto || '').trim()) {
+    changes.push(`Nome: "${oldPrj.progetto || '—'}" → "${newPrj.progetto || '—'}"`);
+  }
+  if ((oldPrj.stato || '').trim() !== (newPrj.stato || '').trim()) {
+    changes.push(`Stato: ${oldPrj.stato || '—'} → ${newPrj.stato || '—'}`);
+  }
+  if ((parseInt(oldPrj.avanzamento) || 0) !== (parseInt(newPrj.avanzamento) || 0)) {
+    changes.push(`Avanzamento: ${parseInt(oldPrj.avanzamento) || 0}% → ${parseInt(newPrj.avanzamento) || 0}%`);
+  }
+  if ((parseInt(oldPrj.effort) || 0) !== (parseInt(newPrj.effort) || 0)) {
+    changes.push(`Effort: ${parseInt(oldPrj.effort) || 0}% → ${parseInt(newPrj.effort) || 0}%`);
+  }
+  if ((oldPrj.risorsa || '').trim() !== (newPrj.risorsa || '').trim()) {
+    changes.push(`Risorse: ${oldPrj.risorsa || 'Nessuna'} → ${newPrj.risorsa || 'Nessuna'}`);
+  }
+  if ((oldPrj.stato_tempistiche || 'In linea') !== (newPrj.stato_tempistiche || 'In linea')) {
+    changes.push(`Tempistiche: ${oldPrj.stato_tempistiche || 'In linea'} → ${newPrj.stato_tempistiche || 'In linea'}`);
+  }
+  if ((parseFloat(oldPrj.effort_previsto) || 0) !== (parseFloat(newPrj.effort_previsto) || 0)) {
+    changes.push(`Effort previsto: ${parseFloat(oldPrj.effort_previsto) || 0} → ${parseFloat(newPrj.effort_previsto) || 0} gg/u`);
+  }
+  if ((parseFloat(oldPrj.effort_residuo) || 0) !== (parseFloat(newPrj.effort_residuo) || 0)) {
+    changes.push(`Effort residuo: ${parseFloat(oldPrj.effort_residuo) || 0} → ${parseFloat(newPrj.effort_residuo) || 0} gg/u`);
+  }
+  const oldScad = oldPrj.scadenza ? String(oldPrj.scadenza).slice(0, 10) : '';
+  const newScad = newPrj.scadenza ? String(newPrj.scadenza).slice(0, 10) : '';
+  if (oldScad !== newScad) {
+    changes.push(`Scadenza: ${oldScad || 'Nessuna'} → ${newScad || 'Nessuna'}`);
+  }
+  if ((oldPrj.descrizione || '').trim() !== (newPrj.descrizione || '').trim()) {
+    changes.push('Descrizione attività aggiornata');
+  }
+  if ((oldPrj.criticita || '').trim() !== (newPrj.criticita || '').trim()) {
+    changes.push('Criticità / Note aggiornate');
+  }
+  if ((oldPrj.pm || '').trim().toLowerCase() !== (newPrj.pm || '').trim().toLowerCase()) {
+    changes.push(`Coordinatore: ${oldPrj.pm || '—'} → ${newPrj.pm || '—'}`);
+  }
+  if (changes.length === 0) {
+    changes.push('Conferma/aggiornamento scheda attività');
+  }
+  return changes;
+}
+
+async function syncHistoryFromNeonDB() {
+  try {
+    const resHist = await fetch('/api/history');
+    if (!resHist.ok) return;
+    const dbEvents = await resHist.json();
+    if (!Array.isArray(dbEvents)) return;
+
+    const normalizedDb = dbEvents.map(ev => ({
+      ...ev,
+      pm: sanitizeProjectPM(ev.pm)
+    }));
+
+    // Retain local-only events (e.g. TEAM resource edits, DELETEs, or very recent local project edits not yet in DB)
+    const keptLocal = (areaHistoryEvents || []).filter(loc => {
+      if (!loc || !loc.isLocal) return false;
+      if (loc.operation === 'TEAM' || loc.operation === 'DELETE') return true;
+      const locTime = new Date(loc.recorded_at).getTime();
+      const matchedInDb = normalizedDb.some(dbEv =>
+        dbEv.project_id === loc.project_id &&
+        Math.abs(new Date(dbEv.recorded_at).getTime() - locTime) < 120000
+      );
+      return !matchedInDb;
+    });
+
+    areaHistoryEvents = [...keptLocal, ...normalizedDb].sort(
+      (a, b) => new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime()
+    ).slice(0, 300);
+    localStorage.setItem('mp95_area_history', JSON.stringify(areaHistoryEvents));
+  } catch (err) {
+    console.warn('Storico area da cache locale:', err.message);
+  }
+}
 
 function syncResourceProjectsToProjectsTable() {
   const allCoords = getAllCoordinators();
@@ -292,6 +403,8 @@ async function fetchFromNeonDB() {
         dbReached = true;
       }
     }
+
+    await syncHistoryFromNeonDB();
   } catch (err) {
     console.log("DB non raggiungibile — dati da LocalStorage offline cache.");
   } finally {
@@ -329,6 +442,8 @@ function persistToNeonDB() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(coordinatorResources)
       });
+      await syncHistoryFromNeonDB();
+      renderCoordinatorsGrid();
       console.log('✓ Stato salvato nel DB Neon.');
     } catch (err) {
       console.warn('⚠ Impossibile sincronizzare con il DB Neon:', err.message);
@@ -1789,6 +1904,105 @@ function getProjectsForCoordinator(coordName) {
   });
 }
 
+function formatAreaUpdateTimestamp(isoOrDateStr) {
+  if (!isoOrDateStr) return { dateTimeLabel: 'Nessun dato', freshnessBadge: '' };
+  const rawStr = String(isoOrDateStr).trim();
+  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(rawStr);
+  const dt = new Date(isDateOnly ? `${rawStr}T12:00:00` : rawStr);
+  if (isNaN(dt.getTime())) return { dateTimeLabel: 'Nessun dato', freshnessBadge: '' };
+
+  const datePart = dt.toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
+  const timePart = !isDateOnly
+    ? ' · ' + dt.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+    : '';
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const startOfTarget = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime();
+  const diffDays = Math.max(0, Math.round((startOfToday - startOfTarget) / (1000 * 60 * 60 * 24)));
+
+  let badgeClass = 'older';
+  let badgeText = `${diffDays} gg fa`;
+  if (diffDays === 0) {
+    badgeClass = 'fresh';
+    badgeText = 'Oggi';
+  } else if (diffDays === 1) {
+    badgeClass = 'fresh';
+    badgeText = 'Ieri';
+  } else if (diffDays <= 7) {
+    badgeClass = 'recent';
+    badgeText = `${diffDays} gg fa`;
+  }
+
+  return {
+    dateTimeLabel: `${datePart}${timePart}`,
+    freshnessBadge: `<span class="pm-update-freshness ${badgeClass}">${badgeText}</span>`
+  };
+}
+
+function getAreaUpdatesForCoordinator(pmName, repartoLabel, prjList) {
+  const normCoord = pmName.trim().toLowerCase();
+  const matchedEvents = (areaHistoryEvents || []).filter(ev => {
+    if (!ev || !ev.pm) return false;
+    return sanitizeProjectPM(ev.pm).toLowerCase() === normCoord;
+  });
+
+  // Also check project timestamps in case projects were updated or seeded without history entries
+  let latestPrjTime = 0;
+  let latestPrjDateStr = null;
+  (prjList || []).forEach(p => {
+    const cand = p.updated_at || p.data_ultimo_aggiornamento;
+    if (cand) {
+      const t = new Date(cand).getTime();
+      if (!isNaN(t) && t > latestPrjTime) {
+        latestPrjTime = t;
+        latestPrjDateStr = cand;
+      }
+    }
+  });
+
+  let displayEvents = matchedEvents.slice(0, 15);
+  if (displayEvents.length === 0 && prjList && prjList.length > 0) {
+    displayEvents = prjList
+      .slice()
+      .sort((a, b) => {
+        const tA = new Date(a.updated_at || a.data_ultimo_aggiornamento || 0).getTime() || 0;
+        const tB = new Date(b.updated_at || b.data_ultimo_aggiornamento || 0).getTime() || 0;
+        return tB - tA;
+      })
+      .slice(0, 10)
+      .map(p => ({
+        id: `snap-${p.id}`,
+        project_id: p.id,
+        progetto: p.progetto,
+        pm: pmName,
+        reparto: repartoLabel,
+        operation: 'SNAPSHOT',
+        recorded_at: p.data_ultimo_aggiornamento || p.updated_at || null,
+        changes: [
+          `Stato: ${p.stato || 'In corso'} · Effort: ${p.effort ?? 0}% · Avanzamento: ${p.avanzamento ?? 0}%`
+        ]
+      }));
+  }
+
+  let bestTimestamp = null;
+  if (matchedEvents.length > 0 && matchedEvents[0].recorded_at) {
+    bestTimestamp = matchedEvents[0].recorded_at;
+    const evTime = new Date(bestTimestamp).getTime();
+    if (latestPrjTime > evTime + 86400000 && latestPrjDateStr) {
+      bestTimestamp = latestPrjDateStr;
+    }
+  } else if (latestPrjDateStr) {
+    bestTimestamp = latestPrjDateStr;
+  }
+
+  return {
+    bestTimestamp,
+    displayEvents,
+    totalCount: matchedEvents.length > 0 ? matchedEvents.length : displayEvents.length
+  };
+}
+
 function renderCoordinatorsGrid() {
   const grid = document.getElementById('coordinatorsGrid');
   if (!grid) return;
@@ -1803,6 +2017,15 @@ function renderCoordinatorsGrid() {
 
     const prjList = getProjectsForCoordinator(pmName);
     const resourcesList = coordinatorResources[pmName] || [];
+    const areaUpdates = getAreaUpdatesForCoordinator(pmName, repartoLabel, prjList);
+    const { dateTimeLabel, freshnessBadge } = formatAreaUpdateTimestamp(areaUpdates.bestTimestamp);
+    const latestEv = areaUpdates.displayEvents[0] || null;
+    const latestChangePreview = latestEv
+      ? `<div class="pm-last-update-detail">
+           <span class="pm-last-update-prj"><i class="fa-solid fa-pen-nib" style="color:${badgeColor}; margin-right:0.25rem;"></i>${latestEv.progetto}:</span>
+           <span class="pm-last-update-summary">${(latestEv.changes && latestEv.changes[0]) ? latestEv.changes[0] : 'Dati aggiornati'}</span>
+         </div>`
+      : '';
 
     // Calculate effort per resource for this coordinator's team
     let teamEffortsSum = 0;
@@ -1870,6 +2093,19 @@ function renderCoordinatorsGrid() {
         </div>
       </div>
 
+      <div class="pm-last-update-banner" onclick="toggleAccordion('accordion-upd-${pmIndex}')" title="Clicca per visualizzare il registro completo degli aggiornamenti dell'area ${repartoLabel}">
+        <div class="pm-last-update-top">
+          <span class="pm-last-update-label">
+            <i class="fa-solid fa-clock-rotate-left" style="color:${badgeColor};"></i> Ultimo agg. area:
+          </span>
+          <div class="pm-last-update-time-group">
+            <strong class="pm-last-update-date">${dateTimeLabel}</strong>
+            ${freshnessBadge}
+          </div>
+        </div>
+        ${latestChangePreview}
+      </div>
+
       <div class="pm-capacity-gauge">
         <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; font-weight:700; margin-bottom:0.4rem;">
           <span>Allocazione Risorse Team (${resourcesList.length} persone)</span>
@@ -1891,6 +2127,58 @@ function renderCoordinatorsGrid() {
       </div>
 
       <div class="pm-dropdown-section">
+
+        <!-- DROPDOWN 0: STORICO AGGIORNAMENTI AREA -->
+        <div class="pm-accordion" id="accordion-upd-${pmIndex}">
+          <div class="pm-accordion-header" onclick="toggleAccordion('accordion-upd-${pmIndex}')">
+            <span><i class="fa-solid fa-clock-rotate-left" style="color:var(--success); margin-right:0.4rem;"></i> Ultimi Aggiornamenti Area (${areaUpdates.displayEvents.length})</span>
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="pm-accordion-body">
+            ${areaUpdates.displayEvents.length === 0
+              ? '<div style="font-size:0.82rem; color:var(--text-dim);">Nessun aggiornamento registrato per questa area</div>'
+              : areaUpdates.displayEvents.map(ev => {
+                  const evTs = formatAreaUpdateTimestamp(ev.recorded_at);
+                  let opLabel = 'MODIFICA';
+                  let opClass = 'update';
+                  if (ev.operation === 'INSERT') { opLabel = 'NUOVO'; opClass = 'insert'; }
+                  else if (ev.operation === 'TEAM') { opLabel = 'TEAM'; opClass = 'team'; }
+                  else if (ev.operation === 'DELETE') { opLabel = 'ELIMINATO'; opClass = 'delete'; }
+                  else if (ev.operation === 'SNAPSHOT') { opLabel = 'ATTIVO'; opClass = 'snapshot'; }
+
+                  const hasPrj = ev.project_id && projects.some(p => p.id === ev.project_id);
+                  const changesPills = (ev.changes || []).map(ch =>
+                    `<div class="pm-update-change-pill"><i class="fa-solid fa-angle-right" style="color:var(--mp95-orange); font-size:0.7rem;"></i> <span>${ch}</span></div>`
+                  ).join('');
+
+                  return `
+                    <div class="pm-update-log-item">
+                      <div class="pm-update-log-meta">
+                        <span class="pm-update-log-date"><i class="fa-regular fa-clock"></i> ${evTs.dateTimeLabel}</span>
+                        <span class="pm-update-op-badge ${opClass}">${opLabel}</span>
+                      </div>
+                      <div class="pm-update-log-title-row">
+                        <span class="pm-update-log-title">${ev.progetto || 'Attività'}</span>
+                        ${hasPrj ? `
+                          <div style="display:flex; gap:0.35rem; align-items:center;">
+                            <button type="button" onclick="openProjectHistoryModal('${ev.project_id}')" class="pm-update-action-btn" title="Storico avanzamento progetto">
+                              <i class="fa-solid fa-chart-line"></i>
+                            </button>
+                            <button type="button" onclick="openEditProjectModal('${ev.project_id}')" class="pm-update-action-btn" title="Apri scheda attività">
+                              <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                          </div>
+                        ` : ''}
+                      </div>
+                      <div class="pm-update-changes-list">
+                        ${changesPills}
+                      </div>
+                    </div>
+                  `;
+                }).join('')
+            }
+          </div>
+        </div>
 
         <!-- DROPDOWN 1: PROGETTI DEL COORDINATORE (solo dove il coordinatore è anche risorsa attiva) -->
         ${(() => {
@@ -2236,6 +2524,19 @@ async function handleSaveResourceForm(e) {
     }
   });
 
+  recordLocalAreaUpdate({
+    pm: pmName,
+    reparto,
+    project_id: null,
+    progetto: name,
+    operation: 'TEAM',
+    changes: [
+      isEdit
+        ? `Risorsa aggiornata nel team (${role})${projectsArr.length > 0 ? ' · Progetti: ' + projectsArr.join(', ') : ''}`
+        : `Nuova risorsa aggiunta al team (${role})${projectsArr.length > 0 ? ' · Progetti: ' + projectsArr.join(', ') : ''}`
+    ]
+  });
+
   // saveState() handles both LocalStorage and Neon DB persistence
   saveState();
   closeResourceModal();
@@ -2257,6 +2558,15 @@ window.deleteTeamResource = async function(encodedPmName, resourceIdx) {
     if (sanitizeProjectPM(p.pm).toLowerCase() === pmName.toLowerCase() && p.risorsa && p.risorsa.trim().toLowerCase() === resName.toLowerCase()) {
       p.risorsa = null;
     }
+  });
+
+  recordLocalAreaUpdate({
+    pm: pmName,
+    reparto: null,
+    project_id: null,
+    progetto: resName,
+    operation: 'TEAM',
+    changes: [`Risorsa rimossa dal team di ${pmName}`]
   });
 
   // saveState() handles both LocalStorage and Neon DB persistence
@@ -3118,7 +3428,7 @@ function levenshteinDistance(a, b) {
  * Each field maps to an array of known aliases (normalized).
  */
 const COLUMN_ALIAS_MAP = {
-  progetto:    ['progetto', 'nome progetto', 'project', 'nome attivita', 'attivita', 'titolo', 'project name', 'name', 'oggetto', 'nome', 'descrizione progetto', 'activity', 'task'],
+  progetto:    ['progetto', 'nome progetto', 'nome progetto/attivita', 'project', 'nome attivita', 'attivita', 'titolo', 'project name', 'name', 'oggetto', 'nome', 'descrizione progetto', 'activity', 'task'],
   stato:       ['stato', 'status', 'fase', 'stato avanzamento', 'state', 'situazione', 'condizione'],
   effort:      ['effort', 'effort %', '% effort', 'impegno', '% impegno', 'allocazione', '% allocazione', 'carico', 'workload', 'fte %', 'percentuale', 'perc', 'occupazione', 'quota', 'effort percentuale'],
   risorsa:     ['risorsa', 'risorsa coinvolta', 'resource', 'persona', 'membro', 'utente', 'assegnatario', 'nome risorsa', 'collaboratore', 'nominativo'],
@@ -4055,8 +4365,18 @@ async function handleSaveProject(e) {
         scadenza,
         data_ultimo_aggiornamento,
         stato_tempistiche,
-        criticita: finalCrit
+        criticita: finalCrit,
+        updated_at: new Date().toISOString()
       };
+      const diffChanges = computeProjectDiffChanges(targetPrj, savedPrj);
+      recordLocalAreaUpdate({
+        pm: savedPrj.pm,
+        reparto: savedPrj.reparto,
+        project_id: savedPrj.id,
+        progetto: savedPrj.progetto,
+        operation: 'UPDATE',
+        changes: diffChanges
+      });
       projects[existingIndex] = savedPrj;
     }
   } else {
@@ -4080,8 +4400,17 @@ async function handleSaveProject(e) {
       scadenza,
       data_ultimo_aggiornamento,
       stato_tempistiche,
-      criticita
+      criticita,
+      updated_at: new Date().toISOString()
     };
+    recordLocalAreaUpdate({
+      pm: savedPrj.pm,
+      reparto: savedPrj.reparto,
+      project_id: savedPrj.id,
+      progetto: savedPrj.progetto,
+      operation: 'INSERT',
+      changes: computeProjectDiffChanges(null, savedPrj)
+    });
     projects.push(savedPrj);
   }
 
@@ -4124,6 +4453,17 @@ async function handleSaveProject(e) {
 
 window.deleteProject = async function(id) {
   if (confirm('Sei sicuro di voler eliminare questo progetto?')) {
+    const targetPrj = projects.find(p => p.id === id);
+    if (targetPrj) {
+      recordLocalAreaUpdate({
+        pm: targetPrj.pm,
+        reparto: targetPrj.reparto,
+        project_id: targetPrj.id,
+        progetto: targetPrj.progetto,
+        operation: 'DELETE',
+        changes: ['Attività/progetto eliminato dall\'area']
+      });
+    }
     projects = projects.filter(p => p.id !== id);
     try {
       await fetch(`/api/projects/${id}`, { method: 'DELETE' });

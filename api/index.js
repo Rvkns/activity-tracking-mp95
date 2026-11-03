@@ -65,6 +65,118 @@ app.get(['/api/projects/:id/history', '/projects/:id/history'], async (req, res)
   }
 });
 
+// 1c. GET /api/history - Global & per-area modification log with computed field diffs
+app.get(['/api/history', '/history'], async (req, res) => {
+  const pool = getPool();
+  try {
+    const result = await pool.query(
+      `SELECT id, project_id, operation, progetto, stato, pm, risorsa, reparto,
+              effort, effort_previsto, effort_residuo, avanzamento, stato_tempistiche,
+              descrizione, criticita, allocazioni, data_ultimo_aggiornamento, recorded_at
+       FROM mp95_project_history ORDER BY id ASC`
+    );
+
+    const rowsByPrj = {};
+    for (const r of result.rows) {
+      if (!rowsByPrj[r.project_id]) rowsByPrj[r.project_id] = [];
+      rowsByPrj[r.project_id].push(r);
+    }
+
+    const events = [];
+    for (const pid of Object.keys(rowsByPrj)) {
+      const prjRows = rowsByPrj[pid];
+      // Collapse rapid same-transaction intermediate snapshots (<2500ms) for the same project
+      const collapsed = [];
+      for (let i = 0; i < prjRows.length; i++) {
+        const curr = prjRows[i];
+        const next = prjRows[i + 1];
+        if (
+          next &&
+          next.operation === 'UPDATE' &&
+          Math.abs(new Date(next.recorded_at).getTime() - new Date(curr.recorded_at).getTime()) < 2500
+        ) {
+          continue;
+        }
+        collapsed.push(curr);
+      }
+
+      let prev = null;
+      for (const r of collapsed) {
+        if (!prev || r.operation === 'INSERT') {
+          events.push({
+            id: `db-${r.id}`,
+            project_id: r.project_id,
+            progetto: r.progetto,
+            pm: r.pm,
+            reparto: r.reparto,
+            operation: 'INSERT',
+            recorded_at: r.recorded_at,
+            changes: [
+              `Nuova attività inserita (Stato: ${r.stato || 'In corso'}, Effort: ${r.effort ?? 0}%, Avanzamento: ${r.avanzamento ?? 0}%)`
+            ]
+          });
+          prev = r;
+          continue;
+        }
+
+        const changes = [];
+        if ((prev.progetto || '') !== (r.progetto || '')) {
+          changes.push(`Nome: "${prev.progetto || '—'}" → "${r.progetto || '—'}"`);
+        }
+        if ((prev.stato || '') !== (r.stato || '')) {
+          changes.push(`Stato: ${prev.stato || '—'} → ${r.stato || '—'}`);
+        }
+        if ((parseInt(prev.avanzamento) || 0) !== (parseInt(r.avanzamento) || 0)) {
+          changes.push(`Avanzamento: ${parseInt(prev.avanzamento) || 0}% → ${parseInt(r.avanzamento) || 0}%`);
+        }
+        if ((parseInt(prev.effort) || 0) !== (parseInt(r.effort) || 0)) {
+          changes.push(`Effort: ${parseInt(prev.effort) || 0}% → ${parseInt(r.effort) || 0}%`);
+        }
+        if ((prev.risorsa || '').trim() !== (r.risorsa || '').trim()) {
+          changes.push(`Risorse: ${prev.risorsa || 'Nessuna'} → ${r.risorsa || 'Nessuna'}`);
+        }
+        if ((prev.stato_tempistiche || 'In linea') !== (r.stato_tempistiche || 'In linea')) {
+          changes.push(`Tempistiche: ${prev.stato_tempistiche || 'In linea'} → ${r.stato_tempistiche || 'In linea'}`);
+        }
+        if ((parseFloat(prev.effort_previsto) || 0) !== (parseFloat(r.effort_previsto) || 0)) {
+          changes.push(`Effort previsto: ${parseFloat(prev.effort_previsto) || 0} → ${parseFloat(r.effort_previsto) || 0} gg/u`);
+        }
+        if ((parseFloat(prev.effort_residuo) || 0) !== (parseFloat(r.effort_residuo) || 0)) {
+          changes.push(`Effort residuo: ${parseFloat(prev.effort_residuo) || 0} → ${parseFloat(r.effort_residuo) || 0} gg/u`);
+        }
+        if ((prev.descrizione || '').trim() !== (r.descrizione || '').trim()) {
+          changes.push('Descrizione attività aggiornata');
+        }
+        if ((prev.criticita || '').trim() !== (r.criticita || '').trim()) {
+          changes.push('Criticità / Note aggiornate');
+        }
+
+        if (changes.length > 0) {
+          events.push({
+            id: `db-${r.id}`,
+            project_id: r.project_id,
+            progetto: r.progetto,
+            pm: r.pm,
+            reparto: r.reparto,
+            operation: 'UPDATE',
+            recorded_at: r.recorded_at,
+            changes
+          });
+        }
+        prev = r;
+      }
+    }
+
+    events.sort((a, b) => new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime());
+    res.json(events.slice(0, 300));
+  } catch (err) {
+    console.error('Error fetching global history:', err);
+    res.status(500).json({ error: err.message || 'Errore durante il recupero dello storico modifiche.' });
+  } finally {
+    await pool.end();
+  }
+});
+
 // 2. POST /api/projects - Create a new project
 app.post(['/api/projects', '/projects'], async (req, res) => {
   const {
@@ -206,13 +318,21 @@ app.post(['/api/projects/batch', '/projects/batch'], async (req, res) => {
       const allocJson = p.allocazioni ? JSON.stringify(p.allocazioni) : null;
       const lastUpdateDate = p.data_ultimo_aggiornamento || todayDateStr;
 
-      // Check if project exists by ID or by (progetto + pm) -> single project entity!
-      const existing = await client.query(
-        `SELECT id, descrizione, criticita FROM mp95_projects 
-         WHERE id = $1 
-            OR (LOWER(TRIM(progetto)) = LOWER($2) AND LOWER(TRIM(pm)) = LOWER($3))`,
-        [p.id || '', progetto, pm]
-      );
+      // Check if project exists by ID first; fallback to (progetto + pm) only if ID not provided/found
+      let existing = { rows: [] };
+      if (p.id) {
+        existing = await client.query(
+          `SELECT id, descrizione, criticita FROM mp95_projects WHERE id = $1`,
+          [p.id]
+        );
+      }
+      if (existing.rows.length === 0) {
+        existing = await client.query(
+          `SELECT id, descrizione, criticita FROM mp95_projects 
+           WHERE LOWER(TRIM(progetto)) = LOWER($1) AND LOWER(TRIM(pm)) = LOWER($2)`,
+          [progetto, pm]
+        );
+      }
 
       if (existing.rows.length > 0) {
         const targetId = existing.rows[0].id;
@@ -237,7 +357,25 @@ app.post(['/api/projects/batch', '/projects/batch'], async (req, res) => {
              reparto = $14, allocazioni = $15,
              data_ultimo_aggiornamento = $16,
              updated_at = CURRENT_TIMESTAMP
-           WHERE id = $17`,
+           WHERE id = $17
+             AND (
+               progetto IS DISTINCT FROM $1 OR
+               stato IS DISTINCT FROM $2 OR
+               pm IS DISTINCT FROM $3 OR
+               effort IS DISTINCT FROM $4 OR
+               risorsa IS DISTINCT FROM $5 OR
+               descrizione IS DISTINCT FROM $6 OR
+               effort_previsto IS DISTINCT FROM $7 OR
+               effort_residuo IS DISTINCT FROM $8 OR
+               avanzamento IS DISTINCT FROM $9 OR
+               data_inizio IS DISTINCT FROM $10::date OR
+               scadenza IS DISTINCT FROM $11::date OR
+               stato_tempistiche IS DISTINCT FROM $12 OR
+               criticita IS DISTINCT FROM $13 OR
+               reparto IS DISTINCT FROM $14 OR
+               allocazioni::text IS DISTINCT FROM $15::jsonb::text OR
+               data_ultimo_aggiornamento IS DISTINCT FROM $16::date
+             )`,
           [
             progetto, p.stato || 'In corso', pm, parseInt(p.effort) || 0,
             p.risorsa || null, finalDesc,

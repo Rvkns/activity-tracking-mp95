@@ -776,6 +776,203 @@ tr:hover td {
   color: var(--text-dim);
 }
 
+/* Area Last Update Banner & Modification Log in Coordinator Cards */
+.pm-last-update-banner {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--mp95-blue);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.pm-last-update-banner:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--border-color-light);
+}
+
+.pm-last-update-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.pm-last-update-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pm-last-update-time-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.pm-last-update-date {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.pm-update-freshness {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0.12rem 0.45rem;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.pm-update-freshness.fresh {
+  background: rgba(16, 185, 129, 0.18);
+  color: var(--success);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.pm-update-freshness.recent {
+  background: rgba(59, 130, 246, 0.18);
+  color: var(--mp95-blue);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.pm-update-freshness.older {
+  background: rgba(148, 163, 184, 0.14);
+  color: var(--text-dim);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.pm-last-update-detail {
+  font-size: 0.76rem;
+  color: var(--text-dim);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.pm-last-update-prj {
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-right: 0.25rem;
+}
+
+.pm-update-log-item {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.45rem;
+}
+
+.pm-update-log-item:last-child {
+  margin-bottom: 0;
+}
+
+.pm-update-log-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pm-update-log-date {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.pm-update-op-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 0.1rem 0.42rem;
+  border-radius: 4px;
+  letter-spacing: 0.4px;
+}
+
+.pm-update-op-badge.insert {
+  background: rgba(16, 185, 129, 0.18);
+  color: var(--success);
+}
+
+.pm-update-op-badge.update {
+  background: rgba(59, 130, 246, 0.18);
+  color: var(--mp95-blue);
+}
+
+.pm-update-op-badge.team {
+  background: rgba(167, 139, 250, 0.2);
+  color: #A78BFA;
+}
+
+.pm-update-op-badge.delete {
+  background: rgba(239, 68, 68, 0.18);
+  color: var(--danger);
+}
+
+.pm-update-op-badge.snapshot {
+  background: rgba(255, 152, 0, 0.18);
+  color: var(--mp95-orange);
+}
+
+.pm-update-log-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pm-update-log-title {
+  font-size: 0.83rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.pm-update-action-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--mp95-blue);
+  border-radius: 4px;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.pm-update-action-btn:hover {
+  background: var(--mp95-blue);
+  color: #FFFFFF;
+  border-color: var(--mp95-blue);
+}
+
+.pm-update-changes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+}
+
+.pm-update-change-pill {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  line-height: 1.35;
+}
+
 .pm-stat-row {
   display: flex;
   justify-content: space-between;
@@ -1327,6 +1524,16 @@ textarea.form-control {
 [data-theme="light"] .pm-project-item {
   background: #F8FAFC;
   border-color: #E2E8F0;
+}
+
+[data-theme="light"] .pm-last-update-banner,
+[data-theme="light"] .pm-update-log-item {
+  background: #F8FAFC;
+  border-color: #E2E8F0;
+}
+
+[data-theme="light"] .pm-last-update-banner:hover {
+  background: #F1F5F9;
 }
 
 [data-theme="light"] .wiki-section-card {
